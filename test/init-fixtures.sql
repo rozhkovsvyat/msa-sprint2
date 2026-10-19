@@ -49,3 +49,22 @@ VALUES
 ('test-user-2', 'test-hotel-1', 'TESTCODE1', 10.0, 90.0, NOW()),
 ('test-user-3', 'test-hotel-1', null, 0.0, 80.0, NOW());
 
+-- Отели для проверки причин отказа (задание 2): у каждого нарушено ровно одно правило.
+-- test-hotel-4 работает и свободен, но не доверенный: один отзыв.
+-- test-hotel-5 работает и доверенный (10 отзывов по 5), но мест нет.
+INSERT INTO hotel (id, operational, fully_booked, city, rating, description) VALUES
+  ('test-hotel-4', true, false, 'Incheon', 3.0, 'Operational hotel without enough good reviews.'),
+  ('test-hotel-5', true, true, 'Gwangju', 5.0, 'Trusted hotel with no free rooms.');
+
+INSERT INTO review (id, user_id, hotel_id, text, rating, created_at) VALUES
+  ('rev-013', 'test-user-2', 'test-hotel-4', 'Average', 3, '2024-04-01'),
+  ('rev-014', 'test-user-1', 'test-hotel-5', 'Excellent', 5, '2024-05-01'),
+  ('rev-015', 'test-user-1', 'test-hotel-5', 'Excellent', 5, '2024-05-02'),
+  ('rev-016', 'test-user-1', 'test-hotel-5', 'Excellent', 5, '2024-05-03'),
+  ('rev-017', 'test-user-2', 'test-hotel-5', 'Excellent', 5, '2024-05-04'),
+  ('rev-018', 'test-user-2', 'test-hotel-5', 'Excellent', 5, '2024-05-05'),
+  ('rev-019', 'test-user-2', 'test-hotel-5', 'Excellent', 5, '2024-05-06'),
+  ('rev-020', 'test-user-3', 'test-hotel-5', 'Excellent', 5, '2024-05-07'),
+  ('rev-021', 'test-user-3', 'test-hotel-5', 'Excellent', 5, '2024-05-08'),
+  ('rev-022', 'test-user-3', 'test-hotel-5', 'Excellent', 5, '2024-05-09'),
+  ('rev-023', 'test-user-3', 'test-hotel-5', 'Excellent', 5, '2024-05-10');

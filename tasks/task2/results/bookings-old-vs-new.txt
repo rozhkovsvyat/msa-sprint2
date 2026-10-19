@@ -1,0 +1,19 @@
+Legacy archive (single writer already switched to booking-service):
+ id |          created_at           | discount_percent |   hotel_id   | price | promo_code |   user_id
+----+-------------------------------+------------------+--------------+-------+------------+-------------
+  8 | 2026-10-19 08:21:33.909939+00 |               10 | test-hotel-1 |    90 | TESTCODE1  | test-user-2
+  9 | 2026-10-19 08:21:33.909939+00 |                0 | test-hotel-1 |    80 |            | test-user-3
+(2 rows)
+
+
+Current booking database (new bookings are written only here):
+ id |   user_id   |   hotel_id   |  promo_code  | discount_percent | price |          created_at           | created_at_estimated |     source
+----+-------------+--------------+--------------+------------------+-------+-------------------------------+----------------------+-----------------
+  8 | test-user-2 | test-hotel-1 | TESTCODE1    |               10 |    90 | 2026-10-19 08:21:33.909939+00 | f                    | migration
+  9 | test-user-3 | test-hotel-1 |              |                0 |    80 | 2026-10-19 08:21:33.909939+00 | f                    | migration
+ 10 | test-user-3 | test-hotel-1 |              |                0 |    80 | 2026-10-19 08:21:34.644223+00 | f                    | booking-service
+ 11 | test-user-2 | test-hotel-1 | TESTCODE1    |               10 |    90 | 2026-10-19 08:21:34.680605+00 | f                    | booking-service
+ 12 | test-user-2 | test-hotel-1 | TESTCODE-OLD |                0 |   100 | 2026-10-19 08:22:35.119841+00 | f                    | booking-service
+ 13 | test-user-2 | test-hotel-1 |              |                0 |   100 | 2026-10-19 08:23:40.714896+00 | f                    | booking-service
+(6 rows)
+

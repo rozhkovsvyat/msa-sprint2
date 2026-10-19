@@ -1,0 +1,40 @@
+               event_id               |  booking_id   |             user_id             |    hotel_id    |  promo_code  | discount_percent | price |           booked_at           | booked_at_estimated |     source      |          received_at          |                 correlation_id
+--------------------------------------+---------------+---------------------------------+----------------+--------------+------------------+-------+-------------------------------+---------------------+-----------------+-------------------------------+------------------------------------------------
+ ad156cf1-8f2d-1986-e2b3-1946c8dfc010 |             1 | test-user-2                     | test-hotel-1   | TESTCODE1    |               10 |    90 | 2026-10-19 08:20:14.062491+00 | f                   | migration       | 2026-10-19 08:20:21.896328+00 | migration:ad156cf1-8f2d-1986-e2b3-1946c8dfc010
+ 6799ed00-578f-f544-d96e-8a4c868c24a8 |             2 | test-user-3                     | test-hotel-1   |              |                0 |    80 | 2026-10-19 08:20:14.062491+00 | f                   | migration       | 2026-10-19 08:20:21.910337+00 | migration:6799ed00-578f-f544-d96e-8a4c868c24a8
+ 726ef485-e86d-cbb0-96f7-2d12d3763b41 |             3 | test-user-3                     | test-hotel-1   |              |                0 |    80 | 2026-10-19 08:20:16.144516+00 | t                   | migration       | 2026-10-19 08:20:21.91283+00  | migration:726ef485-e86d-cbb0-96f7-2d12d3763b41
+ 67099ef0-1ed0-6c69-0ac5-1f84035292c8 |             4 | test-user-2                     | test-hotel-1   | TESTCODE1    |               10 |    90 | 2026-10-19 08:20:16.144516+00 | t                   | migration       | 2026-10-19 08:20:21.914276+00 | migration:67099ef0-1ed0-6c69-0ac5-1f84035292c8
+ be213ebd-1c48-1308-255e-99212e8966dd |             5 | test-user-2                     | test-hotel-1   | TESTCODE1    |               10 |    90 | 2026-10-19 08:20:21.568862+00 | f                   | booking-service | 2026-10-19 08:20:22.068075+00 | cd0c887c-4aa3-414b-ba8e-945861729ef1
+ cfd94daf-a90b-259d-43c6-58fb69288086 |             8 | test-user-2                     | test-hotel-1   | TESTCODE1    |               10 |    90 | 2026-10-19 08:21:33.909939+00 | f                   | migration       | 2026-10-19 08:21:34.452614+00 | migration:cfd94daf-a90b-259d-43c6-58fb69288086
+ e4d8e739-4e24-169e-c8ab-95214e938b97 |             9 | test-user-3                     | test-hotel-1   |              |                0 |    80 | 2026-10-19 08:21:33.909939+00 | f                   | migration       | 2026-10-19 08:21:34.462608+00 | migration:e4d8e739-4e24-169e-c8ab-95214e938b97
+ 7d6e7dd6-f1db-5b67-d3a0-29c48a091f72 |            10 | test-user-3                     | test-hotel-1   |              |                0 |    80 | 2026-10-19 08:21:34.644223+00 | f                   | booking-service | 2026-10-19 08:21:34.973545+00 | f156b2db-d5ab-4b0b-89d6-811dfd2d4f72
+ b40f4b6d-fbcd-5bf1-0378-e3122d982299 |            11 | test-user-2                     | test-hotel-1   | TESTCODE1    |               10 |    90 | 2026-10-19 08:21:34.680605+00 | f                   | booking-service | 2026-10-19 08:21:34.981958+00 | 4dc80b8e-c89c-48b3-a14d-767464dfe222
+ 48aacc61-7081-9dae-fc77-fc98d595968d |            12 | test-user-2                     | test-hotel-1   | TESTCODE-OLD |                0 |   100 | 2026-10-19 08:22:35.119841+00 | f                   | booking-service | 2026-10-19 08:22:35.462502+00 | hotelio-live-create
+ 7d664513-ccf4-9722-a3fa-452ac89ddec5 |            13 | test-user-2                     | test-hotel-1   |              |                0 |   100 | 2026-10-19 08:23:40.714896+00 | f                   | booking-service | 2026-10-19 08:23:49.069419+00 | broker-outage-1792398219
+ 8621efb1-666d-4951-9308-559430faeed8 | 9277953812000 | kafka-contract-1792398277-53409 | contract-hotel |              |                0 |   100 | 2026-10-19 08:24:37.953814+00 | f                   | booking-service | 2026-10-19 08:28:20.3135+00   | kafka-contract-1792398277-53409
+ 35921035-66a5-4eee-b49a-552d645a50ee | 9524127038000 | kafka-contract-1792398524-55390 | contract-hotel |              |                0 |   100 | 2026-10-19 08:28:44.12704+00  | f                   | booking-service | 2026-10-19 08:28:44.704704+00 | kafka-contract-1792398524-55390
+(13 rows)
+
+             user_id             | bookings | revenue |        last_booking_at
+---------------------------------+----------+---------+-------------------------------
+ kafka-contract-1792398277-53409 |        1 |     100 | 2026-10-19 08:24:37.953814+00
+ kafka-contract-1792398524-55390 |        1 |     100 | 2026-10-19 08:28:44.12704+00
+ test-user-2                     |        7 |     650 | 2026-10-19 08:23:40.714896+00
+ test-user-3                     |        4 |     320 | 2026-10-19 08:21:34.644223+00
+(4 rows)
+
+ count
+-------
+    13
+(1 row)
+
+
+Analyst insert negative control:
+ERROR:  permission denied for table booking_history
+Same SQL as owner (zero rows, no mutation):
+INSERT 0 0
+
+GROUP           TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID                                  HOST            CLIENT-ID
+booking-history booking-events  0          4               4               0               rdkafka-ed639641-641a-4874-b143-7c82418230ab /172.18.0.6     rdkafka
+booking-history booking-events  1          7               7               0               rdkafka-ed639641-641a-4874-b143-7c82418230ab /172.18.0.6     rdkafka
+booking-history booking-events  2          7               7               0               rdkafka-ed639641-641a-4874-b143-7c82418230ab /172.18.0.6     rdkafka

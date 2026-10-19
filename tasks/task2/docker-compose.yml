@@ -1,4 +1,6 @@
-version: "3.8"
+# Задание 2: монолит с gRPC-прокси бронирований, booking-service, booking-history-service, Kafka.
+# Запуск, переключение данных и проверки — results/README.md.
+# Пароли — демо-значения стенда; переопределяются переменными окружения или файлом .env рядом.
 
 services:
   monolith:
@@ -13,16 +15,26 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://monolith-db:5432/hotelio
       SPRING_DATASOURCE_USERNAME: hotelio
-      SPRING_DATASOURCE_PASSWORD: hotelio
-      BOOKING_SERVICE_EXTERNAL_HOST: booking-service
+      SPRING_DATASOURCE_PASSWORD: ${LEGACY_DB_PASSWORD:-hotelio}
+      # В application.yml монолита ddl-auto: create — перезапуск стирал бы данные (ADR-001, Н1).
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      # Имя хоста включает готовый gRPC-прокси бронирований; false возвращает монолиту свою логику (откат).
+      BOOKING_SERVICE_EXTERNAL_HOST: ${BOOKING_SERVICE_EXTERNAL_HOST:-booking-service}
       BOOKING_SERVICE_EXTERNAL_PORT: 9090
+    depends_on:
+      monolith-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-so", "/dev/null", "http://localhost:8080/"]
+      interval: 3s
+      retries: 60
 
   monolith-db:
     image: postgres:15
     container_name: hotelio-db
     environment:
       POSTGRES_USER: hotelio
-      POSTGRES_PASSWORD: hotelio
+      POSTGRES_PASSWORD: ${LEGACY_DB_PASSWORD:-hotelio}
       POSTGRES_DB: hotelio
     ports:
       - "5432:5432"
@@ -30,9 +42,117 @@ services:
       - monolith-db-data:/var/lib/postgresql/data
     networks:
       - hotelio-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hotelio -d hotelio"]
+      interval: 2s
+      retries: 30
+
+  booking-service:
+    image: hotelio-booking-service
+    build: &booking-build
+      context: .
+      dockerfile: booking-service/Dockerfile
+    container_name: booking-service
+    ports:
+      - "9090:9090"   # gRPC: вызовы прокси монолита
+      - "8085:8080"   # /ping, /ready, /version, /diagnostics/outbox
+    environment:
+      BOOKING_DB: Host=booking-db;Database=booking;Username=booking;Password=${BOOKING_DB_PASSWORD:-booking};GSS Encryption Mode=Disable
+      MONOLITH_URL: http://hotelio-monolith:8080/
+      KAFKA_BOOTSTRAP: kafka:9092
+      GRPC_REFLECTION: "true"   # для grpcurl на стенде
+    depends_on:
+      booking-schema:
+        condition: service_completed_successfully
+      kafka-init:
+        condition: service_completed_successfully
+    networks:
+      - hotelio-net
+
+  # Схема БД — командой migrate из того же образа, до запуска сервиса.
+  booking-schema:
+    image: hotelio-booking-service
+    build: *booking-build
+    command: ["migrate"]
+    environment:
+      BOOKING_DB: Host=booking-db;Database=booking;Username=booking;Password=${BOOKING_DB_PASSWORD:-booking};GSS Encryption Mode=Disable
+    depends_on:
+      booking-db:
+        condition: service_healthy
+    networks:
+      - hotelio-net
+
+  booking-db:
+    image: postgres:15
+    container_name: booking-db
+    environment:
+      POSTGRES_USER: booking
+      POSTGRES_PASSWORD: ${BOOKING_DB_PASSWORD:-booking}
+      POSTGRES_DB: booking
+    ports:
+      - "5433:5432"
+    volumes:
+      - booking-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booking -d booking"]
+      interval: 2s
+      retries: 30
+    networks:
+      - hotelio-net
+
+  booking-history-service:
+    image: hotelio-booking-history-service
+    build: &history-build
+      context: .
+      dockerfile: booking-history-service/Dockerfile
+    container_name: booking-history-service
+    ports:
+      - "8086:8080"
+    environment:
+      HISTORY_DB: Host=history-db;Database=history;Username=history;Password=${HISTORY_DB_PASSWORD:-history};GSS Encryption Mode=Disable
+      KAFKA_BOOTSTRAP: kafka:9092
+    depends_on:
+      history-schema:
+        condition: service_completed_successfully
+      kafka-init:
+        condition: service_completed_successfully
+    networks:
+      - hotelio-net
+
+  history-schema:
+    image: hotelio-booking-history-service
+    build: *history-build
+    command: ["migrate"]
+    environment:
+      HISTORY_DB: Host=history-db;Database=history;Username=history;Password=${HISTORY_DB_PASSWORD:-history};GSS Encryption Mode=Disable
+      ANALYST_PASSWORD: ${ANALYST_PASSWORD:-analyst}
+    depends_on:
+      history-db:
+        condition: service_healthy
+    networks:
+      - hotelio-net
+
+  history-db:
+    image: postgres:15
+    container_name: history-db
+    environment:
+      POSTGRES_USER: history
+      POSTGRES_PASSWORD: ${HISTORY_DB_PASSWORD:-history}
+      POSTGRES_DB: history
+    ports:
+      - "5434:5432"
+    volumes:
+      - history-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U history -d history"]
+      interval: 2s
+      retries: 30
+    networks:
+      - hotelio-net
 
   kafka:
     image: confluentinc/cp-kafka:7.2.1
+    container_name: kafka
     ports:
       - "9092:9092"
     environment:
@@ -40,10 +160,13 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
     networks:
       - hotelio-net
   zookeeper:
     image: confluentinc/cp-zookeeper:7.2.1
+    container_name: zookeeper
     ports:
       - "2181:2181"
     environment:
@@ -52,8 +175,65 @@ services:
     networks:
       - hotelio-net
 
+  # Топик создаётся заранее: 3 партиции, ключ — id бронирования, хранение 7 суток.
+  kafka-init:
+    image: confluentinc/cp-kafka:7.2.1
+    depends_on:
+      - kafka
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
+        until kafka-topics --bootstrap-server kafka:9092 --list >/dev/null 2>&1; do sleep 2; done
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic booking-events \
+          --partitions 3 --replication-factor 1 --config retention.ms=604800000
+    networks:
+      - hotelio-net
+
+  # Ops-джоба переноса бронирований (ADR-001): запускается вручную при переключении и откате.
+  booking-migration:
+    image: postgres:15
+    profiles: ["ops"]
+    entrypoint: ["/migration/migrate-bookings.sh"]
+    command: ["forward"]
+    environment:
+      LEGACY_DB_URL: postgresql://hotelio:${LEGACY_DB_PASSWORD:-hotelio}@monolith-db:5432/hotelio
+      BOOKING_DB_URL: postgresql://booking:${BOOKING_DB_PASSWORD:-booking}@booking-db:5432/booking
+      MIGRATION_OFFLINE: ${MIGRATION_OFFLINE:-no}
+    depends_on:
+      booking-schema:
+        condition: service_completed_successfully
+    volumes:
+      - ./migration:/migration:ro
+    networks:
+      - hotelio-net
+
+  # Регрессионные тесты курса (test/regress.sh): фикстуры переносятся в booking-service той же ops-джобой.
+  regress:
+    image: hotelio-tester
+    build: ../../test
+    profiles: ["test"]
+    environment:
+      DB_HOST: monolith-db
+      DB_PORT: 5432
+      DB_NAME: hotelio
+      DB_USER: hotelio
+      DB_PASSWORD: ${LEGACY_DB_PASSWORD:-hotelio}
+      API_URL: http://hotelio-monolith:8080
+      BOOKING_DB_URL: postgresql://booking:${BOOKING_DB_PASSWORD:-booking}@booking-db:5432/booking
+      HISTORY_DB_URL: postgresql://history:${HISTORY_DB_PASSWORD:-history}@history-db:5432/history
+      BOOKING_GRPC: booking-service:9090
+    depends_on:
+      monolith:
+        condition: service_healthy
+    volumes:
+      - ./migration:/migration:ro
+    networks:
+      - hotelio-net
+
 volumes:
   monolith-db-data:
+  booking-db-data:
+  history-db-data:
 
 networks:
   hotelio-net:

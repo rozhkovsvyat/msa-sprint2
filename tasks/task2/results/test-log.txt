@@ -1,0 +1,138 @@
+Negative control: booking-service stopped; regression must fail.
+ Container booking-service Stopping
+ Container booking-service Stopped
+🏁 Регрессионный тест до миграции Hotelio
+🧪 Проверка подключения к БД...
+🧪 Загрузка фикстур...
+DELETE 4
+DELETE 5
+DELETE 23
+DELETE 3
+DELETE 5
+INSERT 0 4
+INSERT 0 5
+INSERT 0 23
+INSERT 0 3
+INSERT 0 2
+🧪 Выполнение HTTP-тестов...
+
+Тесты пользователей...
+✅ Получение test-user-1 по ID работает
+✅ Статус test-user-1: ACTIVE
+✅ test-user-1 в блэклисте
+✅ test-user-1 активен
+✅ test-user-1 не авторизован (в блэклисте)
+✅ test-user-3 — VIP-пользователь
+✅ test-user-2 авторизован
+
+Тесты отелей...
+✅ test-hotel-1 получен по ID
+✅ test-hotel-1 работает
+✅ test-hotel-3 не работает
+✅ test-hotel-2 полностью забронирован
+✅ Поиск отелей в Сеуле работает
+✅ Топ-отели в Сеуле загружены
+
+Тесты ревью...
+✅ Отзывы test-hotel-1 найдены
+✅ test-hotel-1 признан надёжным
+✅ test-hotel-3 НЕ признан надёжным (ожидаемо)
+
+Тесты промокодов...
+✅ Промокод TESTCODE1 найден
+✅ VIP-промо доступен VIP
+✅ VIP-промо недоступен обычному
+✅ Обычный промо доступен
+✅ Истекший промо недоступен
+✅ POST /validate промо прошёл
+
+Тесты бронирования...
+curl: (22) The requested URL returned error: 500
+❌ Бронирования не получены
+Negative control exit=1 (expected nonzero)
+ Container kafka Running
+ Container booking-db Running
+ Container zookeeper Running
+ Container booking-db Waiting
+ Container kafka-init Starting
+ Container kafka-init Started
+ Container booking-db Healthy
+ Container task2-booking-schema-1 Starting
+ Container task2-booking-schema-1 Started
+ Container task2-booking-schema-1 Waiting
+ Container kafka-init Waiting
+ Container task2-booking-schema-1 Exited
+ Container kafka-init Exited
+ Container booking-service Starting
+ Container booking-service Started
+
+Positive regression including migration, distinct rejection reasons and history.
+🏁 Регрессионный тест до миграции Hotelio
+🧪 Проверка подключения к БД...
+🧪 Загрузка фикстур...
+DELETE 4
+DELETE 5
+DELETE 23
+DELETE 3
+DELETE 2
+INSERT 0 4
+INSERT 0 5
+INSERT 0 23
+INSERT 0 3
+INSERT 0 2
+🧪 Перенос бронирований в booking-service (ops-джоба, режим тестового стенда)...
+[migration] в монолите бронирований: 2, максимальный id: 9
+[migration] перенесено новых: 2, из них с подставленной датой: 0
+[migration] счётчик id booking-service: 9
+[migration] источник: 2 a99cc803bfcb1b76416de408207ef46e
+[migration] приёмник: 2 a99cc803bfcb1b76416de408207ef46e
+[migration] длительность: 1 с
+[migration] OK: количество и контрольная сумма совпадают
+🧪 Выполнение HTTP-тестов...
+
+Тесты пользователей...
+✅ Получение test-user-1 по ID работает
+✅ Статус test-user-1: ACTIVE
+✅ test-user-1 в блэклисте
+✅ test-user-1 активен
+✅ test-user-1 не авторизован (в блэклисте)
+✅ test-user-3 — VIP-пользователь
+✅ test-user-2 авторизован
+
+Тесты отелей...
+✅ test-hotel-1 получен по ID
+✅ test-hotel-1 работает
+✅ test-hotel-3 не работает
+✅ test-hotel-2 полностью забронирован
+✅ Поиск отелей в Сеуле работает
+✅ Топ-отели в Сеуле загружены
+
+Тесты ревью...
+✅ Отзывы test-hotel-1 найдены
+✅ test-hotel-1 признан надёжным
+✅ test-hotel-3 НЕ признан надёжным (ожидаемо)
+
+Тесты промокодов...
+✅ Промокод TESTCODE1 найден
+✅ VIP-промо доступен VIP
+✅ VIP-промо недоступен обычному
+✅ Обычный промо доступен
+✅ Истекший промо недоступен
+✅ POST /validate промо прошёл
+
+Тесты бронирования...
+✅ Все бронирования получены (gRPC ListBookings в booking-service)
+✅ Бронирования test-user-2 найдены
+✅ Бронирование прошло (без промо)
+✅ Бронирование с промо прошло
+✅ Отклонено: неактивный пользователь
+✅ Отклонено: отключённый отель из исходной фикстуры
+✅ Отклонено: отель с недостатком отзывов и без мест
+✅ Отклонено: недоверенный отель (работает, места есть) — Hotel is not trusted based on reviews, записи нет
+✅ Отклонено: полностью занятый отель (работает, доверенный) — Hotel is fully booked, записи нет
+
+Тесты истории бронирований...
+✅ Бронирование 10 попало в историю ровно один раз
+✅ Бронирование 11 попало в историю ровно один раз
+✅ Все HTTP-тесты пройдены!
+Positive regression exit=0

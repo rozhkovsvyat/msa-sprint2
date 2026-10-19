@@ -1,0 +1,49 @@
+Выполнение тестов из /Users/svyat/Scratch/msa-sprint2/tasks/task2/booking-service/tests/bin/Debug/net10.0/BookingService.Tests.dll (net10.0|arm64)
+/Users/svyat/Scratch/msa-sprint2/tasks/task2/booking-service/tests/bin/Debug/net10.0/BookingService.Tests.dll (net10.0|arm64) пройдено (29s 391ms)
+
+Сводка тестового запуска: Пройден!
+  итог: 31
+  сбой: 0
+  успешно: 31
+  пропущено: 0
+  длительность: 32s 956ms
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+PASS: real .NET own scope preserved; 6 invalid-identity list/entity requests rejected
+PASS: HTTP/gRPC request-id -> legacy/outbox/log; aggregate 3s legacy budget; /version fault=503, /ping=200, readiness and outbox lag
+[migration] в монолите бронирований: 1, максимальный id: 1
+[migration] перенесено новых: 1, из них с подставленной датой: 1
+[migration] счётчик id booking-service: 1
+[migration] источник: 1 02bb6db701bed3b132377fe635e95448
+[migration] приёмник: 1 02bb6db701bed3b132377fe635e95448
+[migration] длительность: 1 с
+[migration] OK: количество и контрольная сумма совпадают
+[migration] в монолите бронирований: 1, максимальный id: 1
+[migration] перенесено новых: 0, из них с подставленной датой: 0
+[migration] счётчик id booking-service: 1
+[migration] источник: 1 02bb6db701bed3b132377fe635e95448
+[migration] приёмник: 1 02bb6db701bed3b132377fe635e95448
+[migration] длительность: 1 с
+[migration] OK: количество и контрольная сумма совпадают
+[migration] откат: бронирований после переключения (id > 1): 1
+2
+[migration] источник: 2 5e06a319a79b825e2e18f0926e2f8deb
+[migration] приёмник: 2 5e06a319a79b825e2e18f0926e2f8deb
+[migration] длительность: 1 с
+[migration] OK: количество и контрольная сумма совпадают
+[migration] в монолите бронирований: 2, максимальный id: 2
+[migration] перенесено новых: 0, из них с подставленной датой: 0
+[migration] счётчик id booking-service: 2
+[migration] источник: 2 5e06a319a79b825e2e18f0926e2f8deb
+[migration] приёмник: 2 5e06a319a79b825e2e18f0926e2f8deb
+[migration] длительность: 1 с
+[migration] OK: количество и контрольная сумма совпадают
+[migration] в монолите бронирований: 2, максимальный id: 2
+[migration] перенесено новых: 2, из них с подставленной датой: 1
+[migration] счётчик id booking-service: 2
+[migration] источник: 2 5e06a319a79b825e2e18f0926e2f8deb
+[migration] приёмник: 2 5e06a319a79b825e2e18f0926e2f8deb
+[migration] длительность: 1 с
+[migration] OK: количество и контрольная сумма совпадают
+PASS: offline/reset guards, readonly source, forward/repeat/reverse/reset and stable eventId

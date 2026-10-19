@@ -58,14 +58,14 @@ kubectl -n istio-system port-forward svc/istio-ingressgateway 19090:80   # вх�
 
 ## Проверки
 
-| Скрипт | Что проверяет | Лог |
-| :- | :- | :- |
-| [check-istio.sh](../check-istio.sh) | istiod и шлюзы работают, инъекция включена, поды v1 и v2 — `2/2` (сервис и sidecar), `istioctl analyze` без замечаний | [check-istio.log](check-istio.log) |
-| [check-canary.sh](../check-canary.sh) | 400 запросов: доля v2 около 10% (в пределах трёх стандартных отклонений), ошибок нет | [check-canary.log](check-canary.log) |
-| [check-feature-flag.sh](../check-feature-flag.sh) | С `X-Feature-Enabled: true` все запросы на v2 и `/feature` отвечает; без флага и с поддельным `x-booking-route` — обычная канарейка | [check-feature-flag.log](check-feature-flag.log) |
-| [check-fallback.sh](../check-fallback.sh) | Удаление пода v1, одна реплика v1, живой под v1 с ответом 503 (`FAULT_INJECTION_STATUS=503`), все поды v1 погашены — запросы обслуживает v2; затем v1 возвращается | [check-fallback.log](check-fallback.log) |
-| [check-negative-fallback.sh](../check-negative-fallback.sh) | Отрицательный контроль: при погашенной v1 обычная канарейка «90% → subset v1» отдаёт 503, рабочий маршрут — нет | [negative-control-classic-canary-no-fallback.log](negative-control-classic-canary-no-fallback.log) |
-| [check-circuit-breaker.sh](../check-circuit-breaker.sh) | Нагрузка из пода внутри mesh сверх лимитов: часть запросов сразу получает 503 с флагом `UO` | [check-circuit-breaker.log](check-circuit-breaker.log) |
+| Скрипт | Что проверяет | Результат прогона | Лог |
+| :- | :- | :- | :- |
+| [check-istio.sh](../check-istio.sh) | istiod и шлюзы работают, инъекция включена, поды v1 и v2 — `2/2` (сервис и sidecar), `istioctl analyze` без замечаний | Три пода `2/2`, перезапусков нет, замечаний нет | [check-istio.log](check-istio.log) |
+| [check-canary.sh](../check-canary.sh) | 400 запросов: доля v2 около 10% (в пределах трёх стандартных отклонений), ошибок нет | v1 — 358, v2 — 42 (допустимо 22–58), ошибок 0 | [check-canary.log](check-canary.log) |
+| [check-feature-flag.sh](../check-feature-flag.sh) | С `X-Feature-Enabled: true` все запросы на v2 и `/feature` отвечает; без флага и с поддельным `x-booking-route` — обычная канарейка | С флагом на v2 30 из 30; без флага — 5 из 30, с поддельным заголовком — 3 из 30 | [check-feature-flag.log](check-feature-flag.log) |
+| [check-fallback.sh](../check-fallback.sh) | Удаление пода v1, одна реплика v1, живой под v1 с ответом 503 (`FAULT_INJECTION_STATUS=503`), все поды v1 погашены — запросы обслуживает v2; затем v1 возвращается | Под с 503 исключён outlier detection, успешных ответов 99 из 100; без подов v1 — 100 из 100 от v2, ошибок нет | [check-fallback.log](check-fallback.log) |
+| [check-negative-fallback.sh](../check-negative-fallback.sh) | Отрицательный контроль: при погашенной v1 обычная канарейка «90% → subset v1» отдаёт 503, рабочий маршрут — нет | Рабочий маршрут — 100 из 100 от v2; обычная канарейка — 95 ответов 503 | [negative-control-classic-canary-no-fallback.log](negative-control-classic-canary-no-fallback.log) |
+| [check-circuit-breaker.sh](../check-circuit-breaker.sh) | Нагрузка из пода внутри mesh сверх лимитов: часть запросов сразу получает 503 с флагом `UO` | 400 запросов в 40 соединений: 203 обслужены, 197 отсечены с 503 `UO` | [check-circuit-breaker.log](check-circuit-breaker.log) |
 
 Общие функции — в [lib.sh](../lib.sh). Каждый скрипт завершается с ненулевым кодом, если ожидание не выполнено.
 

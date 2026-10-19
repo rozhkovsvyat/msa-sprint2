@@ -1,5 +1,36 @@
-== Отрицательный контроль: шлюз с FORWARD_USERID=false (без willSendRequest), запрос владельца бронирований ==
-{"ts":"2026-10-18T18:52:39.484Z","svc":"apollo-gateway","msg":"ready at http://localhost:4000/","subgraphs":["booking-subgraph","hotel-subgraph","promocode-subgraph"],"forwardUserId":false}
+Отрицательный контроль (задание 3): шлюз из шаблона курса (tasks/task3/gateway/index.js в main, без willSendRequest)
+запущен в нашем образе шлюза на порту 4100 рядом с рабочим. Владелец бронирований передаёт userid, но шаблон
+не пробрасывает заголовки в подграфы, и booking-subgraph отвечает UNAUTHENTICATED. Команды выполняются из tasks/task3.
+
+$ git show main:tasks/task3/gateway/index.js > /tmp/course-gateway-index.js && cat /tmp/course-gateway-index.js
+import { ApolloServer } from '@apollo/server';
+import { startStandaloneServer } from '@apollo/server/standalone';
+import { ApolloGateway } from '@apollo/gateway';
+
+
+const gateway = new ApolloGateway({
+  serviceList: [
+    { name: 'booking', url: 'http://booking-subgraph:4001' },
+    { name: 'hotel', url: 'http://hotel-subgraph:4002' }
+  ]
+});
+
+const server = new ApolloServer({ gateway, subscriptions: false });
+
+startStandaloneServer(server, {
+  listen: { port: 4000 },
+  context: async ({ req }) => ({ req }), // headers пробрасываются
+}).then(({ url }) => {
+  console.log(`🚀 Gateway ready at ${url}`);
+});
+$ docker create --name course-gateway --network hotelio-net -p 4100:4000 task3-apollo-gateway >/dev/null && docker cp /tmp/course-gateway-index.js course-gateway:/app/index.js && docker start course-gateway
+course-gateway
+$ for i in $(seq 1 30); do docker logs course-gateway 2>&1 | grep -q 'Gateway ready' && break; sleep 1; done; docker logs course-gateway 2>&1
+The `serviceList` option is deprecated and will be removed in a future version of `@apollo/gateway`. Please migrate to its replacement `IntrospectAndCompose`. More information on `IntrospectAndCompose` can be found in the documentation.
+🚀 Gateway ready at http://localhost:4000/
+
+-- запрос владельца бронирований через шлюз из шаблона (порт 4100):
+$ curl -s http://localhost:4100/ -H 'content-type: application/json' -H 'userid: test-user-2' -H 'x-request-id: negative-control-course-gateway' --data '{"query":"{ bookingsByUser(userId: \"test-user-2\") { id hotel { id city } } }"}' | jq .
 {
   "errors": [
     {
@@ -9,9 +40,47 @@
       ],
       "extensions": {
         "code": "UNAUTHENTICATED",
-        "serviceName": "booking-subgraph"
+        "serviceName": "booking"
       }
     }
   ],
   "data": null
 }
+-- тот же запрос через рабочий шлюз (порт 4000):
+$ curl -s http://localhost:4000/ -H 'content-type: application/json' -H 'userid: test-user-2' -H 'x-request-id: negative-control-working-gateway' --data '{"query":"{ bookingsByUser(userId: \"test-user-2\") { id hotel { id city } } }"}' | jq .
+{
+  "data": {
+    "bookingsByUser": [
+      {
+        "id": "3",
+        "hotel": {
+          "id": "test-hotel-1",
+          "city": "Seoul"
+        }
+      },
+      {
+        "id": "6",
+        "hotel": {
+          "id": "test-hotel-1",
+          "city": "Seoul"
+        }
+      },
+      {
+        "id": "7",
+        "hotel": {
+          "id": "test-hotel-1",
+          "city": "Seoul"
+        }
+      }
+    ]
+  }
+}
+-- журнал booking-subgraph с момента запуска course-gateway: шаблон не передаёт ни userid, ни x-request-id
+$ docker logs --since 2026-10-19T14:46:00Z booking-subgraph 2>&1
+{"ts":"2026-10-19T14:46:00.858Z","svc":"booking-subgraph","msg":"request","userid":null,"operation":null,"requestId":"a1e721fb-db91-481f-b7b5-546197baa703"}
+{"ts":"2026-10-19T14:46:01.562Z","svc":"booking-subgraph","msg":"request","userid":null,"operation":null,"requestId":"0d4c64a5-2bbd-4bdb-a750-e7f91050e949"}
+{"ts":"2026-10-19T14:46:01.582Z","svc":"booking-subgraph","msg":"request","userid":"test-user-2","operation":null,"requestId":"negative-control-working-gateway"}
+{"ts":"2026-10-19T14:46:01.582Z","svc":"booking-subgraph","msg":"gRPC ListBookings","userId":"test-user-2","requestId":"negative-control-working-gateway"}
+{"ts":"2026-10-19T14:46:01.589Z","svc":"booking-subgraph","msg":"bookings returned","userId":"test-user-2","count":3,"ids":["3","6","7"],"requestId":"negative-control-working-gateway"}
+$ docker rm -f course-gateway
+course-gateway

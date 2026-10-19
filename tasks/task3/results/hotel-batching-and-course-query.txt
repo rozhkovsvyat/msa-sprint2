@@ -1,5 +1,20 @@
+Проверочный запрос задания (./calls.sh course) и запрос отелей пачкой (./calls.sh batch) через шлюз (задание 3).
+Перед batch прошло больше 30 секунд — время жизни кеша справочника отелей, поэтому все отели берутся из монолита.
+Команды выполняются из tasks/task3.
 
-POST http://localhost:4000/  userid=<нет>  x-request-id=hotelio-batch-proof
+$ ./calls.sh course
+
+POST http://localhost:4000/  userid=user1  x-request-id=calls-1792421043-6800
+{
+  "data": {
+    "bookingsByUser": []
+  }
+}
+(код выхода 0)
+
+$ ./calls.sh batch
+
+POST http://localhost:4000/  userid=test-user-2  x-request-id=calls-1792421078-21164
 {
   "data": {
     "hotelsByIds": [
@@ -30,12 +45,4 @@ POST http://localhost:4000/  userid=<нет>  x-request-id=hotelio-batch-proof
     ]
   }
 }
-x-request-id: hotelio-batch-proof
-
-POST http://localhost:4000/  userid=user1  x-request-id=hotelio-course-proof
-{
-  "data": {
-    "bookingsByUser": []
-  }
-}
-x-request-id: hotelio-course-proof
+(код выхода 0)

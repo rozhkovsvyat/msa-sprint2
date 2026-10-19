@@ -67,7 +67,7 @@ npm ci && npm test   # контрактные тесты: настоящие ш�
 | Скриншот успешного вызова | [screenshot-success.png](screenshot-success.png) |
 | Скриншот Deny по ACL | [screenshot-acl-deny.png](screenshot-acl-deny.png) |
 | Логи booking-subgraph | [booking-subgraph-logs.txt](booking-subgraph-logs.txt) |
-| Дополнительно | [promocode-subgraph-logs.txt](promocode-subgraph-logs.txt) — `discountPercent` отдаёт новый подграф; [negative-control-no-header-forwarding.txt](negative-control-no-header-forwarding.txt); [hotel-batching-and-course-query.txt](hotel-batching-and-course-query.txt) и [hotel-subgraph-logs.txt](hotel-subgraph-logs.txt) — батчинг отелей |
+| Дополнительно | [promocode-subgraph-logs.txt](promocode-subgraph-logs.txt) — `discountPercent` отдаёт новый подграф; [negative-control-no-header-forwarding.txt](negative-control-no-header-forwarding.txt); [hotel-batching-and-course-query.txt](hotel-batching-and-course-query.txt) и [hotel-subgraph-logs.txt](hotel-subgraph-logs.txt) — батчинг отелей; [npm-test.txt](npm-test.txt) — 12 контрактных тестов, все прошли |
 
 ![Успешный вызов](screenshot-success.png)
 

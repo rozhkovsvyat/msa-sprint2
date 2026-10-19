@@ -1,33 +1,22 @@
-▶️ Deployment и Service (namespace=staging)
+$ kubectl -n staging port-forward svc/booking-service 8080:80 &
+Forwarding from 127.0.0.1:8080 -> 8080
+Forwarding from [::1]:8080 -> 8080
+Handling connection for 8080
+$ NAMESPACE=staging ./check-status.sh
+▶️ Checking booking-service deployment (namespace staging)...
 deployment "booking-service" successfully rolled out
-NAME                               READY   STATUS    RESTARTS        AGE
-booking-service-6df4b9df58-ph6rh   1/1     Running   1 (3m37s ago)   73m
-NAME              TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
-booking-service   ClusterIP   10.104.4.37   <none>        80/TCP    3h37m
-▶️ Helm release
+NAME                              READY   STATUS    RESTARTS   AGE
+booking-service-9c6d5947b-gnnzx   1/1     Running   0          7m5s
+
+▶️ Checking service...
+NAME              TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+booking-service   ClusterIP   10.97.72.184   <none>        80/TCP    7m5s
+
+▶️ Helm release:
 NAME           	NAMESPACE	REVISION	UPDATED                             	STATUS  	CHART                	APP VERSION
-booking-service	staging  	3       	2026-10-19 13:56:16.398479 +0300 MSK	deployed	booking-service-0.2.2	1.0
-NAME: booking-service
-LAST DEPLOYED: Mon Oct 19 13:56:16 2026
-NAMESPACE: staging
-STATUS: deployed
-REVISION: 3
-DESCRIPTION: Upgrade complete
-RESOURCES:
-==> v1/Service
-NAME              TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
-booking-service   ClusterIP   10.104.4.37   <none>        80/TCP    3h37m
+booking-service	staging  	1       	2026-10-19 17:52:12.802155 +0300 MSK	deployed	booking-service-0.2.2	1.0        
 
-==> v1/Deployment
-NAME              READY   UP-TO-DATE   AVAILABLE   AGE
-booking-service   1/1     1            1           3h37m
-
-==> v1/Pod(related)
-NAME                               READY   STATUS    RESTARTS        AGE
-booking-service-6df4b9df58-ph6rh   1/1     Running   1 (3m37s ago)   73m
-
-
-TEST SUITE: None
-▶️ GET http://127.0.0.1:18090/ping
+▶️ Quick curl http://localhost:8080/ping
+Handling connection for 8080
 pong
 ✅ Reachable

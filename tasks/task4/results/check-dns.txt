@@ -1,4 +1,4 @@
-▶️ Running in-cluster DNS test (namespace staging), http://booking-service/ping
-[INFO] Resolve: booking-service -> 10.104.4.37 (ClusterIP)
-[INFO] DNS Response: pong (pod phase: Succeeded)
-[PASS] DNS test succeeded
+$ NAMESPACE=staging ./check-dns.sh
+▶️ Running in-cluster DNS test (namespace staging)...
+pong
+✅ Success

@@ -70,6 +70,8 @@ NAMESPACE=staging ./check-status.sh                   # под, Service, рел�
 | tag | `tag` | Аннотированный git-тег `booking-service-<дата-время>`; отправка в origin — при `PUSH_TAG=true` |
 | release | `deploy-prod`, `rollback-prod` | Вручную: тот же образ в prod без пересборки, `check-promotion.sh` сверяет imageID подов staging и prod; откат — `helm rollback` |
 
+Чтобы было что откатывать, вторая ревизия prod включает фича-флаг (`helm upgrade --reuse-values --set featureFlags.enableFeatureX=true`); `rollback-prod` возвращает ревизию 1 — флаг снова выключен, образ тот же ([helm-rollback.log](helm-rollback.log)).
+
 Registry нет, поэтому образ попадает в Minikube через `minikube image load`. Для внешнего кластера здесь будут публикация образа в registry и доступ к нему из кластера.
 
 ## Service discovery через DNS

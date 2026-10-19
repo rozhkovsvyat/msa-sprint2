@@ -1,22 +1,60 @@
-parsing and downloads finished in 45 ms.
-json schema validated in 88 ms
+Откат prod (задание 4), 19.10.2026 17:53 MSK. Каталог tasks/task4.
+Ревизия 2 — тот же образ, в prod включается фича-флаг (featureFlags.enableFeatureX=true, остальные values прежние).
+Откат gitlab-ci-local rollback-prod возвращает ревизию 1: флаг снова выключен, образ не меняется.
+
+== До отката ==
+$ helm -n prod history booking-service
+REVISION	UPDATED                 	STATUS  	CHART                	APP VERSION	DESCRIPTION     
+1       	Mon Oct 19 17:52:43 2026	deployed	booking-service-0.2.2	1.0        	Install complete
+$ helm -n prod upgrade booking-service helm/booking-service --reuse-values --set featureFlags.enableFeatureX=true --description 'ENABLE_FEATURE_X=true in prod' --wait --timeout 180s
+Release "booking-service" has been upgraded. Happy Helming!
+NAME: booking-service
+LAST DEPLOYED: Mon Oct 19 17:53:12 2026
+NAMESPACE: prod
+STATUS: deployed
+REVISION: 2
+DESCRIPTION: ENABLE_FEATURE_X=true in prod
+TEST SUITE: None
+$ helm -n prod history booking-service
+REVISION	UPDATED                 	STATUS    	CHART                	APP VERSION	DESCRIPTION                  
+1       	Mon Oct 19 17:52:43 2026	superseded	booking-service-0.2.2	1.0        	Install complete             
+2       	Mon Oct 19 17:53:12 2026	deployed  	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
+$ kubectl -n prod get deployment booking-service -o jsonpath='{.spec.template.spec.containers[0].image} ENABLE_FEATURE_X={.spec.template.spec.containers[0].env[?(@.name=="ENABLE_FEATURE_X")].value}{"\n"}'
+booking-service:72827b54 ENABLE_FEATURE_X=true
+
+== Откат ==
+$ gitlab-ci-local rollback-prod
+parsing and downloads finished in 50 ms.
+json schema validated in 76 ms
 rollback-prod starting shell (release)
-rollback-prod $ helm -n "${PROD_NAMESPACE}" rollback "${RELEASE}" --wait --timeout 180s
+rollback-prod $ helm -n prod rollback "${RELEASE}" --wait --timeout 180s
 rollback-prod > still running...
 rollback-prod > Rollback was a success! Happy Helming!
-rollback-prod $ kubectl -n "${PROD_NAMESPACE}" rollout status "deployment/${RELEASE}" --timeout=120s
-rollback-prod > deployment "booking-service" successfully rolled out
-rollback-prod $ helm -n "${PROD_NAMESPACE}" history "${RELEASE}" --max 3
-rollback-prod > REVISION	UPDATED                 	STATUS    	CHART                	APP VERSION	DESCRIPTION
-rollback-prod > 1       	Mon Oct 19 11:32:37 2026	superseded	booking-service-0.2.2	1.0        	Install complete
-rollback-prod > 2       	Mon Oct 19 11:33:25 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete
-rollback-prod > 3       	Mon Oct 19 11:34:39 2026	deployed  	booking-service-0.2.2	1.0        	Rollback to 1
-rollback-prod $ kubectl -n "${PROD_NAMESPACE}" get deployment "${RELEASE}" -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
-rollback-prod > booking-service:ce216be2
-rollback-prod finished in 18 s
+rollback-prod $ helm -n prod history "${RELEASE}" --max 3
+rollback-prod > REVISION	UPDATED                 	STATUS    	CHART                	APP VERSION	DESCRIPTION                  
+rollback-prod > 1       	Mon Oct 19 17:52:43 2026	superseded	booking-service-0.2.2	1.0        	Install complete             
+rollback-prod > 2       	Mon Oct 19 17:53:12 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
+rollback-prod > 3       	Mon Oct 19 17:53:31 2026	deployed  	booking-service-0.2.2	1.0        	Rollback to 1                
+rollback-prod $ kubectl -n prod get deployment "${RELEASE}" -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+rollback-prod > booking-service:72827b54
+rollback-prod $ NAMESPACE=prod ./check-dns.sh
+rollback-prod > ▶️ Running in-cluster DNS test (namespace prod)...
+rollback-prod > pong
+rollback-prod > ✅ Success
+rollback-prod finished in 21 s
 
  PASS  rollback-prod
-▶️ Running in-cluster DNS test (namespace prod)...
-[INFO] Resolve: booking-service -> 10.110.183.91 (ClusterIP)
-[INFO] DNS Response: pong (pod phase: Succeeded)
-[PASS] DNS test succeeded
+
+== После отката ==
+$ helm -n prod history booking-service
+REVISION	UPDATED                 	STATUS    	CHART                	APP VERSION	DESCRIPTION                  
+1       	Mon Oct 19 17:52:43 2026	superseded	booking-service-0.2.2	1.0        	Install complete             
+2       	Mon Oct 19 17:53:12 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
+3       	Mon Oct 19 17:53:31 2026	deployed  	booking-service-0.2.2	1.0        	Rollback to 1                
+$ kubectl -n prod get deployment booking-service -o jsonpath='{.spec.template.spec.containers[0].image} ENABLE_FEATURE_X={.spec.template.spec.containers[0].env[?(@.name=="ENABLE_FEATURE_X")].value}{"\n"}'
+booking-service:72827b54 ENABLE_FEATURE_X=false
+$ kubectl -n prod get pods -l app=booking-service
+NAME                               READY   STATUS    RESTARTS   AGE
+booking-service-7bdbdd9b49-wfz4d   1/1     Running   0          21s
+booking-service-7bdbdd9b49-xjwvp   1/1     Running   0          14s
+booking-service-7bdbdd9b49-xpwch   1/1     Running   0          8s

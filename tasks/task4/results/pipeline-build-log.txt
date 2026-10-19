@@ -1,275 +1,129 @@
-parsing and downloads finished in 520 ms.
-json schema validated in 1.4 s
+Пайплайн booking-service (задание 4), 19.10.2026 17:51 MSK. Стенд: macOS 26.6.2, Colima, Minikube 1.39.0, Helm 4.3.0, gitlab-ci-local 4.76.1. Каталог tasks/task4.
+$ gitlab-ci-local build unit-tests test deploy tag
+parsing and downloads finished in 48 ms.
+json schema validated in 78 ms
 unit-tests starting shell (test)
 build      starting shell (build)
-build      $ IMAGE_TAG="${CI_COMMIT_SHORT_SHA}" # collapsed multi-line command
-build      > IMAGE_TAG=75fe395f
-build      $ docker build -f booking-service/Dockerfile -t "${IMAGE_NAME}:${IMAGE_TAG}" ..
-unit-tests $ docker run --rm --cpus=2 --memory=2g -v "$(cd ../task2 && pwd)":/src:ro mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa sh -c 'cp -r /src /work && cd /work/booking-service && rm -rf src/bin src/obj tests/bin tests/obj && dotnet test --project tests/BookingService.Tests.csproj'
+unit-tests $ docker run --rm -v "$(cd ../task2 && pwd)":/src:ro mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa sh -c 'cp -r /src /work && find /work -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + && cd /work/booking-service && dotnet test --project tests/BookingService.Tests.csproj'
+build      $ docker build -f ../task2/booking-service/Dockerfile -t "${IMAGE_NAME}:${IMAGE_TAG}" ../task2
 build      > #0 building with "colima" instance using docker driver
-build      >
+build      > 
 build      > #1 [internal] load build definition from Dockerfile
-build      > #1 transferring dockerfile:
-build      > #1 transferring dockerfile: 1.29kB 0.1s done
-build      > #1 DONE 1.2s
-build      >
+build      > #1 transferring dockerfile: 975B done
+build      > #1 DONE 0.0s
+build      > 
 build      > #2 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
-build      > #2 DONE 0.2s
-build      >
+build      > #2 DONE 0.0s
+build      > 
 build      > #3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
-build      > #3 DONE 0.4s
-build      >
+build      > #3 DONE 0.5s
+build      > 
 build      > #4 [internal] load .dockerignore
-build      > #4 transferring context:
-build      > #4 transferring context: 79B 0.0s done
-build      > #4 DONE 0.2s
-build      >
-build      > #5 [internal] load build context
+build      > #4 transferring context: 65B done
+build      > #4 DONE 0.0s
+build      > 
+build      > #5 [stage-1 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
+build      > #5 resolve mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac 0.0s done
 build      > #5 DONE 0.0s
-build      >
-build      > #6 [stage-1 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
-build      > #6 resolve mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
-build      > #6 ...
-build      >
-build      > #7 [build 1/8] FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
-build      > #7 resolve mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa 0.3s done
-build      > #7 DONE 0.4s
-build      >
-build      > #6 [stage-1 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
-build      > #6 resolve mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac 0.5s done
-build      > #6 DONE 0.5s
-build      >
-build      > #5 [internal] load build context
-build      > #5 transferring context: 42.78kB 0.0s done
-build      > #5 DONE 0.8s
-build      >
-build      > #8 [stage-1 2/3] WORKDIR /app
+build      > 
+build      > #6 [build 1/7] FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
+build      > #6 resolve mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa 0.0s done
+build      > #6 DONE 0.0s
+build      > 
+build      > #7 [internal] load build context
+build      > #7 transferring context: 1.10kB done
+build      > #7 DONE 0.0s
+build      > 
+build      > #8 [build 3/7] COPY booking.proto ./
 build      > #8 CACHED
-build      >
-build      > #9 [build 5/8] COPY task2/booking-service/src/BookingService.csproj booking-service/src/
+build      > 
+build      > #9 [build 6/7] COPY booking-service/src/ booking-service/src/
 build      > #9 CACHED
-build      >
-build      > #10 [build 4/8] COPY task2/shared/ shared/
+build      > 
+build      > #10 [build 4/7] COPY booking-service/src/BookingService.csproj booking-service/src/
 build      > #10 CACHED
-build      >
-build      > #11 [build 2/8] WORKDIR /src
+build      > 
+build      > #11 [build 7/7] RUN dotnet publish booking-service/src/BookingService.csproj -c Release -o /app --no-restore
 build      > #11 CACHED
-build      >
-build      > #12 [build 6/8] RUN dotnet restore booking-service/src/BookingService.csproj
+build      > 
+build      > #12 [stage-1 2/3] WORKDIR /app
 build      > #12 CACHED
-build      >
-build      > #13 [build 7/8] COPY task2/booking-service/src/ booking-service/src/
+build      > 
+build      > #13 [build 2/7] WORKDIR /src
 build      > #13 CACHED
-build      >
-build      > #14 [build 8/8] RUN dotnet publish booking-service/src/BookingService.csproj -c Release -o /app --no-restore
+build      > 
+build      > #14 [build 5/7] RUN dotnet restore booking-service/src/BookingService.csproj
 build      > #14 CACHED
-build      >
-build      > #15 [build 3/8] COPY task2/booking.proto ./
-build      > #15 CACHED
-build      >
-build      > #16 [stage-1 3/3] COPY --from=build /app ./
-build      > #16 CACHED
-build      >
-build      > #17 exporting to image
-build      > #17 exporting layers
-build      > #17 exporting layers 0.0s done
-build      > #17 exporting manifest sha256:d72c63b53cea080a90e8fe59e94f258b7cf489e5c6125366d69082dcd8c86ea2 0.1s done
-build      > #17 exporting config sha256:0c6656eb45845f0c575b4d17503368dda17b913094a19ee9bf3bca4b78a1636a
-build      > #17 exporting config sha256:0c6656eb45845f0c575b4d17503368dda17b913094a19ee9bf3bca4b78a1636a 0.1s done
-build      > #17 exporting attestation manifest sha256:cbad7582e50d1d3041305a7f14d81325e304c08e42daf88d29877a303cf53a9f
-build      > #17 exporting attestation manifest sha256:cbad7582e50d1d3041305a7f14d81325e304c08e42daf88d29877a303cf53a9f 0.4s done
-build      > #17 exporting manifest list sha256:33bbcd772bb1e2825c39a08121bb30a0fb04e7f82760356026e7d70de4706794
-build      > #17 exporting manifest list sha256:33bbcd772bb1e2825c39a08121bb30a0fb04e7f82760356026e7d70de4706794 0.1s done
-build      > #17 naming to docker.io/library/booking-service:75fe395f
-build      > #17 naming to docker.io/library/booking-service:75fe395f 0.0s done
-build      > #17 unpacking to docker.io/library/booking-service:75fe395f 0.1s done
-build      > #17 DONE 1.1s
-build      $ docker build -f booking-history-service/Dockerfile -t "${HISTORY_IMAGE_NAME}:${IMAGE_TAG}" ..
-build      > #0 building with "colima" instance using docker driver
-build      >
-build      > #1 [internal] load build definition from Dockerfile
-build      > #1 transferring dockerfile: 30B 0.0s
-build      > #1 transferring dockerfile: 1.17kB 0.1s done
-build      > #1 DONE 0.2s
-build      >
-build      > #2 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
-unit-tests > still running...
-build      > #2 DONE 0.3s
-build      >
-build      > #3 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
-build      > #3 DONE 0.3s
-build      >
-build      > #4 [internal] load .dockerignore
-build      > #4 transferring context: 79B 0.0s done
-build      > #4 DONE 0.1s
-build      >
-build      > #5 [internal] load build context
-build      > #5 DONE 0.0s
-build      >
-build      > #6 [stage-1 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
-build      > #6 resolve mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
-build      > #6 resolve mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac 0.2s done
-build      > #6 DONE 0.3s
-build      >
-build      > #7 [build 1/7] FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
-build      > #7 resolve mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
-build      > #7 resolve mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa 0.2s done
-build      > #7 DONE 0.3s
-build      >
-build      > #5 [internal] load build context
-build      > #5 transferring context: 19.52kB 0.0s done
-build      > #5 DONE 0.0s
-build      >
-build      > #8 [stage-1 2/3] WORKDIR /app
-build      > #8 CACHED
-build      >
-build      > #9 [build 3/7] COPY task2/shared/ shared/
-build      > #9 CACHED
-build      >
-build      > #10 [build 7/7] RUN dotnet publish booking-history-service/src/BookingHistoryService.csproj -c Release -o /app --no-restore
-build      > #10 CACHED
-build      >
-build      > #11 [build 5/7] RUN dotnet restore booking-history-service/src/BookingHistoryService.csproj
-build      > #11 CACHED
-build      >
-build      > #12 [build 2/7] WORKDIR /src
-build      > #12 CACHED
-build      >
-build      > #13 [build 4/7] COPY task2/booking-history-service/src/BookingHistoryService.csproj booking-history-service/src/
-build      > #13 CACHED
-build      >
-build      > #14 [build 6/7] COPY task2/booking-history-service/src/ booking-history-service/src/
-build      > #14 CACHED
-build      >
+build      > 
 build      > #15 [stage-1 3/3] COPY --from=build /app ./
 build      > #15 CACHED
-build      >
+build      > 
 build      > #16 exporting to image
-build      > #16 exporting layers 0.0s done
-build      > #16 exporting manifest sha256:8936009e3d39a9808695324759e58914385a7c128215756a7425fb2a0e217fee 0.0s done
-build      > #16 exporting config sha256:48deb6d4ca02be0b67854887e6dec426f02ea57a6a5d106dc2092aaa7183e870
-build      > #16 exporting config sha256:48deb6d4ca02be0b67854887e6dec426f02ea57a6a5d106dc2092aaa7183e870 0.0s done
-build      > #16 exporting attestation manifest sha256:4be47e0d633f1dfe67e34ff40e2180b8adf0ef72fe8ed55c1c3d2f24fa43102f 0.1s done
-build      > #16 exporting manifest list sha256:c8ff7bfe17a424d22c2650cdf9b306f13fcb638aaf0d4ff9ef3d4aba86221c37
-build      > #16 exporting manifest list sha256:c8ff7bfe17a424d22c2650cdf9b306f13fcb638aaf0d4ff9ef3d4aba86221c37 0.1s done
-build      > #16 naming to docker.io/library/booking-history-service:75fe395f 0.0s done
-build      > #16 unpacking to docker.io/library/booking-history-service:75fe395f 0.0s done
-build      > #16 DONE 0.4s
-build      $ docker image ls --filter "reference=${IMAGE_NAME}:${IMAGE_TAG}" --filter "reference=${HISTORY_IMAGE_NAME}:${IMAGE_TAG}"
-build      > IMAGE                              ID             DISK USAGE   CONTENT SIZE   EXTRA
-build      > booking-history-service:75fe395f   c8ff7bfe17a4        525MB          138MB
-build      > booking-service:75fe395f           33bbcd772bb1        528MB          139MB
-build      $ minikube image load "${IMAGE_NAME}:${IMAGE_TAG}"
-unit-tests > still running...
-build      > still running...
-unit-tests > still running...
-build      > still running...
-unit-tests > still running...
-build      > still running...
-unit-tests > still running...
-build      > still running...
-unit-tests > still running...
-build      > still running...
-unit-tests > still running...
-build      > still running...
-unit-tests > still running...
-build      > still running...
-unit-tests > still running...
-build      > still running...
-unit-tests > still running...
-build      finished in 1.68 min
-unit-tests > still running...
-unit-tests > still running...
-unit-tests > still running...
-unit-tests > still running...
-unit-tests > still running...
-unit-tests > still running...
-unit-tests > still running...
-unit-tests > still running...
-unit-tests > still running...
-unit-tests > still running...
-unit-tests > still running...
-unit-tests > still running...
-unit-tests > still running...
-unit-tests > still running...
+build      > #16 exporting layers done
+build      > #16 exporting manifest sha256:de541612b6485c5c88477c46bf21455f5ee68ac14d0fc9c6c796d879ea15a789 done
+build      > #16 exporting config sha256:eeac4c606087600a13123139c091fb060833f6e6af7a01bd3a36d137f633028a done
+build      > #16 exporting attestation manifest sha256:794d76c587ad23a04d664bac4d5b46c129b212ab85205ccdfa0428f57bb64915 done
+build      > #16 exporting manifest list sha256:71a446f05b040e9f3217a4e166264a55fcb46298fd8b0a8451003137c1be4391 done
+build      > #16 naming to docker.io/library/booking-service:72827b54 done
+build      > #16 unpacking to docker.io/library/booking-service:72827b54 done
+build      > #16 DONE 0.1s
+build      $ docker image ls "${IMAGE_NAME}:${IMAGE_TAG}"
+build      > IMAGE                      ID             DISK USAGE   CONTENT SIZE   EXTRA
+build      > booking-service:72827b54   71a446f05b04        528MB          139MB        
+build      finished in 1.11 s
 unit-tests > still running...
 unit-tests > still running...
 unit-tests > Running tests from /work/booking-service/tests/bin/Debug/net10.0/BookingService.Tests.dll (net10.0|arm64)
-unit-tests > skipped DeliveryIntegrationTests.UpgradePoisonIsolationTransientRecoveryAndCrashReplay
-unit-tests >   Нужен tests/run-isolated.sh
-unit-tests >   from /work/booking-service/tests/bin/Debug/net10.0/BookingService.Tests.dll (net10.0|arm64)
-unit-tests > /work/booking-service/tests/bin/Debug/net10.0/BookingService.Tests.dll (net10.0|arm64) passed (8s 875ms)
-unit-tests >
+unit-tests > /work/booking-service/tests/bin/Debug/net10.0/BookingService.Tests.dll (net10.0|arm64) passed (3s 290ms)
+unit-tests > 
 unit-tests > Test run summary: Passed!
-unit-tests >   total: 31
+unit-tests >   total: 45
 unit-tests >   failed: 0
-unit-tests >   succeeded: 30
-unit-tests >   skipped: 1
-unit-tests >   duration: 11s 047ms
-unit-tests finished in 4.63 min
+unit-tests >   succeeded: 45
+unit-tests >   skipped: 0
+unit-tests >   duration: 3s 544ms
+unit-tests finished in 25 s
 test       starting shell (test)
-test       $ IMAGE_TAG="${CI_COMMIT_SHORT_SHA}" # collapsed multi-line command
-test       > IMAGE_TAG=75fe395f
 test       $ docker rm -f booking-service-ci >/dev/null 2>&1 || true
 test       $ docker run -d --name booking-service-ci -p 18080:8080 -e ENABLE_FEATURE_X=true -e BOOKING_DB="Host=absent-db;Database=booking;Username=booking" -e MONOLITH_URL=http://absent-monolith:8080/ -e OUTBOX_PUBLISHER=disabled "${IMAGE_NAME}:${IMAGE_TAG}"
-test       > 3190986fae0787e617c5f406762c634e178bac259b9256b098f26a1c680c4105
+test       > c46dc5cfe6247ba9bd23629d5dd6d2a2c2d5d288b6a9d7a0d1b0a640704ea983
 test       $ for i in $(seq 1 30); do # collapsed multi-line command
 test       > /ping -> pong
 test       > /feature (ENABLE_FEATURE_X=true) -> Feature X is enabled!
 test       > /ready без БД -> 503
-test       > booking-service-ci
-test       $ docker rm -f booking-history-ci >/dev/null 2>&1 || true
-test       $ docker run -d --name booking-history-ci -p 18081:8080 -e HISTORY_DB="Host=absent-db;Database=history;Username=history" -e KAFKA_BOOTSTRAP=absent-kafka:9092 "${HISTORY_IMAGE_NAME}:${IMAGE_TAG}"
-test       > 645eddefd25b7ef08d7742fc85e0a8736ef154efeb152ec4dd703b37fc28f8aa
-test       $ history_exit=$(docker wait booking-history-ci) # collapsed multi-line command
-test       > history without schema: exit=1 (expected 1)
-test       > 10:56:14.931 fail: BookingHistoryService[0] History startup blocked: schema unavailable or outdated (NpgsqlException)
-test       > booking-history-ci
-test       finished in 12 s
+test       finished in 1.62 s
 deploy     starting shell (deploy)
-deploy     $ IMAGE_TAG="${CI_COMMIT_SHORT_SHA}" # collapsed multi-line command
-deploy     > IMAGE_TAG=75fe395f
-deploy     $ NAMESPACE="${STAGING_NAMESPACE}"
-deploy     $ helm upgrade --install "${RELEASE}" helm/booking-service -n "${NAMESPACE}" --create-namespace \ # collapsed multi-line command
-deploy     > still running...
-deploy     > Release "booking-service" has been upgraded. Happy Helming!
+deploy     $ minikube image load "${IMAGE_NAME}:${IMAGE_TAG}" # collapsed multi-line command
+deploy     > Release "booking-service" does not exist. Installing it now.
 deploy     > NAME: booking-service
-deploy     > LAST DEPLOYED: Mon Oct 19 13:56:16 2026
+deploy     > LAST DEPLOYED: Mon Oct 19 17:52:12 2026
 deploy     > NAMESPACE: staging
 deploy     > STATUS: deployed
-deploy     > REVISION: 3
-deploy     > DESCRIPTION: Upgrade complete
+deploy     > REVISION: 1
+deploy     > DESCRIPTION: Install complete
 deploy     > TEST SUITE: None
-deploy     > deployment "booking-service" successfully rolled out
-deploy     > NAME                                   READY   STATUS      RESTARTS        AGE
-deploy     > pod/booking-service-54f554f5f6-v7vp6   0/1     Completed   4 (9m56s ago)   117m
-deploy     > pod/booking-service-6df4b9df58-ph6rh   1/1     Running     0               9s
-deploy     >
-deploy     > NAME                      TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
-deploy     > service/booking-service   ClusterIP   10.104.4.37   <none>        80/TCP    144m
-deploy     > ▶️ Running in-cluster DNS test (namespace staging), http://booking-service/ping
-deploy     > [INFO] Resolve: booking-service -> 10.104.4.37 (ClusterIP)
-deploy     > [INFO] DNS Response: pong (pod phase: Succeeded)
-deploy     > [PASS] DNS test succeeded
-deploy     > REVISION	UPDATED                 	STATUS    	CHART                	APP VERSION	DESCRIPTION
-deploy     > 1       	Mon Oct 19 11:32:18 2026	superseded	booking-service-0.2.2	1.0        	Install complete
-deploy     > 2       	Mon Oct 19 11:58:48 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete
-deploy     > 3       	Mon Oct 19 13:56:16 2026	deployed  	booking-service-0.2.2	1.0        	Upgrade complete
-deploy     finished in 17 s
+deploy     > NAME                                  READY   STATUS    RESTARTS   AGE
+deploy     > pod/booking-service-9c6d5947b-gnnzx   1/1     Running   0          6s
+deploy     > 
+deploy     > NAME                      TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+deploy     > service/booking-service   ClusterIP   10.97.72.184   <none>        80/TCP    6s
+deploy     > ▶️ Running in-cluster DNS test (namespace staging)...
+deploy     > pong
+deploy     > ✅ Success
+deploy     > REVISION	UPDATED                 	STATUS  	CHART                	APP VERSION	DESCRIPTION     
+deploy     > 1       	Mon Oct 19 17:52:12 2026	deployed	booking-service-0.2.2	1.0        	Install complete
+deploy     finished in 16 s
 tag        starting shell (tag)
 tag        $ TAG="${RELEASE}-$(date +%Y%m%d-%H%M%S)"
-tag        $ git tag -a "${TAG}" -m "Выпуск ${RELEASE} ${CI_COMMIT_SHORT_SHA}, проверен в staging"
+tag        $ git tag -a "${TAG}" -m "Выпуск ${RELEASE} ${IMAGE_TAG}, проверен в staging"
 tag        $ if [ "${PUSH_TAG}" = "true" ]; then git push origin "${TAG}"; fi
-tag        > To github.com:rozhkovsvyat/msa-sprint2.git
-tag        >  * [new tag]         booking-service-20261019-135632 -> booking-service-20261019-135632
 tag        $ git tag --list "${RELEASE}-*" | tail -3
-tag        > booking-service-20261019-113227
-tag        > booking-service-20261019-115900
-tag        > booking-service-20261019-135632
-tag        finished in 4.14 s
+tag        > booking-service-20261019-175221
+tag        finished in 52 ms
 
- PASS  build
+ PASS  build     
  PASS  unit-tests
- PASS  test
- PASS  deploy
- PASS  tag
+ PASS  test      
+ PASS  deploy    
+ PASS  tag       
+(код выхода 0)

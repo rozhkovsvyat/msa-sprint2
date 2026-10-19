@@ -1,119 +1,137 @@
+$ docker compose --profile test build -q regress
+ Image hotelio-tester Building 
+ Image hotelio-tester Built 
+$ ./migration/cutover-drill.sh
 
-[11:20:06] 0. Чистый стенд
+[17:38:17] 0. Чистый стенд
+ Image hotelio-booking-service Building 
+ Image hotelio-booking-service Building 
+ Image hotelio-booking-history-service Building 
+ Image task2-monolith Building 
+ Image hotelio-booking-history-service Building 
+ Image task2-monolith Built 
+ Image hotelio-booking-service Built 
+ Image hotelio-booking-service Built 
+ Image hotelio-booking-history-service Built 
+ Image hotelio-booking-history-service Built 
 
-[11:20:09] 1. Легаси: монолит без прокси (BOOKING_SERVICE_EXTERNAL_HOST=false), фикстуры и бронирования через API
+[17:38:20] 1. Монолит без прокси: фикстуры курса и два бронирования через API (регресс курса без переноса)
 ➡️  BookingService beans:
     - bookingService: class com.hotelio.monolith.service.BookingService
-2026-10-19T08:20:13.727Z  INFO 1 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-19T14:38:30.450Z  INFO 1 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+ Container task2-regress-run-636793b31939 Creating 
+ Container task2-regress-run-636793b31939 Created 
 ✅ Все HTTP-тесты пройдены!
- id |   user_id   |   hotel_id   | promo_code | discount_percent | price |          created_at
-----+-------------+--------------+------------+------------------+-------+-------------------------------
-  1 | test-user-2 | test-hotel-1 | TESTCODE1  |               10 |    90 | 2026-10-19 08:20:14.062491+00
-  2 | test-user-3 | test-hotel-1 |            |                0 |    80 | 2026-10-19 08:20:14.062491+00
-  3 | test-user-3 | test-hotel-1 |            |                0 |    80 |
-  4 | test-user-2 | test-hotel-1 | TESTCODE1  |               10 |    90 |
+ id |   user_id   |   hotel_id   | promo_code | discount_percent | price |          created_at          
+----+-------------+--------------+------------+------------------+-------+------------------------------
+  1 | test-user-2 | test-hotel-1 | TESTCODE1  |               10 |    90 | 2026-10-19 14:38:31.91524+00
+  2 | test-user-3 | test-hotel-1 |            |                0 |    80 | 2026-10-19 14:38:31.91524+00
+  3 | test-user-3 | test-hotel-1 |            |                0 |    80 | 
+  4 | test-user-2 | test-hotel-1 | TESTCODE1  |               10 |    90 | 
 (4 rows)
 
 
-[11:20:14] 2. Окно переключения: остановка записи → перенос → включение прокси
- Container booking-db Running
- Container task2-booking-schema-1 Creating
- Container task2-booking-schema-1 Created
- Container booking-db Waiting
- Container booking-db Healthy
- Container task2-booking-schema-1 Starting
- Container task2-booking-schema-1 Started
- Container task2-booking-schema-1 Waiting
- Container task2-booking-schema-1 Exited
- Container task2-booking-migration-run-48350d3f4fbc Creating
- Container task2-booking-migration-run-48350d3f4fbc Created
+[17:38:32] 2. Окно переключения: остановка записи → перенос → включение прокси
+ Container booking-db Running 
+ Container task2-booking-schema-1 Creating 
+ Container task2-booking-schema-1 Created 
+ Container booking-db Waiting 
+ Container booking-db Healthy 
+ Container task2-booking-schema-1 Starting 
+ Container task2-booking-schema-1 Started 
+ Container task2-booking-schema-1 Waiting 
+ Container task2-booking-schema-1 Exited 
+ Container task2-booking-migration-run-6e9e7c6b94c0 Creating 
+ Container task2-booking-migration-run-6e9e7c6b94c0 Created 
 [migration] в монолите бронирований: 4, максимальный id: 4
 [migration] перенесено новых: 4, из них с подставленной датой: 2
 [migration] счётчик id booking-service: 4
-[migration] источник: 4 14c4225f8bec89b1866988dbef3e3f6e
-[migration] приёмник: 4 14c4225f8bec89b1866988dbef3e3f6e
+[migration] источник: 4 a937e6a0f068282322149a35c4afdb9f
+[migration] приёмник: 4 a937e6a0f068282322149a35c4afdb9f
 [migration] длительность: 0 с
 [migration] OK: количество и контрольная сумма совпадают
-
-[11:20:21] Окно переключения: 7 с (включая перезапуск JVM монолита)
 ➡️  BookingService beans:
     - bookingService: class com.hotelio.monolith.service.BookingService
     - grpcBookingService: class com.hotelio.GrpcBookingService
 
-[11:20:21] 3. После переключения: список через монолит читает booking-service; перенесённые даты помечены
-[{"id":2,"userId":"test-user-3","hotelId":"test-hotel-1","promoCode":"","discountPercent":0.0,"price":80.0,"createdAt":"2026-10-19T08:20:14.062491Z"},{"id":3,"userId":"test-user-3","hotelId":"test-hotel-1","promoCode":"","discountPercent":0.0,"price":80.0,"createdAt":"2026-10-19T08:20:16.144516Z"}]
- id |   user_id   |   hotel_id   | promo_code | discount_percent | price |          created_at           | created_at_estimated |  source
-----+-------------+--------------+------------+------------------+-------+-------------------------------+----------------------+-----------
-  1 | test-user-2 | test-hotel-1 | TESTCODE1  |               10 |    90 | 2026-10-19 08:20:14.062491+00 | f                    | migration
-  2 | test-user-3 | test-hotel-1 |            |                0 |    80 | 2026-10-19 08:20:14.062491+00 | f                    | migration
-  3 | test-user-3 | test-hotel-1 |            |                0 |    80 | 2026-10-19 08:20:16.144516+00 | t                    | migration
-  4 | test-user-2 | test-hotel-1 | TESTCODE1  |               10 |    90 | 2026-10-19 08:20:16.144516+00 | t                    | migration
+[17:38:41] Окно переключения: 9 с, включая перезапуск монолита
+
+[17:38:41] 3. После переключения список через монолит читает booking-service; перенесённые даты помечены
+[{"id":2,"userId":"test-user-3","hotelId":"test-hotel-1","promoCode":"","discountPercent":0.0,"price":80.0,"createdAt":"2026-10-19T14:38:31.915240Z"},{"id":3,"userId":"test-user-3","hotelId":"test-hotel-1","promoCode":"","discountPercent":0.0,"price":80.0,"createdAt":"2026-10-19T14:38:34.557890Z"}]
+ id |   user_id   |   hotel_id   | promo_code | discount_amount | price |          created_at          | created_at_estimated |  source   
+----+-------------+--------------+------------+-----------------+-------+------------------------------+----------------------+-----------
+  1 | test-user-2 | test-hotel-1 | TESTCODE1  |           10.00 | 90.00 | 2026-10-19 14:38:31.91524+00 | f                    | migration
+  2 | test-user-3 | test-hotel-1 |            |            0.00 | 80.00 | 2026-10-19 14:38:31.91524+00 | f                    | migration
+  3 | test-user-3 | test-hotel-1 |            |            0.00 | 80.00 | 2026-10-19 14:38:34.55789+00 | t                    | migration
+  4 | test-user-2 | test-hotel-1 | TESTCODE1  |           10.00 | 90.00 | 2026-10-19 14:38:34.55789+00 | t                    | migration
 (4 rows)
 
 
-[11:20:21] 4. Новое бронирование после переключения (id продолжает счётчик)
-{"id":5,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":"2026-10-19T08:20:21.568862Z"}
- booking_id |   user_id   | price | booked_at_estimated |     source
+[17:38:41] 4. Новое бронирование после переключения продолжает счётчик id
+{"id":5,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":"2026-10-19T14:38:41.996390Z"}
+ booking_id |   user_id   | price | booked_at_estimated |     source      
 ------------+-------------+-------+---------------------+-----------------
-          1 | test-user-2 |    90 | f                   | migration
-          2 | test-user-3 |    80 | f                   | migration
-          3 | test-user-3 |    80 | t                   | migration
-          4 | test-user-2 |    90 | t                   | migration
-          5 | test-user-2 |    90 | f                   | booking-service
+          1 | test-user-2 | 90.00 | f                   | migration
+          2 | test-user-3 | 80.00 | f                   | migration
+          3 | test-user-3 | 80.00 | t                   | migration
+          4 | test-user-2 | 90.00 | t                   | migration
+          5 | test-user-2 | 90.00 | f                   | booking-service
 (5 rows)
 
 
-[11:20:24] 5. Откат: остановка → обратный перенос → монолит без прокси
- Container booking-db Running
- Container booking-db Waiting
- Container booking-db Healthy
- Container task2-booking-schema-1 Starting
- Container task2-booking-schema-1 Started
- Container task2-booking-schema-1 Waiting
- Container task2-booking-schema-1 Exited
- Container task2-booking-migration-run-5e401d2cae85 Creating
- Container task2-booking-migration-run-5e401d2cae85 Created
+[17:38:45] 5. Откат: остановка → обратный перенос → монолит без прокси
+ Container booking-db Running 
+ Container booking-db Waiting 
+ Container booking-db Healthy 
+ Container task2-booking-schema-1 Starting 
+ Container task2-booking-schema-1 Started 
+ Container task2-booking-schema-1 Waiting 
+ Container task2-booking-schema-1 Exited 
+ Container task2-booking-migration-run-6595ed290c96 Creating 
+ Container task2-booking-migration-run-6595ed290c96 Created 
 [migration] откат: бронирований после переключения (id > 4): 1
-5
-[migration] источник: 5 7c1ca4b8d4cbb3b956b64ac956e91f18
-[migration] приёмник: 5 7c1ca4b8d4cbb3b956b64ac956e91f18
+[migration] счётчик id монолита: 5
+[migration] источник: 5 917f3e952024fd0c0a7347c5b561c4fb
+[migration] приёмник: 5 917f3e952024fd0c0a7347c5b561c4fb
 [migration] длительность: 0 с
 [migration] OK: количество и контрольная сумма совпадают
-
-[11:20:28] Окно отката: 4 с
 ➡️  BookingService beans:
     - bookingService: class com.hotelio.monolith.service.BookingService
-2026-10-19T08:20:28.826Z  INFO 1 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-19T14:38:51.171Z  INFO 1 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
 
-[11:20:28] Монолит снова владеет бронированиями, бронирование после переключения на месте:
-[{"id":1,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":"2026-10-19T08:20:14.062491Z"},{"id":4,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":null},{"id":5,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":"2026-10-19T08:20:21.568862Z"}]
- id |   user_id   |   hotel_id   | promo_code | discount_percent | price |          created_at
-----+-------------+--------------+------------+------------------+-------+-------------------------------
-  1 | test-user-2 | test-hotel-1 | TESTCODE1  |               10 |    90 | 2026-10-19 08:20:14.062491+00
-  2 | test-user-3 | test-hotel-1 |            |                0 |    80 | 2026-10-19 08:20:14.062491+00
-  3 | test-user-3 | test-hotel-1 |            |                0 |    80 |
-  4 | test-user-2 | test-hotel-1 | TESTCODE1  |               10 |    90 |
-  5 | test-user-2 | test-hotel-1 | TESTCODE1  |               10 |    90 | 2026-10-19 08:20:21.568862+00
+[17:38:51] Окно отката: 6 с. Бронирование, созданное после переключения, вернулось в монолит:
+[{"id":1,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":"2026-10-19T14:38:31.915240Z"},{"id":4,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":null},{"id":5,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":"2026-10-19T14:38:41.996390Z"}]
+ id |   user_id   |   hotel_id   | promo_code | discount_percent | price |          created_at          
+----+-------------+--------------+------------+------------------+-------+------------------------------
+  1 | test-user-2 | test-hotel-1 | TESTCODE1  |               10 |    90 | 2026-10-19 14:38:31.91524+00
+  2 | test-user-3 | test-hotel-1 |            |                0 |    80 | 2026-10-19 14:38:31.91524+00
+  3 | test-user-3 | test-hotel-1 |            |                0 |    80 | 
+  4 | test-user-2 | test-hotel-1 | TESTCODE1  |               10 |    90 | 
+  5 | test-user-2 | test-hotel-1 | TESTCODE1  |               10 |    90 | 2026-10-19 14:38:41.99639+00
 (5 rows)
 
 
-[11:20:28] 6. Повторное переключение: перенос идемпотентен
- Container booking-db Running
- Container booking-db Waiting
- Container booking-db Healthy
- Container task2-booking-schema-1 Starting
- Container task2-booking-schema-1 Started
- Container task2-booking-schema-1 Waiting
- Container task2-booking-schema-1 Exited
- Container task2-booking-migration-run-cec5a6002626 Creating
- Container task2-booking-migration-run-cec5a6002626 Created
+[17:38:51] 6. Повторное переключение: перенос идемпотентен
+ Container booking-db Running 
+ Container booking-db Waiting 
+ Container booking-db Healthy 
+ Container task2-booking-schema-1 Starting 
+ Container task2-booking-schema-1 Started 
+ Container task2-booking-schema-1 Waiting 
+ Container task2-booking-schema-1 Exited 
+ Container task2-booking-migration-run-dc3a0af06c14 Creating 
+ Container task2-booking-migration-run-dc3a0af06c14 Created 
 [migration] в монолите бронирований: 5, максимальный id: 5
 [migration] перенесено новых: 0, из них с подставленной датой: 0
 [migration] счётчик id booking-service: 5
-[migration] источник: 5 7c1ca4b8d4cbb3b956b64ac956e91f18
-[migration] приёмник: 5 7c1ca4b8d4cbb3b956b64ac956e91f18
+[migration] источник: 5 917f3e952024fd0c0a7347c5b561c4fb
+[migration] приёмник: 5 917f3e952024fd0c0a7347c5b561c4fb
 [migration] длительность: 0 с
 [migration] OK: количество и контрольная сумма совпадают
-[{"id":1,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":"2026-10-19T08:20:14.062491Z"},{"id":4,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":"2026-10-19T08:20:16.144516Z"},{"id":5,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":"2026-10-19T08:20:21.568862Z"}]
+➡️  BookingService beans:
+    - bookingService: class com.hotelio.monolith.service.BookingService
+    - grpcBookingService: class com.hotelio.GrpcBookingService
+[{"id":1,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":"2026-10-19T14:38:31.915240Z"},{"id":4,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":"2026-10-19T14:38:34.557890Z"},{"id":5,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":"2026-10-19T14:38:41.996390Z"}]
 
-[11:20:36] Учения завершены
+[17:39:00] Учения завершены
+(код выхода 0)

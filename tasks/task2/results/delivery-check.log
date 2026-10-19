@@ -1,0 +1,31 @@
+$ ./check-delivery.sh
+▶️ 1. Kafka остановлена, создаём бронирование (x-request-id: delivery-check-1792420833)
+               event_id               | failure_count |        last_error        | dead_lettered_at 
+--------------------------------------+---------------+--------------------------+------------------
+ d169a1bf-6772-021b-ef23-cc2bca1caad3 |             6 | Kafka: Local_MsgTimedOut | 
+(1 row)
+
+  [PASS] бронирование 7 сохранено, событие ждёт в outbox, в карантин не попало
+▶️ 2. Kafka запущена
+               event_id               | booking_id |   user_id   | price  |     source      |      correlation_id       
+--------------------------------------+------------+-------------+--------+-----------------+---------------------------
+ d169a1bf-6772-021b-ef23-cc2bca1caad3 |          7 | test-user-2 | 100.00 | booking-service | delivery-check-1792420833
+(1 row)
+
+  [PASS] событие опубликовано без ручного вмешательства, в истории одна запись
+14:42:01.838 info: Hotelio.BookingHistory.BookingEventsConsumer[0] Saved eventId=d169a1bf-6772-021b-ef23-cc2bca1caad3 bookingId=7 0@0 requestId=delivery-check-1792420833
+14:42:02.642 info: Hotelio.BookingHistory.BookingEventsConsumer[0] Duplicate skipped eventId=d169a1bf-6772-021b-ef23-cc2bca1caad3 bookingId=7 0@1 requestId=delivery-check-1792420833
+  [PASS] повторная публикация прочитана, история не удвоилась
+▶️ 3. Сообщение с schemaVersion 2
+     topic      | kafka_partition | kafka_offset |            error            
+----------------+-----------------+--------------+-----------------------------
+ booking-events |               0 |            2 | unsupported schemaVersion 2
+(1 row)
+
+
+GROUP           TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID                                  HOST            CLIENT-ID
+booking-history booking-events  0          3               3               0               rdkafka-517231bc-2226-42d7-aca1-dcc0a4edff83 /172.18.0.8     rdkafka
+booking-history booking-events  1          5               5               0               rdkafka-517231bc-2226-42d7-aca1-dcc0a4edff83 /172.18.0.8     rdkafka
+booking-history booking-events  2          1               1               0               rdkafka-517231bc-2226-42d7-aca1-dcc0a4edff83 /172.18.0.8     rdkafka
+  [PASS] сообщение в dead letter, история не изменилась, смещение группы сдвинулось дальше
+(код выхода 0)

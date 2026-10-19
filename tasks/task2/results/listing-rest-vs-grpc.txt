@@ -1,40 +1,57 @@
-[{"id":8,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":"2026-10-19T08:21:33.909939Z"},{"id":11,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE1","discountPercent":10.0,"price":90.0,"createdAt":"2026-10-19T08:21:34.680605Z"},{"id":12,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"TESTCODE-OLD","discountPercent":0.0,"price":100.0,"createdAt":"2026-10-19T08:22:35.119841Z"},{"id":13,"userId":"test-user-2","hotelId":"test-hotel-1","promoCode":"","discountPercent":0.0,"price":100.0,"createdAt":"2026-10-19T08:23:40.714896Z"}]
+Список бронирований test-user-2: REST монолита (через gRPC-прокси) и gRPC ListBookings booking-service (задание 2).
+
+== REST монолита ==
+$ curl -s 'http://localhost:8084/api/bookings?userId=test-user-2' | jq .
+[
+  {
+    "id": 3,
+    "userId": "test-user-2",
+    "hotelId": "test-hotel-1",
+    "promoCode": "TESTCODE1",
+    "discountPercent": 10.0,
+    "price": 90.0,
+    "createdAt": "2026-10-19T14:40:02.530507Z"
+  },
+  {
+    "id": 6,
+    "userId": "test-user-2",
+    "hotelId": "test-hotel-1",
+    "promoCode": "TESTCODE1",
+    "discountPercent": 10.0,
+    "price": 90.0,
+    "createdAt": "2026-10-19T14:40:03.110457Z"
+  }
+]
+== gRPC booking-service ==
+$ grpcurl -plaintext -H 'x-request-id: listing-test-user-2' -d '{"user_id":"test-user-2"}' localhost:9090 booking.BookingService/ListBookings
 {
   "bookings": [
     {
-      "id": "8",
+      "id": "3",
       "user_id": "test-user-2",
       "hotel_id": "test-hotel-1",
       "promo_code": "TESTCODE1",
       "discount_percent": 10,
       "price": 90,
-      "created_at": "2026-10-19T08:21:33.909939Z"
+      "created_at": "2026-10-19T14:40:02.530507Z"
     },
     {
-      "id": "11",
+      "id": "6",
       "user_id": "test-user-2",
       "hotel_id": "test-hotel-1",
       "promo_code": "TESTCODE1",
       "discount_percent": 10,
       "price": 90,
-      "created_at": "2026-10-19T08:21:34.680605Z"
-    },
-    {
-      "id": "12",
-      "user_id": "test-user-2",
-      "hotel_id": "test-hotel-1",
-      "promo_code": "TESTCODE-OLD",
-      "price": 100,
-      "created_at": "2026-10-19T08:22:35.119841Z"
-    },
-    {
-      "id": "13",
-      "user_id": "test-user-2",
-      "hotel_id": "test-hotel-1",
-      "price": 100,
-      "created_at": "2026-10-19T08:23:40.714896Z"
+      "created_at": "2026-10-19T14:40:03.110457Z"
     }
   ]
 }
+== Ограничение готового прокси: список без userId через монолит ==
+$ curl -s -w '\nHTTP %{http_code}\n' http://localhost:8084/api/bookings
+{"timestamp":"2026-10-19T14:40:29.479+00:00","status":500,"error":"Internal Server Error","path":"/api/bookings"}
+HTTP 500
+$ docker logs --since 1m hotelio-monolith 2>&1 | grep -m1 -A3 NullPointerException
+2026-10-19T14:40:29.476Z ERROR 1 --- [nio-8080-exec-1] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.NullPointerException] with root cause
 
-Known binary proxy limitation, missing userId: HTTP 500
+java.lang.NullPointerException: null
+	at com.hotelio.proto.booking.BookingListRequest$Builder.setUserId(BookingListRequest.java:449) ~[p-o-y-1.0.0.jar!/:na]

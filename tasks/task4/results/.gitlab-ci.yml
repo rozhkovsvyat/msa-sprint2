@@ -1,0 +1,102 @@
+# Пайплайн booking-service: gitlab-ci-local build test deploy tag
+# Выпуск в prod и откат — ручные задания: gitlab-ci-local deploy-prod, gitlab-ci-local rollback-prod.
+# Задания выполняются на машине с Docker, Minikube, Helm и kubectl (shell-исполнитель).
+stages:
+  - build
+  - test
+  - deploy
+  - tag
+  - release
+
+variables:
+  IMAGE_TAG: ${CI_COMMIT_SHORT_SHA}   # неизменяемый тег: staging и prod получают один и тот же образ
+  IMAGE_NAME: booking-service
+  RELEASE: booking-service
+  PUSH_TAG: "false"                   # true — отправить git-тег в origin
+
+# Развёртывание в namespace NAMESPACE с values-NAMESPACE.yaml и проверка DNS изнутри кластера.
+.helm-deploy: &helm_deploy |
+  minikube image load "${IMAGE_NAME}:${IMAGE_TAG}"
+  helm upgrade --install "${RELEASE}" helm/booking-service -n "${NAMESPACE}" --create-namespace \
+    -f "helm/booking-service/values-${NAMESPACE}.yaml" --set image.tag="${IMAGE_TAG}" --wait --timeout 180s
+  kubectl -n "${NAMESPACE}" get pods,svc -l "app=${RELEASE}"
+  NAMESPACE="${NAMESPACE}" ./check-dns.sh
+  helm -n "${NAMESPACE}" history "${RELEASE}" --max 3
+
+build:
+  stage: build
+  script:
+    # Исходники и Dockerfile сервиса — в задании 2, контекст сборки — tasks/task2
+    - docker build -f ../task2/booking-service/Dockerfile -t "${IMAGE_NAME}:${IMAGE_TAG}" ../task2
+    - docker image ls "${IMAGE_NAME}:${IMAGE_TAG}"
+
+unit-tests:
+  stage: test
+  needs: []
+  script:
+    # Исходники монтируются только на чтение и копируются внутрь контейнера без каталогов сборки хоста.
+    - docker run --rm -v "$(cd ../task2 && pwd)":/src:ro mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
+      sh -c 'cp -r /src /work && find /work -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + &&
+             cd /work/booking-service && dotnet test --project tests/BookingService.Tests.csproj'
+
+test:
+  stage: test
+  needs: [build]
+  script:
+    # Контейнер без БД, Kafka и монолита: проверяются /ping и фича-флаг. Адреса зависимостей сервис требует —
+    # передаём недоступные, публикация outbox выключена.
+    - docker rm -f booking-service-ci >/dev/null 2>&1 || true
+    - docker run -d --name booking-service-ci -p 18080:8080 -e ENABLE_FEATURE_X=true
+      -e BOOKING_DB="Host=absent-db;Database=booking;Username=booking" -e MONOLITH_URL=http://absent-monolith:8080/
+      -e OUTBOX_PUBLISHER=disabled "${IMAGE_NAME}:${IMAGE_TAG}"
+    - |
+      for i in $(seq 1 30); do
+        body=$(curl -sf http://localhost:18080/ping || true)
+        [ "$body" = "pong" ] && break
+        sleep 1
+      done
+      echo "/ping -> ${body}"
+      feature=$(curl -sf http://localhost:18080/feature || true); echo "/feature (ENABLE_FEATURE_X=true) -> ${feature}"
+      ready=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:18080/ready); echo "/ready без БД -> ${ready}"
+      [ "$body" = "pong" ] || docker logs booking-service-ci
+      docker rm -f booking-service-ci >/dev/null
+      [ "$body" = "pong" ] && [ "$feature" = "Feature X is enabled!" ] && [ "$ready" = "503" ]
+
+deploy:
+  stage: deploy
+  needs: [build, test, unit-tests]
+  variables:
+    NAMESPACE: staging
+  script:
+    - *helm_deploy
+
+tag:
+  stage: tag
+  needs: [deploy]
+  script:
+    - TAG="${RELEASE}-$(date +%Y%m%d-%H%M%S)"
+    - git tag -a "${TAG}" -m "Выпуск ${RELEASE} ${IMAGE_TAG}, проверен в staging"
+    - if [ "${PUSH_TAG}" = "true" ]; then git push origin "${TAG}"; fi
+    - git tag --list "${RELEASE}-*" | tail -3
+
+# Выпуск в prod: тот же образ, что прошёл staging, без пересборки; отличаются только values-prod.yaml.
+deploy-prod:
+  stage: release
+  needs: [tag]
+  when: manual
+  variables:
+    NAMESPACE: prod
+  script:
+    - *helm_deploy
+    - ./check-promotion.sh
+
+# Откат prod на предыдущую ревизию Helm: образ и values той ревизии.
+rollback-prod:
+  stage: release
+  needs: []
+  when: manual
+  script:
+    - helm -n prod rollback "${RELEASE}" --wait --timeout 180s
+    - helm -n prod history "${RELEASE}" --max 3
+    - kubectl -n prod get deployment "${RELEASE}" -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+    - NAMESPACE=prod ./check-dns.sh

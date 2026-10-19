@@ -1,0 +1,22 @@
+parsing and downloads finished in 45 ms.
+json schema validated in 88 ms
+rollback-prod starting shell (release)
+rollback-prod $ helm -n "${PROD_NAMESPACE}" rollback "${RELEASE}" --wait --timeout 180s
+rollback-prod > still running...
+rollback-prod > Rollback was a success! Happy Helming!
+rollback-prod $ kubectl -n "${PROD_NAMESPACE}" rollout status "deployment/${RELEASE}" --timeout=120s
+rollback-prod > deployment "booking-service" successfully rolled out
+rollback-prod $ helm -n "${PROD_NAMESPACE}" history "${RELEASE}" --max 3
+rollback-prod > REVISION	UPDATED                 	STATUS    	CHART                	APP VERSION	DESCRIPTION
+rollback-prod > 1       	Mon Oct 19 11:32:37 2026	superseded	booking-service-0.2.2	1.0        	Install complete
+rollback-prod > 2       	Mon Oct 19 11:33:25 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete
+rollback-prod > 3       	Mon Oct 19 11:34:39 2026	deployed  	booking-service-0.2.2	1.0        	Rollback to 1
+rollback-prod $ kubectl -n "${PROD_NAMESPACE}" get deployment "${RELEASE}" -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+rollback-prod > booking-service:ce216be2
+rollback-prod finished in 18 s
+
+ PASS  rollback-prod
+▶️ Running in-cluster DNS test (namespace prod)...
+[INFO] Resolve: booking-service -> 10.110.183.91 (ClusterIP)
+[INFO] DNS Response: pong (pod phase: Succeeded)
+[PASS] DNS test succeeded

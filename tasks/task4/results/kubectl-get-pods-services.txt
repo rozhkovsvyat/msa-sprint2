@@ -1,0 +1,5 @@
+NAME                                   READY   STATUS    RESTARTS      AGE
+pod/booking-service-6df4b9df58-ph6rh   1/1     Running   1 (21m ago)   91m
+
+NAME                      TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
+service/booking-service   ClusterIP   10.104.4.37   <none>        80/TCP    3h55m

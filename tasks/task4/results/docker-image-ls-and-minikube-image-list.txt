@@ -1,0 +1,13 @@
+$ docker image ls   # 18.10.2026 22:01:32 MSK
+REPOSITORY                      TAG             IMAGE ID       SIZE
+task3-booking-subgraph          latest          4d6f0d744e42   294MB
+booking-service                 ce216be2        9f1174ce6952   526MB
+booking-service                 4843c44c        8c456d4e9dfb   526MB
+task2-booking-service           latest          0515a77e44aa   526MB
+booking-history-service         4843c44c        05a0c657170c   524MB
+booking-history-service         ce216be2        f14d9d62bef3   524MB
+task2-booking-history-service   latest          8feda5c7b725   524MB
+booking-service                 dev             b64d34aba447   526MB
+
+$ minikube image list | grep booking
+docker.io/library/booking-service:ce216be2

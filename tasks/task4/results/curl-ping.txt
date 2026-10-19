@@ -1,0 +1,12 @@
+HTTP/1.1 200 OK
+Content-Type: text/plain; charset=utf-8
+Date: Mon, 19 Oct 2026 12:06:38 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+X-Booking-Service-Version: v1
+x-request-id: bf6000c5-c188-42b6-bf82-7ade72ba046c
+
+pong
+
+$ curl http://127.0.0.1:18090/version
+{"version":"v1","featureX":true}

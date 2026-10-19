@@ -1,0 +1,33 @@
+▶️ Deployment и Service (namespace=staging)
+deployment "booking-service" successfully rolled out
+NAME                               READY   STATUS    RESTARTS        AGE
+booking-service-6df4b9df58-ph6rh   1/1     Running   1 (3m37s ago)   73m
+NAME              TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
+booking-service   ClusterIP   10.104.4.37   <none>        80/TCP    3h37m
+▶️ Helm release
+NAME           	NAMESPACE	REVISION	UPDATED                             	STATUS  	CHART                	APP VERSION
+booking-service	staging  	3       	2026-10-19 13:56:16.398479 +0300 MSK	deployed	booking-service-0.2.2	1.0
+NAME: booking-service
+LAST DEPLOYED: Mon Oct 19 13:56:16 2026
+NAMESPACE: staging
+STATUS: deployed
+REVISION: 3
+DESCRIPTION: Upgrade complete
+RESOURCES:
+==> v1/Service
+NAME              TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
+booking-service   ClusterIP   10.104.4.37   <none>        80/TCP    3h37m
+
+==> v1/Deployment
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+booking-service   1/1     1            1           3h37m
+
+==> v1/Pod(related)
+NAME                               READY   STATUS    RESTARTS        AGE
+booking-service-6df4b9df58-ph6rh   1/1     Running   1 (3m37s ago)   73m
+
+
+TEST SUITE: None
+▶️ GET http://127.0.0.1:18090/ping
+pong
+✅ Reachable

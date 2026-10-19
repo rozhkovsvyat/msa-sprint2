@@ -1,0 +1,14 @@
+# staging: одна реплика, флаг включён для проверки новой функции, скромные ресурсы.
+replicaCount: 1
+image:
+  pullPolicy: Never   # образ загружается в Minikube через minikube image load, без registry
+featureFlags:
+  enableFeatureX: true
+env:
+  - name: ASPNETCORE_ENVIRONMENT
+    value: Staging
+  - name: Logging__LogLevel__Default
+    value: Information
+resources:
+  requests: { cpu: 100m, memory: 128Mi }
+  limits:   { cpu: 500m, memory: 256Mi }

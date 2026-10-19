@@ -1,0 +1,39 @@
+parsing and downloads finished in 53 ms.
+json schema validated in 96 ms
+deploy-prod starting shell (release)
+deploy-prod $ IMAGE_TAG="${CI_COMMIT_SHORT_SHA}" # collapsed multi-line command
+deploy-prod > IMAGE_TAG=309f2300
+deploy-prod $ NAMESPACE="${PROD_NAMESPACE}"
+deploy-prod $ helm upgrade --install "${RELEASE}" helm/booking-service -n "${NAMESPACE}" --create-namespace \ # collapsed multi-line command
+deploy-prod > still running...
+deploy-prod > Release "booking-service" has been upgraded. Happy Helming!
+deploy-prod > NAME: booking-service
+deploy-prod > LAST DEPLOYED: Mon Oct 19 11:33:25 2026
+deploy-prod > NAMESPACE: prod
+deploy-prod > STATUS: deployed
+deploy-prod > REVISION: 2
+deploy-prod > DESCRIPTION: Upgrade complete
+deploy-prod > TEST SUITE: None
+deploy-prod > deployment "booking-service" successfully rolled out
+deploy-prod > NAME                                   READY   STATUS      RESTARTS   AGE
+deploy-prod > pod/booking-service-58798b7bc-gsl66    0/1     Completed   0          66s
+deploy-prod > pod/booking-service-6cb78d48b9-2z5bw   1/1     Running     0          6s
+deploy-prod > pod/booking-service-6cb78d48b9-hvpqq   1/1     Running     0          12s
+deploy-prod > pod/booking-service-6cb78d48b9-kkbkh   1/1     Running     0          18s
+deploy-prod >
+deploy-prod > NAME                      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+deploy-prod > service/booking-service   ClusterIP   10.110.183.91   <none>        80/TCP    66s
+deploy-prod > ▶️ Running in-cluster DNS test (namespace prod)...
+deploy-prod > [INFO] Resolve: booking-service -> 10.110.183.91 (ClusterIP)
+deploy-prod > [INFO] DNS Response: pong (pod phase: Succeeded)
+deploy-prod > [PASS] DNS test succeeded
+deploy-prod > REVISION	UPDATED                 	STATUS    	CHART                	APP VERSION	DESCRIPTION
+deploy-prod > 1       	Mon Oct 19 11:32:37 2026	superseded	booking-service-0.2.2	1.0        	Install complete
+deploy-prod > 2       	Mon Oct 19 11:33:25 2026	deployed  	booking-service-0.2.2	1.0        	Upgrade complete
+deploy-prod $ ./check-promotion.sh
+deploy-prod > staging (staging): sha256:70bedb713de722f4a3c854cfdee460a05a03a29ec05704ba69cad8b78c74fdb4
+deploy-prod > prod (prod): sha256:70bedb713de722f4a3c854cfdee460a05a03a29ec05704ba69cad8b78c74fdb4
+deploy-prod > [PASS] В обеих средах один imageID; пересборки при продвижении нет
+deploy-prod finished in 21 s
+
+ PASS  deploy-prod

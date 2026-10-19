@@ -3,21 +3,70 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}
   labels:
-    app: {{ .Release.Name }}
+    {{- include "booking-service.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ .Release.Name }}
+      {{- include "booking-service.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: {{ .Release.Name }}
+        {{- include "booking-service.labels" . | nindent 8 }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
-          imagePullPolicy: Never
-
+          image: "{{ .Values.image.name }}:{{ required "image.tag обязателен: задайте неизменяемый тег" .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.service.targetPort }}
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+            - name: grpc
+              containerPort: {{ .Values.grpc.containerPort }}
+          env:
+            - name: HTTP_PORT
+              value: {{ .Values.service.targetPort | quote }}
+            - name: GRPC_PORT
+              value: {{ .Values.grpc.containerPort | quote }}
+            - name: SERVICE_VERSION
+              value: {{ .Values.serviceVersion | quote }}
+            - name: ENABLE_FEATURE_X
+              value: {{ .Values.featureFlags.enableFeatureX | quote }}
+            {{- with .Values.dependencies }}
+            {{- if not .existingSecret }}
+            - name: BOOKING_DB
+              value: {{ .bookingDb | quote }}
+            {{- end }}
+            - name: MONOLITH_URL
+              value: {{ .monolithUrl | quote }}
+            - name: OUTBOX_PUBLISHER
+              value: {{ .outboxPublisher | quote }}
+            {{- if .kafkaBootstrap }}
+            - name: KAFKA_BOOTSTRAP
+              value: {{ .kafkaBootstrap | quote }}
+            {{- end }}
+            {{- end }}
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.dependencies.existingSecret }}
+          envFrom:
+            - secretRef:
+                name: {{ . }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readinessPath }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

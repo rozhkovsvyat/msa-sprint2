@@ -1,0 +1,18 @@
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+{"ts":"2026-10-19T08:21:31.243Z","svc":"promocode-subgraph","msg":"ready at http://localhost:4003/","monolith":"http://hotelio-monolith:8080"}
+{"ts":"2026-10-19T08:21:31.562Z","svc":"promocode-subgraph","msg":"request","userid":null,"operation":null,"requestId":"382fa2f9-b18c-4ccd-ad1a-161e541f6abf"}
+{"ts":"2026-10-19T08:22:10.062Z","svc":"promocode-subgraph","msg":"request","userid":"test-user-2","operation":"MyBookings__promocode_subgraph__1","requestId":"hotelio-live-read"}
+{"ts":"2026-10-19T08:22:10.101Z","svc":"promocode-subgraph","msg":"discountPercent resolved","bookingId":"8","storedDiscountPercent":10,"source":"booking","resolver":"promocode-subgraph","requestId":"hotelio-live-read"}
+{"ts":"2026-10-19T08:22:10.101Z","svc":"promocode-subgraph","msg":"discountPercent resolved","bookingId":"11","storedDiscountPercent":10,"source":"booking","resolver":"promocode-subgraph","requestId":"hotelio-live-read"}
+{"ts":"2026-10-19T08:22:10.102Z","svc":"promocode-subgraph","msg":"promo batch","codes":["TESTCODE1"],"requestId":"hotelio-live-read"}
+{"ts":"2026-10-19T08:22:35.265Z","svc":"promocode-subgraph","msg":"request","userid":"test-user-2","operation":"MyBookings__promocode_subgraph__1","requestId":"hotelio-history"}
+{"ts":"2026-10-19T08:22:35.269Z","svc":"promocode-subgraph","msg":"discountPercent resolved","bookingId":"8","storedDiscountPercent":10,"source":"booking","resolver":"promocode-subgraph","requestId":"hotelio-history"}
+{"ts":"2026-10-19T08:22:35.269Z","svc":"promocode-subgraph","msg":"discountPercent resolved","bookingId":"11","storedDiscountPercent":10,"source":"booking","resolver":"promocode-subgraph","requestId":"hotelio-history"}
+{"ts":"2026-10-19T08:22:35.269Z","svc":"promocode-subgraph","msg":"discountPercent resolved","bookingId":"12","storedDiscountPercent":0,"source":"booking","resolver":"promocode-subgraph","requestId":"hotelio-history"}
+{"ts":"2026-10-19T08:22:35.269Z","svc":"promocode-subgraph","msg":"promo batch","codes":["TESTCODE1","TESTCODE-OLD"],"requestId":"hotelio-history"}
+{"ts":"2026-10-19T08:24:39.219Z","svc":"promocode-subgraph","msg":"request","userid":"test-user-2","operation":"MyBookings__promocode_subgraph__1","requestId":"hotelio-history"}
+{"ts":"2026-10-19T08:24:39.229Z","svc":"promocode-subgraph","msg":"discountPercent resolved","bookingId":"8","storedDiscountPercent":10,"source":"booking","resolver":"promocode-subgraph","requestId":"hotelio-history"}
+{"ts":"2026-10-19T08:24:39.229Z","svc":"promocode-subgraph","msg":"discountPercent resolved","bookingId":"11","storedDiscountPercent":10,"source":"booking","resolver":"promocode-subgraph","requestId":"hotelio-history"}
+{"ts":"2026-10-19T08:24:39.229Z","svc":"promocode-subgraph","msg":"discountPercent resolved","bookingId":"12","storedDiscountPercent":0,"source":"booking","resolver":"promocode-subgraph","requestId":"hotelio-history"}
+{"ts":"2026-10-19T08:24:39.229Z","svc":"promocode-subgraph","msg":"discountPercent resolved","bookingId":"13","storedDiscountPercent":0,"source":"booking","resolver":"promocode-subgraph","requestId":"hotelio-history"}
+{"ts":"2026-10-19T08:24:39.229Z","svc":"promocode-subgraph","msg":"promo batch","codes":["TESTCODE1","TESTCODE-OLD"],"requestId":"hotelio-history"}

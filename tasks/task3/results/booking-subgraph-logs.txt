@@ -1,0 +1,14 @@
+booking-subgraph  | Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+booking-subgraph  | {"ts":"2026-10-19T08:21:31.185Z","svc":"booking-subgraph","msg":"ready at http://localhost:4001/","bookingGrpc":"booking-service:9090"}
+booking-subgraph  | {"ts":"2026-10-19T08:21:31.565Z","svc":"booking-subgraph","msg":"request","userid":null,"operation":null,"requestId":"97407fa9-2e44-4e7a-88b4-2a33ecc4ce71"}
+booking-subgraph  | {"ts":"2026-10-19T08:22:10.003Z","svc":"booking-subgraph","msg":"request","userid":"test-user-2","operation":"MyBookings__booking_subgraph__0","requestId":"hotelio-live-read"}
+booking-subgraph  | {"ts":"2026-10-19T08:22:10.013Z","svc":"booking-subgraph","msg":"gRPC ListBookings","userId":"test-user-2","requestId":"hotelio-live-read"}
+booking-subgraph  | {"ts":"2026-10-19T08:22:10.052Z","svc":"booking-subgraph","msg":"bookings returned","userId":"test-user-2","count":2,"ids":["8","11"],"requestId":"hotelio-live-read"}
+booking-subgraph  | {"ts":"2026-10-19T08:22:10.090Z","svc":"booking-subgraph","msg":"request","userid":"test-user-2","operation":null,"requestId":"hotelio-live-read"}
+booking-subgraph  | {"ts":"2026-10-19T08:22:10.092Z","svc":"booking-subgraph","msg":"gRPC ListBookings","userId":"test-user-2","requestId":"hotelio-live-read"}
+booking-subgraph  | {"ts":"2026-10-19T08:22:10.212Z","svc":"booking-subgraph","msg":"request","userid":"test-user-3","operation":"MyBookings__booking_subgraph__0","requestId":"hotelio-check-1792398130"}
+booking-subgraph  | {"ts":"2026-10-19T08:22:10.213Z","svc":"booking-subgraph","msg":"ACL deny","requester":"test-user-3","owner":"test-user-2","requestId":"hotelio-check-1792398130"}
+booking-subgraph  | {"ts":"2026-10-19T08:22:10.240Z","svc":"booking-subgraph","msg":"request","userid":null,"operation":"MyBookings__booking_subgraph__0","requestId":"hotelio-check-1792398130"}
+booking-subgraph  | {"ts":"2026-10-19T08:22:10.350Z","svc":"booking-subgraph","msg":"request","userid":"user1","operation":null,"requestId":"hotelio-check-1792398130"}
+booking-subgraph  | {"ts":"2026-10-19T08:22:10.352Z","svc":"booking-subgraph","msg":"gRPC ListBookings","userId":"user1","requestId":"hotelio-check-1792398130"}
+booking-subgraph  | {"ts":"2026-10-19T08:22:10.356Z","svc":"booking-subgraph","msg":"bookings returned","userId":"user1","count":0,"ids":[],"requestId":"hotelio-check-1792398130"}

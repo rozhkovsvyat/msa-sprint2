@@ -1,0 +1,2 @@
+{"ts":"2026-10-19T09:23:49.291Z","svc":"hotel-subgraph","msg":"request","userid":null,"operation":null,"requestId":"hotelio-batch-proof"}
+{"ts":"2026-10-19T09:23:49.353Z","svc":"hotel-subgraph","msg":"batch","requested":["test-hotel-1","test-hotel-2","test-hotel-3"],"fromCache":0,"fetchFromMonolith":["test-hotel-1","test-hotel-2","test-hotel-3"],"requestId":"hotelio-batch-proof"}

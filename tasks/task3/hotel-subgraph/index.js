@@ -1,40 +1,16 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
-import { buildSubgraphSchema } from '@apollo/subgraph';
-import gql from 'graphql-tag';
+import { contextFrom, createHotelCatalog, createMonolithClient, log, schema } from './schema.js';
 
-const typeDefs = gql`
-  type Hotel @key(fields: "id") {
-    id: ID!
-    name: String
-    city: String
-    stars: Int
-  }
+const MONOLITH_URL = process.env.MONOLITH_URL ?? 'http://hotelio-monolith:8080';
+const CACHE_TTL_MS = Number(process.env.HOTEL_CACHE_TTL_MS ?? 30_000);
+const catalog = createHotelCatalog({ fetchHotel: createMonolithClient({ baseUrl: MONOLITH_URL }), ttlMs: CACHE_TTL_MS });
 
-  type Query {
-    hotelsByIds(ids: [ID!]!): [Hotel]
-  }
-`;
-
-const resolvers = {
-  Hotel: {
-    __resolveReference: async ({ id }) => {
-      // TODO: Реальный вызов к hotel-сервису или заглушка
-    },
-  },
-  Query: {
-    hotelsByIds: async (_, { ids }) => {
-      // TODO: Заглушка или REST-запрос
-    },
-  },
-};
-
-const server = new ApolloServer({
-  schema: buildSubgraphSchema([{ typeDefs, resolvers }]),
-});
+const server = new ApolloServer({ schema });
 
 startStandaloneServer(server, {
   listen: { port: 4002 },
-}).then(() => {
-  console.log('✅ Hotel subgraph ready at http://localhost:4002/');
+  context: async ({ req, res }) => contextFrom(req, catalog, res),
+}).then(({ url }) => {
+  log(`ready at ${url}`, { monolith: MONOLITH_URL, cacheTtlMs: CACHE_TTL_MS });
 });

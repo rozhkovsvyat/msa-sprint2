@@ -1,0 +1,17 @@
+== Отрицательный контроль: шлюз с FORWARD_USERID=false (без willSendRequest), запрос владельца бронирований ==
+{"ts":"2026-10-18T18:52:39.484Z","svc":"apollo-gateway","msg":"ready at http://localhost:4000/","subgraphs":["booking-subgraph","hotel-subgraph","promocode-subgraph"],"forwardUserId":false}
+{
+  "errors": [
+    {
+      "message": "Не передан заголовок userid",
+      "path": [
+        "bookingsByUser"
+      ],
+      "extensions": {
+        "code": "UNAUTHENTICATED",
+        "serviceName": "booking-subgraph"
+      }
+    }
+  ],
+  "data": null
+}

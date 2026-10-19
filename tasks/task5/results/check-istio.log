@@ -1,0 +1,31 @@
+▶️ Проверка установки Istio...
+client version: 1.31.2
+control plane version: 1.31.2
+data plane version: 1.31.2 (5 proxies)
+NAME                                   READY   STATUS    RESTARTS   AGE
+istio-egressgateway-5f778cbf8b-gqd9v   1/1     Running   0          13h
+istio-ingressgateway-7498b6878-nf7nk   1/1     Running   0          13h
+istiod-5b97c568c5-dhnc6                1/1     Running   0          13h
+▶️ Проверка Istio инъекции в default namespace...
+"enabled"
+▶️ Поды booking-service: 2/2 = контейнер сервиса + sidecar Envoy
+NAME                                  READY   STATUS    RESTARTS   AGE   VERSION
+booking-service-v1-785dc7b4fd-p2v7s   2/2     Running   0          70s   v1
+booking-service-v1-785dc7b4fd-pjpcq   2/2     Running   0          80s   v1
+booking-service-v2-6969797db6-6pjrq   2/2     Running   0          66s   v2
+booking-service-v1-785dc7b4fd-p2v7s: booking-service
+booking-service-v1-785dc7b4fd-pjpcq: booking-service
+booking-service-v2-6969797db6-6pjrq: booking-service
+▶️ Конфигурация маршрутизации
+NAME                                          AGE
+gateway.networking.istio.io/booking-gateway   13h
+
+NAME                                                 GATEWAYS              HOSTS   AGE
+virtualservice.networking.istio.io/booking-service   ["booking-gateway"]   ["*"]   13h
+
+NAME                                                  HOST              AGE
+destinationrule.networking.istio.io/booking-service   booking-service   13h
+NAME                   AGE
+booking-feature-flag   13h
+
+✔ No validation issues found when analyzing namespace: default.

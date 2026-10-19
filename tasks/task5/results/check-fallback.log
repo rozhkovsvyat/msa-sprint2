@@ -1,0 +1,49 @@
+  [PASS] EDS шлюза: 3 эндпоинтов
+▶️ Шаг 0. Исходное состояние: v1 — 2 пода, 100 запросов
+booking-service-v1-785dc7b4fd-2fmkn   2/2   Running   0     70s    v1
+booking-service-v1-785dc7b4fd-4l9vs   2/2   Running   0     70s    v1
+booking-service-v2-6969797db6-6pjrq   2/2   Running   0     5m4s   v2
+  87 v1
+  13 v2
+  [PASS] ответов v2: 13 (ожидается 1–19)
+  [PASS] ошибок: 0 (ожидается 0–0)
+▶️ Шаг 1а. Удаляем один под v1 и сразу шлём 50 запросов
+pod "booking-service-v1-785dc7b4fd-2fmkn" deleted from default namespace
+ENDPOINT             STATUS      OUTLIER CHECK     CLUSTER
+10.244.0.44:8080     HEALTHY     OK                outbound|80||booking-service.default.svc.cluster.local
+10.244.0.67:8080     HEALTHY     OK                outbound|80||booking-service.default.svc.cluster.local
+  34 v1
+  16 v2
+  [PASS] ошибок: 0 (ожидается 0–0)
+▶️ Шаг 1б. Оставляем одну реплику v1, ждём готовности и шлём 100 запросов
+  [PASS] EDS шлюза: 2 эндпоинтов
+ENDPOINT             STATUS      OUTLIER CHECK     CLUSTER
+10.244.0.44:8080     HEALTHY     OK                outbound|80||booking-service.default.svc.cluster.local
+10.244.0.67:8080     HEALTHY     OK                outbound|80||booking-service.default.svc.cluster.local
+  89 v1
+  11 v2
+  [PASS] ответов v2 (одна здоровая реплика v1 держит свою долю): 11 (ожидается 1–19)
+  [PASS] ошибок: 0 (ожидается 0–0)
+▶️ Шаг 2. Под v1 отвечает 503 на /version (пробы остаются исправными) (FAULT_INJECTION_STATUS=503), 100 запросов на /version
+  [PASS] EDS шлюза: 2 эндпоинтов
+upstream_status=503
+   1 HTTP_503
+  99 v2
+  [PASS] исключений upstream по outlier detection: 1 (ожидается 1–100)
+ENDPOINT             STATUS      OUTLIER CHECK     CLUSTER
+10.244.0.44:8080     HEALTHY     OK                outbound|80||booking-service.default.svc.cluster.local
+10.244.0.74:8080     HEALTHY     FAILED            outbound|80||booking-service.default.svc.cluster.local
+  [PASS] успешных ответов (повторы и выброс пода скрывают сбой): 99 (ожидается 95–100)
+  [PASS] ответов v1: 0 (ожидается 0–0)
+▶️ Шаг 3. Гасим все поды v1 (scale 0), 100 запросов
+  [PASS] EDS шлюза: 1 эндпоинтов
+booking-service-v2-6969797db6-6pjrq   2/2   Running   0     5m24s   v2
+ 100 v2
+  [PASS] ответов v2: 100 (ожидается 100–100)
+▶️ Возвращаем v1 (2 реплики, без инъекции ошибок), 100 запросов
+  [PASS] EDS шлюза: 3 эндпоинтов
+  86 v1
+  14 v2
+  [PASS] ответов v2: 14 (ожидается 1–19)
+  [PASS] ошибок: 0 (ожидается 0–0)
+✅ Все проверки пройдены

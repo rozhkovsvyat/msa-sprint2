@@ -1,0 +1,10 @@
+# v2 — новая версия: одна реплика, фича X включена (GET /feature). Сюда идёт 10% трафика
+# и все запросы с заголовком X-Feature-Enabled: true. Service не создаёт — его делит с v1.
+version: v2
+replicaCount: 1
+image:
+  pullPolicy: Never
+featureFlags:
+  enableFeatureX: true
+service:
+  create: false

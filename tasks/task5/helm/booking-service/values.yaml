@@ -1,0 +1,50 @@
+# Чарт задания 4, рассчитанный на одновременную работу двух версий: каждая версия — отдельный релиз
+# (values-v1.yaml, values-v2.yaml), общий Service создаёт релиз v1.
+appName: booking-service   # имя Service и метка app
+version: v1                # метка version — subset в DestinationRule Istio
+
+replicaCount: 1
+
+image:
+  name: booking-service
+  tag: ""            # тег образа, собранного пайплайном задания 4
+  pullPolicy: IfNotPresent
+
+service:
+  create: true
+  type: ClusterIP
+  port: 80           # http://booking-service/ping внутри кластера
+  targetPort: 8080   # служебный HTTP сервиса: /ping, /ready, /version, /feature
+
+grpc:
+  containerPort: 9090
+
+featureFlags:
+  enableFeatureX: false
+
+# В кластере нет БД, Kafka и монолита: адреса нужны сервису для старта, публикация событий выключена.
+dependencies:
+  bookingDb: "Host=booking-db;Database=booking;Username=booking;GSS Encryption Mode=Disable"
+  monolithUrl: http://hotelio-monolith:8080/
+  outboxPublisher: disabled
+
+env: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+probes:
+  path: /ping
+  liveness:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 3
+  readiness:
+    initialDelaySeconds: 2
+    periodSeconds: 5
+    failureThreshold: 3

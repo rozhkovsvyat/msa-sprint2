@@ -1,0 +1,80 @@
+# Маршрутизация booking-service на входном шлюзе: фича-флаг, канарейка 90/10 с fallback, повторы.
+# Повторы различаются по методу. GET/HEAD идемпотентны: повторяем при 5xx и обрывах.
+# Остальные методы (создание бронирования) повторяем только при отказе соединения: тогда запрос
+# точно не дошёл до сервиса. Ответ 5xx или обрыв после отправки не повторяем, пока у операции нет ключа идемпотентности.
+# perTryTimeout 4 с больше собственного бюджета сервиса на вызов монолита (3 с): Envoy не бросает попытку,
+# которую сервис ещё может завершить, и не множит нагрузку.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: booking-service
+  namespace: default
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - booking-gateway
+  http:
+    # 1. Фича-флаг. Заголовок x-booking-route выставляет только EnvoyFilter (envoy-filter.yaml)
+    #    по X-Feature-Enabled: true; присланный клиентом x-booking-route фильтр удаляет.
+    - name: feature-flag-v2-read
+      match:
+        - headers:
+            x-booking-route:
+              exact: v2
+          method:
+            regex: "GET|HEAD"
+      route:
+        - destination:
+            host: booking-service
+            subset: v2
+      timeout: 10s
+      retries:
+        attempts: 2
+        perTryTimeout: 4s
+        retryOn: 5xx,connect-failure,reset,refused-stream,unavailable
+    - name: feature-flag-v2
+      match:
+        - headers:
+            x-booking-route:
+              exact: v2
+      route:
+        - destination:
+            host: booking-service
+            subset: v2
+      timeout: 10s
+      retries:
+        attempts: 2
+        retryOn: connect-failure,refused-stream
+    # 2. Канарейка 90/10. 90% — пул без subset: по failoverPriority сначала v1, при отказе v1 — v2 (fallback).
+    #    10% — всегда v2. Повторы задаются здесь: в DestinationRule их нет.
+    - name: canary-with-fallback-read
+      match:
+        - method:
+            regex: "GET|HEAD"
+      route:
+        - destination:
+            host: booking-service
+          weight: 90
+        - destination:
+            host: booking-service
+            subset: v2
+          weight: 10
+      timeout: 10s
+      retries:
+        attempts: 2
+        perTryTimeout: 4s
+        retryOn: 5xx,connect-failure,reset,refused-stream,unavailable
+    - name: canary-with-fallback
+      route:
+        - destination:
+            host: booking-service
+          weight: 90
+        - destination:
+            host: booking-service
+            subset: v2
+          weight: 10
+      timeout: 10s
+      retries:
+        attempts: 2
+        retryOn: connect-failure,refused-stream

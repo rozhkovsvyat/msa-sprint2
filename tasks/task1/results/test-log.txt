@@ -1,0 +1,101 @@
+Hotelio — проверка монолита до миграции (задание 1)
+Дата: 18.10.2026 21:20 MSK. Стенд: macOS (Apple M5), Colima, Docker 29.5.2 arm64.
+Коммит курса: 7f244f9. Исправления сборки — коммит a2ba6c2 (базовые образы, см. ADR, раздел «Проблемы»).
+
+== docker ps ==
+NAMES              IMAGE            STATUS          PORTS
+hotelio-db         postgres:15      Up 25 minutes   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+hotelio-monolith   task1-monolith   Up 25 minutes   0.0.0.0:8084->8080/tcp, [::]:8084->8080/tcp
+
+== Регрессионные тесты курса (test/regress.sh), запуск внутри сети hotelio-net ==
+🏁 Регрессионный тест до миграции Hotelio
+🧪 Проверка подключения к БД...
+🧪 Загрузка фикстур...
+DELETE 0
+DELETE 0
+DELETE 0
+DELETE 0
+DELETE 0
+INSERT 0 4
+INSERT 0 3
+INSERT 0 12
+INSERT 0 3
+INSERT 0 2
+🧪 Выполнение HTTP-тестов...
+
+Тесты пользователей...
+✅ Получение test-user-1 по ID работает
+✅ Статус test-user-1: ACTIVE
+✅ test-user-1 в блэклисте
+✅ test-user-1 активен
+✅ test-user-1 не авторизован (в блэклисте)
+✅ test-user-3 — VIP-пользователь
+✅ test-user-2 авторизован
+
+Тесты отелей...
+✅ test-hotel-1 получен по ID
+✅ test-hotel-1 работает
+✅ test-hotel-3 не работает
+✅ test-hotel-2 полностью забронирован
+✅ Поиск отелей в Сеуле работает
+✅ Топ-отели в Сеуле загружены
+
+Тесты ревью...
+✅ Отзывы test-hotel-1 найдены
+✅ test-hotel-1 признан надёжным
+✅ test-hotel-3 НЕ признан надёжным (ожидаемо)
+
+Тесты промокодов...
+✅ Промокод TESTCODE1 найден
+✅ VIP-промо доступен VIP
+✅ VIP-промо недоступен обычному
+✅ Обычный промо доступен
+✅ Истекший промо недоступен
+✅ POST /validate промо прошёл
+
+Тесты бронирования...
+✅ Все бронирования получены
+✅ Бронирования test-user-2 найдены
+✅ Бронирование прошло (без промо)
+✅ Бронирование с промо прошло
+✅ Отклонено: неактивный пользователь
+✅ Отклонено: недоверенный отель
+✅ Отклонено: отель полностью забронирован
+✅ Все HTTP-тесты пройдены!
+
+== Проверка API вручную ==
+$ GET /api/hotels/test-hotel-1
+{"id":"test-hotel-1","operational":true,"fullyBooked":false,"city":"Seoul","rating":4.7,"description":"Modern hotel in Seoul downtown with spa and skybar."}
+(у отеля нет полей name и pricePerNight, хотя они есть в примерах architecture/readme.md)
+$ GET /api/bookings?userId=test-user-3
+[{"id":2,"userId":"test-user-3","hotelId":"test-hotel-1","promoCode":null,"discountPercent":0.0,"price":80.0,"createdAt":"2026-10-18T17:56:03.974844Z"},{"id":3,"userId":"test-user-3","hotelId":"test-hotel-1","promoCode":null,"discountPercent":0.0,"price":80.0,"createdAt":null}]
+(бронирование из фикстур имеет createdAt, созданное через POST /api/bookings — null)
+$ GET /api/users/test-user-3/vip
+true
+
+== Таблица booking после тестов ==
+ id |   user_id   |   hotel_id   | promo_code | discount_percent | price |          created_at           
+----+-------------+--------------+------------+------------------+-------+-------------------------------
+  1 | test-user-2 | test-hotel-1 | TESTCODE1  |               10 |    90 | 2026-10-18 17:56:03.974844+00
+  2 | test-user-3 | test-hotel-1 |            |                0 |    80 | 2026-10-18 17:56:03.974844+00
+  3 | test-user-3 | test-hotel-1 |            |                0 |    80 | 
+  4 | test-user-2 | test-hotel-1 | TESTCODE1  |               10 |    90 | 
+(4 rows)
+
+== Проверка кодовой базы ==
+-- скидка промокода вычитается как сумма, а сохраняется как процент:
+51:        double finalPrice = basePrice - discount;
+58:        booking.setDiscountPercent(discount);
+-- базовая цена зависит только от статуса пользователя, не от отеля:
+95:            return isVip ? 80.0 : 100.0;
+-- createdAt в createBooking не заполняется:
+   вызовов setCreatedAt в BookingService: 0
+-- срок действия промокода (validUntil) не проверяется, только флаг expired:
+22:                .filter(p -> !p.isExpired())
+-- схема БД пересоздаётся при каждом старте:
+8:      ddl-auto: create
+-- готовый gRPC-прокси (libs/p-o-y-1.0.0.jar, без исходников), javap GrpcBookingService.toBooking:
+   14: invokevirtual #124                // Method java/lang/String.isBlank:()Z
+   22: invokestatic  #128                // Method java/lang/Long.parseLong:(Ljava/lang/String;)J
+   82: invokestatic  #179                // Method java/time/Instant.parse:(Ljava/lang/CharSequence;)Ljava/time/Instant;
+   => id проверяется на пустоту, created_at разбирается всегда: пустая дата из нового сервиса даст 500.

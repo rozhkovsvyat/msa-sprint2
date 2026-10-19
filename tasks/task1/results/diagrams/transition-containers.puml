@@ -1,0 +1,47 @@
+@startuml
+!define RELATIVE_INCLUDE true
+!include vendor/c4-plantuml/C4_Container.puml
+LAYOUT_TOP_DOWN()
+skinparam nodesep 35
+skinparam ranksep 75
+skinparam defaultFontName Arial
+skinparam dpi 130
+show stereotype
+
+title
+Hotelio, переходное состояние (неделя 5) — контейнеры (C2)
+Бронирование переключено на booking-service, кабинета на GraphQL ещё нет
+end title
+
+Person(guest, "Клиент", "Бронирует через\nвеб и мобильные клиенты")
+Person(analyst, "Аналитик", "Статистика бронирований")
+System_Ext(partners, "Партнёрские каналы", "Клиенты REST API")
+
+System_Boundary(hotelio, "Hotelio") {
+  Container(web, "Веб- и мобильные клиенты", "SPA, мобильные приложения", "Поиск, бронирование,\nличный кабинет на REST")
+  Container(mono, "Монолит Hotelio", "Java 17, Spring Boot", "Весь REST API как раньше;\nбронирования через прокси\n(BOOKING_SERVICE_EXTERNAL_HOST)")
+  ContainerDb(monodb, "БД монолита", "PostgreSQL", "Пользователи, отели, промокоды,\nотзывы; booking — архив,\nисточник для отката")
+
+  Container(bs, "booking-service", "C#, .NET 10, gRPC", "Создание и список бронирований,\nцена и скидка, outbox")
+  ContainerDb(bsdb, "БД бронирований", "PostgreSQL", "booking, outbox")
+  Container(kafka, "Kafka", "Apache Kafka", "Топик booking-events")
+  Container(hs, "booking-history-service", "C#, .NET 10", "История и агрегаты")
+  ContainerDb(hsdb, "БД истории", "PostgreSQL", "booking_history, статистика")
+  Container(mig, "Ops-джоба миграции", "psql-скрипт, ручной запуск", "Выполнена в окне переключения;\nобратный перенос — при откате")
+}
+
+Rel(guest, web, "Использует")
+Rel(web, mono, "Все запросы", "REST/HTTPS")
+Rel(partners, mono, "Бронирования", "REST/HTTPS")
+
+Rel(mono, bs, "CreateBooking, ListBookings", "gRPC, HTTP/2")
+Rel(bs, mono, "Проверки пользователя, отеля,\nотзывов, промокода (ACL)", "REST")
+Rel(mono, monodb, "Читает и пишет, кроме booking", "JPA")
+Rel(bs, bsdb, "Бронирование и outbox\nв одной транзакции", "SQL")
+Rel(bs, kafka, "Публикует BookingCreated", "Kafka")
+Rel(hs, kafka, "Читает booking-events", "Kafka")
+Rel(hs, hsdb, "Пишет историю идемпотентно", "SQL")
+Rel(analyst, hsdb, "Читает статистику", "SQL, только чтение")
+Rel(mig, monodb, "Читает booking (только чтение)\n/ дописывает при откате", "SQL")
+Rel(mig, bsdb, "Пишет booking и события\n/ читает при откате", "SQL")
+@enduml

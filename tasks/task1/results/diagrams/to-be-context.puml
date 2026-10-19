@@ -1,0 +1,26 @@
+@startuml
+!define RELATIVE_INCLUDE true
+!include vendor/c4-plantuml/C4_Context.puml
+LAYOUT_LEFT_RIGHT()
+skinparam nodesep 40
+skinparam ranksep 90
+skinparam defaultFontName Arial
+skinparam dpi 130
+show stereotype
+
+title
+Hotelio To-Be через 2 месяца — контекст (C1)
+end title
+
+Person(guest, "Клиент", "Ищет отели, бронирует,\nсмотрит свои бронирования")
+Person(analyst, "Аналитик", "Статистика бронирований\nпо пользователям, отелям, дням")
+Person(ops, "Команда эксплуатации", "Выпуск, переключение\nи откат сервисов")
+System_Ext(partners, "Партнёрские каналы", "Внешние системы,\nработающие через REST API")
+
+System(hotelio, "Hotelio", "Платформа бронирования отелей:\nмонолит и выделенные сервисы\nв переходном состоянии")
+
+Rel(guest, hotelio, "Ищет и бронирует, открывает\nличный кабинет", "HTTPS")
+Rel(partners, hotelio, "Создаёт и читает бронирования", "REST/HTTPS")
+Rel(analyst, hotelio, "Читает статистику бронирований", "SQL, роль только на чтение")
+Rel(ops, hotelio, "Выпускает и переключает сервисы", "CI/CD, Helm, Istio")
+@enduml

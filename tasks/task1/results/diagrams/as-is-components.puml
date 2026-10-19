@@ -1,0 +1,49 @@
+@startuml
+!define RELATIVE_INCLUDE true
+!include vendor/c4-plantuml/C4_Component.puml
+LAYOUT_TOP_DOWN()
+skinparam nodesep 40
+skinparam ranksep 80
+skinparam defaultFontName Arial
+skinparam dpi 130
+show stereotype
+
+title
+Hotelio As-Is — компоненты монолита (C3)
+Зависимости сняты с исходного кода hotelio-monolith
+end title
+
+Person(client, "Клиент", "Веб, мобильное приложение\nили партнёрский канал")
+
+Container_Boundary(mono, "Монолит Hotelio [Java 17, Spring Boot 3.2]") {
+  Component(api, "REST-контроллеры", "Spring MVC", "/api/bookings, /api/users, /api/hotels,\n/api/promos, /api/reviews")
+  Component(bsvc, "BookingService", "Java", "Проверки, цена и скидка,\nсохранение бронирования")
+  Component(proxy, "gRPC-прокси бронирований", "p-o-y-1.0.0.jar, без исходников", "Заменяет BookingService, если задана\nBOOKING_SERVICE_EXTERNAL_HOST")
+  Component(rsvc, "ReviewService", "Java", "Доверие к отелю:\n≥10 отзывов, средняя ≥4.0")
+  Component(hsvc, "HotelService", "Java", "Работает ли отель,\nесть ли места")
+  Component(psvc, "PromoCodeService", "Java", "Действует ли промокод\nдля пользователя")
+  Component(usvc, "AppUserService", "Java", "Активность, чёрный список,\nстатус VIP")
+}
+
+ContainerDb(db, "БД монолита", "PostgreSQL 15", "app_user, hotel, promo_code, review, booking —\nодна схема, ddl-auto: create")
+
+Rel(client, api, "Вызывает", "REST/JSON")
+Rel(api, bsvc, "Создаёт и читает\nбронирования")
+Rel(api, rsvc, "Отзывы")
+Rel(api, hsvc, "Отели")
+Rel(api, psvc, "Промокоды")
+Rel(api, usvc, "Пользователи")
+
+Rel(bsvc, rsvc, "Проверяет доверие")
+Rel(bsvc, hsvc, "Проверяет отель")
+Rel(bsvc, psvc, "Проверяет промокод")
+Rel(bsvc, usvc, "Проверяет пользователя\nи статус VIP")
+Rel(psvc, usvc, "Узнаёт статус VIP")
+Rel_L(proxy, bsvc, "Подменяет\n(Spring @Primary)")
+
+Rel(bsvc, db, "Читает и пишет booking", "JPA")
+Rel(rsvc, db, "Читает review", "JPA")
+Rel(hsvc, db, "Читает hotel", "JPA")
+Rel(psvc, db, "Читает promo_code", "JPA")
+Rel(usvc, db, "Читает app_user", "JPA")
+@enduml

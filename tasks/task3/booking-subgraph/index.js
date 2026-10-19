@@ -1,41 +1,16 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
-import { buildSubgraphSchema } from '@apollo/subgraph';
-import gql from 'graphql-tag';
+import { connectBookingService, createListBookings } from './booking-client.js';
+import { contextFrom, log, schema } from './schema.js';
 
-const typeDefs = gql`
-  type Booking @key(fields: "id") {
-    id: ID!
-    userId: String!
-    hotelId: String!
-    promoCode: String
-    discountPercent: Int
-  }
+const BOOKING_GRPC = process.env.BOOKING_GRPC ?? 'booking-service:9090';
+const listBookings = createListBookings(connectBookingService(BOOKING_GRPC));
 
-  type Query {
-    bookingsByUser(userId: String!): [Booking]
-  }
-
-`;
-
-const resolvers = {
-  Query: {
-    bookingsByUser: async (_, { userId }, { req }) => {
-		// TODO: Реальный вызов к grpc booking-сервису или заглушка + ACL
-    },
-  },
-  Booking: {
-	  // TODO: Реальный вызов к grpc booking-сервису или заглушка + ACL
-  },
-};
-
-const server = new ApolloServer({
-  schema: buildSubgraphSchema([{ typeDefs, resolvers }]),
-});
+const server = new ApolloServer({ schema });
 
 startStandaloneServer(server, {
   listen: { port: 4001 },
-  context: async ({ req }) => ({ req }),
-}).then(() => {
-  console.log('✅ Booking subgraph ready at http://localhost:4001/');
+  context: async ({ req, res }) => contextFrom(req, listBookings, res),
+}).then(({ url }) => {
+  log(`ready at ${url}`, { bookingGrpc: BOOKING_GRPC });
 });

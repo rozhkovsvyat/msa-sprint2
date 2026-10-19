@@ -1,0 +1,48 @@
+Проверочный запрос задания (./calls.sh course) и запрос отелей пачкой (./calls.sh batch) через шлюз (задание 3).
+Перед batch прошло больше 30 секунд — время жизни кеша справочника отелей, поэтому все отели берутся из монолита.
+Команды выполняются из tasks/task3.
+
+$ ./calls.sh course
+
+POST http://localhost:4000/  userid=user1  x-request-id=calls-1792421043-6800
+{
+  "data": {
+    "bookingsByUser": []
+  }
+}
+(код выхода 0)
+
+$ ./calls.sh batch
+
+POST http://localhost:4000/  userid=test-user-2  x-request-id=calls-1792421078-21164
+{
+  "data": {
+    "hotelsByIds": [
+      {
+        "id": "test-hotel-1",
+        "city": "Seoul",
+        "rating": 4.7,
+        "name": null
+      },
+      {
+        "id": "test-hotel-2",
+        "city": "Busan",
+        "rating": 4.5,
+        "name": null
+      },
+      {
+        "id": "test-hotel-3",
+        "city": "Daegu",
+        "rating": 3.8,
+        "name": null
+      },
+      {
+        "id": "test-hotel-1",
+        "city": "Seoul",
+        "rating": 4.7,
+        "name": null
+      }
+    ]
+  }
+}
+(код выхода 0)

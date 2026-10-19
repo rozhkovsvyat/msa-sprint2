@@ -1,0 +1,12 @@
+{
+  "name": "promocode-subgraph",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@apollo/server": "^5.5.1",
+    "@apollo/subgraph": "^2.15.1",
+    "dataloader": "^2.2.3",
+    "graphql": "^16.14.2",
+    "graphql-tag": "^2.12.7"
+  }
+}

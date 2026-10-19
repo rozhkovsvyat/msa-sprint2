@@ -1,0 +1,150 @@
+Hotelio — монолит курса до миграции и регрессионные тесты курса (задание 1)
+Дата: 19.10.2026 17:37 MSK. Стенд: macOS 26.6.2 (Apple M5), Colima 0.10.3, Docker 29.5.2 arm64.
+Монолит — tasks/task1/docker-compose.yml курса. Тесты — test/regress.sh и test/init-fixtures.sql курса без изменений
+(из ветки main); образ тестов — test/Dockerfile с актуальным базовым образом, исходный не собирается (ADR-001, Н9).
+Команды выполняются из tasks/task1, проверка кода — из hotelio-monolith.
+
+== Запуск монолита ==
+$ docker compose up -d --build --quiet-build
+time="2026-10-19T17:37:21+03:00" level=warning msg="/Users/svyat/Scratch/msa-sprint2/tasks/task1/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Image task1-monolith Building 
+ Image task1-monolith Built 
+ Volume task1_monolith-db-data Creating 
+ Volume task1_monolith-db-data Creating 
+ Container hotelio-monolith Creating 
+ Volume task1_monolith-db-data Created 
+ Volume task1_monolith-db-data Created 
+ Container hotelio-db Creating 
+ Container hotelio-monolith Created 
+ Container hotelio-db Created 
+ Container hotelio-monolith Starting 
+ Container hotelio-db Starting 
+ Container hotelio-monolith Started 
+ Container hotelio-db Started 
+$ for i in $(seq 1 90); do curl -sf -o /dev/null 'http://localhost:8084/api/hotels/by-city?city=Seoul' && break; sleep 2; done; curl -s -o /dev/null -w 'GET /api/hotels/by-city?city=Seoul -> HTTP %{http_code}\n' 'http://localhost:8084/api/hotels/by-city?city=Seoul'
+GET /api/hotels/by-city?city=Seoul -> HTTP 200
+$ docker ps --filter name=hotelio- --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+NAMES              IMAGE            STATUS         PORTS
+hotelio-db         postgres:15      Up 4 seconds   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+hotelio-monolith   task1-monolith   Up 4 seconds   0.0.0.0:8084->8080/tcp, [::]:8084->8080/tcp
+
+== Регрессионные тесты курса, запуск внутри сети hotelio-net ==
+$ mkdir -p /tmp/tester-course && cp ../../test/Dockerfile ../../test/wait-for-it.sh /tmp/tester-course/ && git show main:test/regress.sh > /tmp/tester-course/regress.sh && git show main:test/init-fixtures.sql > /tmp/tester-course/init-fixtures.sql && chmod +x /tmp/tester-course/*.sh
+$ cmp /tmp/tester-course/regress.sh <(git show main:test/regress.sh) && cmp /tmp/tester-course/init-fixtures.sql <(git show main:test/init-fixtures.sql) && echo 'regress.sh и init-fixtures.sql совпадают с main'
+regress.sh и init-fixtures.sql совпадают с main
+$ docker build -q -t hotelio-tester:course /tmp/tester-course >/dev/null && echo 'образ hotelio-tester:course собран'
+образ hotelio-tester:course собран
+$ docker run --rm --network hotelio-net -e DB_HOST=hotelio-db -e DB_PORT=5432 -e DB_NAME=hotelio -e DB_USER=hotelio -e DB_PASSWORD=hotelio -e API_URL=http://hotelio-monolith:8080 hotelio-tester:course
+🏁 Регрессионный тест до миграции Hotelio
+🧪 Проверка подключения к БД...
+🧪 Загрузка фикстур...
+DELETE 0
+DELETE 0
+DELETE 0
+DELETE 0
+DELETE 0
+INSERT 0 4
+INSERT 0 3
+INSERT 0 12
+INSERT 0 3
+INSERT 0 2
+🧪 Выполнение HTTP-тестов...
+
+Тесты пользователей...
+✅ Получение test-user-1 по ID работает
+✅ Статус test-user-1: ACTIVE
+✅ test-user-1 в блэклисте
+✅ test-user-1 активен
+✅ test-user-1 не авторизован (в блэклисте)
+✅ test-user-3 — VIP-пользователь
+✅ test-user-2 авторизован
+
+Тесты отелей...
+✅ test-hotel-1 получен по ID
+✅ test-hotel-1 работает
+✅ test-hotel-3 не работает
+✅ test-hotel-2 полностью забронирован
+✅ Поиск отелей в Сеуле работает
+✅ Топ-отели в Сеуле загружены
+
+Тесты ревью...
+✅ Отзывы test-hotel-1 найдены
+✅ test-hotel-1 признан надёжным
+✅ test-hotel-3 НЕ признан надёжным (ожидаемо)
+
+Тесты промокодов...
+✅ Промокод TESTCODE1 найден
+✅ VIP-промо доступен VIP
+✅ VIP-промо недоступен обычному
+✅ Обычный промо доступен
+✅ Истекший промо недоступен
+✅ POST /validate промо прошёл
+
+Тесты бронирования...
+✅ Все бронирования получены
+✅ Бронирования test-user-2 найдены
+✅ Бронирование прошло (без промо)
+✅ Бронирование с промо прошло
+✅ Отклонено: неактивный пользователь
+✅ Отклонено: недоверенный отель
+✅ Отклонено: отель полностью забронирован
+✅ Все HTTP-тесты пройдены!
+
+== Проверка API вручную ==
+$ curl -s http://localhost:8084/api/hotels/test-hotel-1; echo
+{"id":"test-hotel-1","operational":true,"fullyBooked":false,"city":"Seoul","rating":4.7,"description":"Modern hotel in Seoul downtown with spa and skybar."}
+(у отеля нет полей name и pricePerNight, хотя они есть в примерах architecture/readme.md)
+$ curl -s 'http://localhost:8084/api/bookings?userId=test-user-3'; echo
+[{"id":2,"userId":"test-user-3","hotelId":"test-hotel-1","promoCode":null,"discountPercent":0.0,"price":80.0,"createdAt":"2026-10-19T14:37:30.067244Z"},{"id":3,"userId":"test-user-3","hotelId":"test-hotel-1","promoCode":null,"discountPercent":0.0,"price":80.0,"createdAt":null}]
+(у бронирования из фикстур есть createdAt, у созданного через POST /api/bookings — null)
+$ curl -s http://localhost:8084/api/users/test-user-3/vip; echo
+true
+
+== Таблица booking после тестов ==
+$ docker exec hotelio-db psql -U hotelio -d hotelio -c 'select * from booking order by id'
+ discount_percent | price |          created_at           | id |   hotel_id   | promo_code |   user_id   
+------------------+-------+-------------------------------+----+--------------+------------+-------------
+               10 |    90 | 2026-10-19 14:37:30.067244+00 |  1 | test-hotel-1 | TESTCODE1  | test-user-2
+                0 |    80 | 2026-10-19 14:37:30.067244+00 |  2 | test-hotel-1 |            | test-user-3
+                0 |    80 |                               |  3 | test-hotel-1 |            | test-user-3
+               10 |    90 |                               |  4 | test-hotel-1 | TESTCODE1  | test-user-2
+(4 rows)
+
+== Проверка кодовой базы (каталог hotelio-monolith) ==
+-- скидка промокода вычитается как сумма, а сохраняется как процент:
+$ grep -n -e 'finalPrice = basePrice - discount' -e 'setDiscountPercent(discount)' src/main/java/com/hotelio/monolith/service/BookingService.java
+51:        double finalPrice = basePrice - discount;
+58:        booking.setDiscountPercent(discount);
+-- базовая цена зависит только от статуса пользователя, не от отеля:
+$ grep -n 'isVip ? 80.0 : 100.0' src/main/java/com/hotelio/monolith/service/BookingService.java
+94:            log.debug("User {} has status '{}', base price is {}", userId, status, isVip ? 80.0 : 100.0);
+95:            return isVip ? 80.0 : 100.0;
+-- createdAt в createBooking не заполняется (вызовов setCreatedAt):
+$ grep -c setCreatedAt src/main/java/com/hotelio/monolith/service/BookingService.java
+0
+(код выхода 1)
+-- срок действия промокода (validUntil) не проверяется, только флаг expired:
+$ grep -n -e isExpired -e validUntil -e ValidUntil src/main/java/com/hotelio/monolith/service/PromoCodeService.java
+22:                .filter(p -> !p.isExpired())
+-- схема БД пересоздаётся при каждом старте:
+$ grep -n ddl-auto src/main/resources/application.yml
+8:      ddl-auto: create
+-- готовый gRPC-прокси (libs/p-o-y-1.0.0.jar, без исходников), метод GrpcBookingService.toBooking:
+$ /opt/homebrew/opt/openjdk@17/bin/javap -c -p -classpath libs/p-o-y-1.0.0.jar com.hotelio.GrpcBookingService | sed -n '/toBooking(/,/^$/p' | grep -e isBlank -e parseLong -e Instant.parse
+      14: invokevirtual #124                // Method java/lang/String.isBlank:()Z
+      22: invokestatic  #128                // Method java/lang/Long.parseLong:(Ljava/lang/String;)J
+      82: invokestatic  #179                // Method java/time/Instant.parse:(Ljava/lang/CharSequence;)Ljava/time/Instant;
+   => id проверяется на пустоту, created_at разбирается всегда: пустая дата из нового сервиса даст 500.
+
+== Остановка стенда задания 1 ==
+$ docker compose down -v 2>&1 | grep -v 'attribute `version` is obsolete'
+ Container hotelio-monolith Stopping 
+ Container hotelio-db Stopping 
+ Container hotelio-db Stopped 
+ Container hotelio-db Removing 
+ Container hotelio-db Removed 
+ Container hotelio-monolith Stopped 
+ Container hotelio-monolith Removing 
+ Container hotelio-monolith Removed 
+ Volume task1_monolith-db-data Removing 
+ Volume task1_monolith-db-data Removed 

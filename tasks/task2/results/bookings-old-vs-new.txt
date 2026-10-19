@@ -1,0 +1,21 @@
+Бронирования в старой и новой системе после переключения (задание 2): монолит больше не пишет в свою таблицу booking,
+она остаётся архивом; новые бронирования пишет только booking-service. Команды выполняются из tasks/task2.
+
+== Монолит (БД hotelio) ==
+$ docker exec hotelio-db psql -U hotelio -d hotelio -c 'select * from booking order by id'
+ id |          created_at           | discount_percent |   hotel_id   | price | promo_code |   user_id   
+----+-------------------------------+------------------+--------------+-------+------------+-------------
+  3 | 2026-10-19 14:40:02.530507+00 |               10 | test-hotel-1 |    90 | TESTCODE1  | test-user-2
+  4 | 2026-10-19 14:40:02.530507+00 |                0 | test-hotel-1 |    80 |            | test-user-3
+(2 rows)
+
+== booking-service (БД booking) ==
+$ docker exec booking-db psql -U booking -d booking -c 'select * from booking order by id'
+ id |   user_id   |   hotel_id   | promo_code | discount_amount | price |          created_at           | created_at_estimated |     source      
+----+-------------+--------------+------------+-----------------+-------+-------------------------------+----------------------+-----------------
+  3 | test-user-2 | test-hotel-1 | TESTCODE1  |           10.00 | 90.00 | 2026-10-19 14:40:02.530507+00 | f                    | migration
+  4 | test-user-3 | test-hotel-1 |            |            0.00 | 80.00 | 2026-10-19 14:40:02.530507+00 | f                    | migration
+  5 | test-user-3 | test-hotel-1 |            |            0.00 | 80.00 | 2026-10-19 14:40:03.079887+00 | f                    | booking-service
+  6 | test-user-2 | test-hotel-1 | TESTCODE1  |           10.00 | 90.00 | 2026-10-19 14:40:03.110457+00 | f                    | booking-service
+(4 rows)
+

@@ -1,5 +1,6 @@
 apiVersion: v2
 name: booking-service
-description: A simple booking service
-version: 0.1.0
+description: Hotelio booking-service (C#/.NET, gRPC + служебный HTTP)
+type: application
+version: 0.2.2
 appVersion: "1.0"

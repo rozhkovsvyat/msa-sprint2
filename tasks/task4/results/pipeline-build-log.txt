@@ -1,0 +1,129 @@
+Пайплайн booking-service (задание 4), 19.10.2026 17:51 MSK. Стенд: macOS 26.6.2, Colima, Minikube 1.39.0, Helm 4.3.0, gitlab-ci-local 4.76.1. Каталог tasks/task4.
+$ gitlab-ci-local build unit-tests test deploy tag
+parsing and downloads finished in 48 ms.
+json schema validated in 78 ms
+unit-tests starting shell (test)
+build      starting shell (build)
+unit-tests $ docker run --rm -v "$(cd ../task2 && pwd)":/src:ro mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa sh -c 'cp -r /src /work && find /work -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + && cd /work/booking-service && dotnet test --project tests/BookingService.Tests.csproj'
+build      $ docker build -f ../task2/booking-service/Dockerfile -t "${IMAGE_NAME}:${IMAGE_TAG}" ../task2
+build      > #0 building with "colima" instance using docker driver
+build      > 
+build      > #1 [internal] load build definition from Dockerfile
+build      > #1 transferring dockerfile: 975B done
+build      > #1 DONE 0.0s
+build      > 
+build      > #2 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
+build      > #2 DONE 0.0s
+build      > 
+build      > #3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
+build      > #3 DONE 0.5s
+build      > 
+build      > #4 [internal] load .dockerignore
+build      > #4 transferring context: 65B done
+build      > #4 DONE 0.0s
+build      > 
+build      > #5 [stage-1 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
+build      > #5 resolve mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac 0.0s done
+build      > #5 DONE 0.0s
+build      > 
+build      > #6 [build 1/7] FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
+build      > #6 resolve mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa 0.0s done
+build      > #6 DONE 0.0s
+build      > 
+build      > #7 [internal] load build context
+build      > #7 transferring context: 1.10kB done
+build      > #7 DONE 0.0s
+build      > 
+build      > #8 [build 3/7] COPY booking.proto ./
+build      > #8 CACHED
+build      > 
+build      > #9 [build 6/7] COPY booking-service/src/ booking-service/src/
+build      > #9 CACHED
+build      > 
+build      > #10 [build 4/7] COPY booking-service/src/BookingService.csproj booking-service/src/
+build      > #10 CACHED
+build      > 
+build      > #11 [build 7/7] RUN dotnet publish booking-service/src/BookingService.csproj -c Release -o /app --no-restore
+build      > #11 CACHED
+build      > 
+build      > #12 [stage-1 2/3] WORKDIR /app
+build      > #12 CACHED
+build      > 
+build      > #13 [build 2/7] WORKDIR /src
+build      > #13 CACHED
+build      > 
+build      > #14 [build 5/7] RUN dotnet restore booking-service/src/BookingService.csproj
+build      > #14 CACHED
+build      > 
+build      > #15 [stage-1 3/3] COPY --from=build /app ./
+build      > #15 CACHED
+build      > 
+build      > #16 exporting to image
+build      > #16 exporting layers done
+build      > #16 exporting manifest sha256:de541612b6485c5c88477c46bf21455f5ee68ac14d0fc9c6c796d879ea15a789 done
+build      > #16 exporting config sha256:eeac4c606087600a13123139c091fb060833f6e6af7a01bd3a36d137f633028a done
+build      > #16 exporting attestation manifest sha256:794d76c587ad23a04d664bac4d5b46c129b212ab85205ccdfa0428f57bb64915 done
+build      > #16 exporting manifest list sha256:71a446f05b040e9f3217a4e166264a55fcb46298fd8b0a8451003137c1be4391 done
+build      > #16 naming to docker.io/library/booking-service:72827b54 done
+build      > #16 unpacking to docker.io/library/booking-service:72827b54 done
+build      > #16 DONE 0.1s
+build      $ docker image ls "${IMAGE_NAME}:${IMAGE_TAG}"
+build      > IMAGE                      ID             DISK USAGE   CONTENT SIZE   EXTRA
+build      > booking-service:72827b54   71a446f05b04        528MB          139MB        
+build      finished in 1.11 s
+unit-tests > still running...
+unit-tests > still running...
+unit-tests > Running tests from /work/booking-service/tests/bin/Debug/net10.0/BookingService.Tests.dll (net10.0|arm64)
+unit-tests > /work/booking-service/tests/bin/Debug/net10.0/BookingService.Tests.dll (net10.0|arm64) passed (3s 290ms)
+unit-tests > 
+unit-tests > Test run summary: Passed!
+unit-tests >   total: 45
+unit-tests >   failed: 0
+unit-tests >   succeeded: 45
+unit-tests >   skipped: 0
+unit-tests >   duration: 3s 544ms
+unit-tests finished in 25 s
+test       starting shell (test)
+test       $ docker rm -f booking-service-ci >/dev/null 2>&1 || true
+test       $ docker run -d --name booking-service-ci -p 18080:8080 -e ENABLE_FEATURE_X=true -e BOOKING_DB="Host=absent-db;Database=booking;Username=booking" -e MONOLITH_URL=http://absent-monolith:8080/ -e OUTBOX_PUBLISHER=disabled "${IMAGE_NAME}:${IMAGE_TAG}"
+test       > c46dc5cfe6247ba9bd23629d5dd6d2a2c2d5d288b6a9d7a0d1b0a640704ea983
+test       $ for i in $(seq 1 30); do # collapsed multi-line command
+test       > /ping -> pong
+test       > /feature (ENABLE_FEATURE_X=true) -> Feature X is enabled!
+test       > /ready без БД -> 503
+test       finished in 1.62 s
+deploy     starting shell (deploy)
+deploy     $ minikube image load "${IMAGE_NAME}:${IMAGE_TAG}" # collapsed multi-line command
+deploy     > Release "booking-service" does not exist. Installing it now.
+deploy     > NAME: booking-service
+deploy     > LAST DEPLOYED: Mon Oct 19 17:52:12 2026
+deploy     > NAMESPACE: staging
+deploy     > STATUS: deployed
+deploy     > REVISION: 1
+deploy     > DESCRIPTION: Install complete
+deploy     > TEST SUITE: None
+deploy     > NAME                                  READY   STATUS    RESTARTS   AGE
+deploy     > pod/booking-service-9c6d5947b-gnnzx   1/1     Running   0          6s
+deploy     > 
+deploy     > NAME                      TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+deploy     > service/booking-service   ClusterIP   10.97.72.184   <none>        80/TCP    6s
+deploy     > ▶️ Running in-cluster DNS test (namespace staging)...
+deploy     > pong
+deploy     > ✅ Success
+deploy     > REVISION	UPDATED                 	STATUS  	CHART                	APP VERSION	DESCRIPTION     
+deploy     > 1       	Mon Oct 19 17:52:12 2026	deployed	booking-service-0.2.2	1.0        	Install complete
+deploy     finished in 16 s
+tag        starting shell (tag)
+tag        $ TAG="${RELEASE}-$(date +%Y%m%d-%H%M%S)"
+tag        $ git tag -a "${TAG}" -m "Выпуск ${RELEASE} ${IMAGE_TAG}, проверен в staging"
+tag        $ if [ "${PUSH_TAG}" = "true" ]; then git push origin "${TAG}"; fi
+tag        $ git tag --list "${RELEASE}-*" | tail -3
+tag        > booking-service-20261019-175221
+tag        finished in 52 ms
+
+ PASS  build     
+ PASS  unit-tests
+ PASS  test      
+ PASS  deploy    
+ PASS  tag       
+(код выхода 0)

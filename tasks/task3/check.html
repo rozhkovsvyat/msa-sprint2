@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Hotelio GraphQL — проверка</title>
+<style>
+  body { font: 15px/1.45 -apple-system, "Segoe UI", sans-serif; margin: 24px; color: #1f2328; }
+  h1 { font-size: 20px; margin: 0 0 12px; }
+  .row { display: flex; gap: 16px; }
+  .col { flex: 1; min-width: 0; }
+  label { font-weight: 600; display: block; margin: 10px 0 4px; }
+  pre { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px; padding: 12px; margin: 0;
+        font: 13px/1.4 ui-monospace, Menlo, monospace; white-space: pre-wrap; }
+  .status { font-weight: 600; margin: 10px 0 4px; }
+  .ok { color: #1a7f37; } .err { color: #cf222e; }
+</style>
+</head>
+<body>
+<h1>Личный кабинет Hotelio — живой запрос к Apollo Gateway</h1>
+<div class="row">
+  <div class="col">
+    <label>Endpoint</label><pre id="endpoint"></pre>
+    <label>HTTP-заголовки</label><pre id="headers"></pre>
+    <label>Запрос</label><pre id="query"></pre>
+  </div>
+  <div class="col">
+    <div id="status" class="status">Выполняется…</div>
+    <pre id="response"></pre>
+  </div>
+</div>
+<script>
+  // Страница сама выполняет запрос к шлюзу при открытии: ?mode=success | deny | anonymous (без userid)
+  const params = new URLSearchParams(location.search);
+  const mode = params.get('mode') ?? 'success';
+  const endpoint = params.get('endpoint') ?? 'http://localhost:4000/';
+  const query = `query MyBookings {
+  bookingsByUser(userId: "test-user-2") {
+    id
+    promoCode
+    discountPercent
+    discountInfo { code isValid discountPercent vipOnly }
+    hotel { id name city rating }
+  }
+}`;
+  const headers = { 'content-type': 'application/json' };
+  if (mode === 'success') headers.userid = 'test-user-2';
+  if (mode === 'deny') headers.userid = 'test-user-3';
+  document.getElementById('endpoint').textContent = 'POST ' + endpoint;
+  document.getElementById('headers').textContent = JSON.stringify(headers, null, 2);
+  document.getElementById('query').textContent = query;
+  fetch(endpoint, { method: 'POST', headers, body: JSON.stringify({ query }) })
+    .then(async (r) => {
+      const body = await r.json();
+      const st = document.getElementById('status');
+      const denied = Array.isArray(body.errors) && body.errors.length > 0;
+      st.textContent = `HTTP ${r.status} · ${denied ? 'ошибка: ' + body.errors.map(e => e.extensions?.code).join(', ') : 'данные получены'} · ${new Date().toLocaleString('ru-RU')}`;
+      st.className = 'status ' + (denied ? 'err' : 'ok');
+      document.getElementById('response').textContent = JSON.stringify(body, null, 2);
+    })
+    .catch((e) => { document.getElementById('status').textContent = 'Сбой запроса: ' + e; });
+</script>
+</body>
+</html>

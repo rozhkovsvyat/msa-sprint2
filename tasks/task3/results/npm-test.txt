@@ -1,0 +1,39 @@
+$ node --version && npm test
+v24.21.0
+
+> test
+> node --test tests/*.test.js
+
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+✔ Свои бронирования приходят одним запросом вместе с отелями и промокодами (126.69625ms)
+✔ @override: discountPercent отдаёт promocode-subgraph по справочнику промокодов (15.5835ms)
+✔ ACL: чужие бронирования и запрос без userid отклоняются, чужое бронирование по id не находится (13.764708ms)
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+✔ ACL: без проброса userid шлюзом даже владелец получает UNAUTHENTICATED (5332.526459ms)
+✔ ACL: userid из пробелов или с управляющими символами отклоняется до вызова booking-service (0.621333ms)
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+✔ ACL: чужое бронирование в ответе booking-service не попадает к пользователю (5329.610375ms)
+✔ Отказ одного отеля: ошибка с path на hotel, остальные бронирования и скидки целы (14.183125ms)
+✔ Лимиты: глубина, псевдонимы и длина hotelsByIds отклоняются до обращения к источникам (10.140542ms)
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+✔ 51 бронирование с отелями и скидками читается через Federation целиком (5431.168292ms)
+✔ x-request-id клиента проходит через шлюз, подграфы, REST и gRPC; недопустимый заменяется новым (56.838792ms)
+✔ DataLoader: пачки до 10 отелей, без повторов, не больше 4 одновременных запросов к монолиту (37.953709ms)
+✔ Кеш отелей: вытеснение старых записей не портит результат текущей пачки (2.179333ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 17086.035708
+(код выхода 0)

@@ -1,18 +1,62 @@
+# Значения по умолчанию. Различия сред — в values-staging.yaml и values-prod.yaml.
 replicaCount: 1
 
 image:
   name: booking-service
-  tag: latest
+  tag: ""            # задаётся пайплайном: короткий SHA коммита (неизменяемый тег, не latest)
   pullPolicy: IfNotPresent
 
 service:
   type: ClusterIP
-  port: 80
-  targetPort: 8080
+  port: 80           # http://booking-service/ping внутри кластера
+  targetPort: 8080   # служебный HTTP сервиса: /ping, /ready, /version, /feature
+
+grpc:
+  containerPort: 9090  # gRPC для прокси монолита; в Service не публикуется на этом этапе
+
+# Фича-флаг: при true сервис открывает /feature и сообщает featureX=true в /version
+featureFlags:
+  enableFeatureX: false
+
+serviceVersion: v1
+
+# Внешние зависимости. Без BOOKING_DB и MONOLITH_URL сервис не стартует, публикацию outbox
+# нужно явно включить (с KAFKA_BOOTSTRAP) или выключить. В учебном кластере заданий 4–5 PostgreSQL,
+# Kafka и монолита нет: под отвечает на /ping, /version и /feature, /ready = 503, outbox не публикуется.
+# Бизнес-путь (gRPC → БД → outbox → Kafka) проверен в docker compose задания 2.
+dependencies:
+  bookingDb: "Host=booking-db;Database=booking;Username=booking;GSS Encryption Mode=Disable"
+  monolithUrl: http://hotelio-monolith:8080/
+  outboxPublisher: disabled    # enabled — нужен kafkaBootstrap
+  kafkaBootstrap: ""
+  # Secret с переменной BOOKING_DB (строка с паролем); если задан, bookingDb из values не используется
+  existingSecret: ""
+
+# Дополнительные переменные окружения контейнера
+env: []
 
 resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
 
-livenessProbe:
+# Задание требует /ping для обеих проб. Когда у пода появится БД, readiness переводится на /ready:
+# под без доступа к БД перестанет получать трафик, а liveness на /ping не будет его перезапускать.
+probes:
+  path: /ping
+  readinessPath: /ping
+  liveness:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 3
+  readiness:
+    initialDelaySeconds: 2
+    periodSeconds: 5
+    failureThreshold: 3
 
-readinessProbe:
-
+# Для полного сервиса с БД: схема из того же образа до rollout. В HTTP-стенде выключено.
+migrations:
+  enabled: false

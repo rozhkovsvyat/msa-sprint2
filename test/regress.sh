@@ -12,6 +12,15 @@ timeout 2 bash -c "</dev/tcp/${DB_HOST}/${DB_PORT}" \
 echo "🧪 Загрузка фикстур..."
 PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" "${DB_NAME}" < init-fixtures.sql
 
+# После выноса бронирований (задание 2) монолит читает их из booking-service через gRPC-прокси.
+# Фикстуры бронирований переносим той же ops-джобой, что и боевые данные, — тест заодно проверяет миграцию.
+# Включается, если задан BOOKING_DB_URL и смонтирован /migration (сервис regress в tasks/task2/docker-compose.yml).
+if [[ -n "${BOOKING_DB_URL:-}" ]]; then
+  echo "🧪 Перенос бронирований в booking-service (ops-джоба, режим тестового стенда)..."
+  LEGACY_DB_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}" \
+    MIGRATION_OFFLINE=yes /migration/migrate-bookings.sh forward --reset-target
+fi
+
 echo "🧪 Выполнение HTTP-тестов..."
 
 pass() { echo "✅ $1"; }
@@ -101,16 +110,28 @@ echo ""
 echo "Тесты бронирования..."
 
 # 1. Получение всех бронирований
-curl -sSf "${BASE}/api/bookings" | grep -q 'test-user-2' && pass "Все бронирования получены" || fail "Бронирования не получены"
+if [[ -n "${BOOKING_GRPC:-}" ]]; then
+  # После включения прокси список без userId через монолит недоступен: готовый p-o-y-1.0.0.jar
+  # вызывает BookingListRequest.setUserId(null) и падает с NullPointerException (HTTP 500).
+  # Полный список проверяем напрямую в booking-service — теперь он владелец бронирований.
+  grpcurl -plaintext -d '{}' "${BOOKING_GRPC}" booking.BookingService/ListBookings | grep -q 'test-user-2' \
+    && pass "Все бронирования получены (gRPC ListBookings в booking-service)" || fail "Бронирования не получены"
+else
+  curl -sSf "${BASE}/api/bookings" | grep -q 'test-user-2' && pass "Все бронирования получены" || fail "Бронирования не получены"
+fi
 
 # 2. Получение бронирований пользователя
 curl -sSf "${BASE}/api/bookings?userId=test-user-2" | grep -q 'test-user-2' && pass "Бронирования test-user-2 найдены" || fail "Нет бронирований test-user-2"
 
 # 3. Успешное бронирование отеля без промо
-curl -sSf -X POST "${BASE}/api/bookings?userId=test-user-3&hotelId=test-hotel-1" | grep -q 'test-hotel-1' && pass "Бронирование прошло (без промо)" || fail "Бронирование (без промо) не прошло"
+resp3=$(curl -sSf -X POST "${BASE}/api/bookings?userId=test-user-3&hotelId=test-hotel-1") || fail "Бронирование (без промо) не прошло"
+echo "$resp3" | grep -q 'test-hotel-1' && pass "Бронирование прошло (без промо)" || fail "Бронирование (без промо) не прошло"
+created_ids=$(echo "$resp3" | sed -n 's/.*"id":\([0-9]*\).*/\1/p')
 
 # 4. Успешное бронирование с промо
-curl -sSf -X POST "${BASE}/api/bookings?userId=test-user-2&hotelId=test-hotel-1&promoCode=TESTCODE1" | grep -q 'TESTCODE1' && pass "Бронирование с промо прошло" || fail "Бронирование с промо не прошло"
+resp4=$(curl -sSf -X POST "${BASE}/api/bookings?userId=test-user-2&hotelId=test-hotel-1&promoCode=TESTCODE1") || fail "Бронирование с промо не прошло"
+echo "$resp4" | grep -q 'TESTCODE1' && pass "Бронирование с промо прошло" || fail "Бронирование с промо не прошло"
+created_ids="$created_ids $(echo "$resp4" | sed -n 's/.*"id":\([0-9]*\).*/\1/p')"
 
 # 5. Ошибка — неактивный пользователь
 code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${BASE}/api/bookings?userId=test-user-0&hotelId=test-hotel-1")
@@ -122,11 +143,46 @@ fi
 
 # 6. Ошибка — отель не доверенный
 curl -s -o /dev/null -w "%{http_code}" -X POST "${BASE}/api/bookings?userId=test-user-2&hotelId=test-hotel-3" | grep -q '500' \
-  && pass "Отклонено: недоверенный отель" \
-  || fail "Ошибка: сервер принял бронирование от недоверенного отеля"
+  && pass "Отклонено: отключённый отель из исходной фикстуры" \
+  || fail "Ошибка: сервер принял бронирование в отключённый отель"
 
 # 7. Ошибка — отель полностью забронирован
 curl -s -o /dev/null -w "%{http_code}" -X POST "${BASE}/api/bookings?userId=test-user-2&hotelId=test-hotel-2" | grep -q '500' \
-  && pass "Отклонено: отель полностью забронирован" \
-  || fail "Ошибка: сервер принял бронирование в полностью занятом отеле"
+  && pass "Отклонено: отель с недостатком отзывов и без мест" \
+  || fail "Ошибка: сервер принял бронирование в исходный проблемный отель"
+
+# 8–9. Каждая причина отказа отдельно: у отелей test-hotel-4 и test-hotel-5 нарушено ровно одно правило.
+# Монолит отдаёт любой отказ как HTTP 500 без текста, поэтому причину читаем из ответа booking-service по gRPC.
+rejected() { # $1 — отель, $2 — ожидаемая причина, $3 — описание
+  local code reason=""
+  code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${BASE}/api/bookings?userId=test-user-2&hotelId=$1")
+  [[ "$code" == "500" ]] || fail "Ошибка: сервер принял бронирование ($3, код $code)"
+  if [[ -n "${BOOKING_GRPC:-}" ]]; then
+    reason=$(grpcurl -plaintext -d "{\"user_id\":\"test-user-2\",\"hotel_id\":\"$1\"}" "${BOOKING_GRPC}" \
+      booking.BookingService/CreateBooking 2>&1 | sed -n 's/^ *Message: //p' || true)
+    [[ "$reason" == "$2" ]] || fail "Отказ по другой причине ($3): «${reason}», ожидалось «$2»"
+    list=$(grpcurl -plaintext -d '{"user_id":"test-user-2"}' "${BOOKING_GRPC}" booking.BookingService/ListBookings)
+    [[ "$list" != *"\"$1\""* ]] || fail "После отказа появилась запись бронирования в $1"
+  fi
+  pass "Отклонено: $3${reason:+ — ${reason}, записи нет}"
+}
+rejected test-hotel-4 "Hotel is not trusted based on reviews" "недоверенный отель (работает, места есть)"
+rejected test-hotel-5 "Hotel is fully booked" "полностью занятый отель (работает, доверенный)"
+
+# История бронирований (задание 2): события BookingCreated из booking-service доходят
+# до booking-history-service через Kafka асинхронно — ждём до 30 секунд.
+if [[ -n "${HISTORY_DB_URL:-}" ]]; then
+  echo ""
+  echo "Тесты истории бронирований..."
+  for id in $created_ids; do
+    found=0
+    for _ in $(seq 1 30); do
+      n=$(psql "${HISTORY_DB_URL}" -At -c "select count(*) from booking_history where booking_id = ${id} and source = 'booking-service'")
+      [[ "$n" == "1" ]] && { found=1; break; }
+      sleep 1
+    done
+    [[ "$found" == "1" ]] && pass "Бронирование ${id} попало в историю ровно один раз" || fail "Бронирование ${id} не появилось в истории"
+  done
+fi
+
 echo "✅ Все HTTP-тесты пройдены!"

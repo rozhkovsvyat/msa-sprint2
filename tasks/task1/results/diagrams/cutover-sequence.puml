@@ -1,0 +1,47 @@
+@startuml
+skinparam defaultFontName Arial
+skinparam dpi 130
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+autonumber
+
+title
+Переключение бронирований на booking-service и откат
+Один писатель в каждый момент — без постоянной синхронизации
+end title
+
+actor "Команда эксплуатации" as ops
+participant "Монолит Hotelio" as mono
+database "БД монолита" as mdb
+participant "Ops-джоба миграции" as job
+database "БД бронирований" as bdb
+participant "booking-service" as bs
+actor "Клиент" as client
+
+== Окно переключения: запись бронирований остановлена ==
+ops -> mono : остановить (бронирования не принимаются)
+ops -> job : запустить перенос вперёд
+job -> mdb : читает booking
+job -> bdb : вставляет записи с теми же ID\n(повторный запуск не дублирует)
+job -> bdb : пустой created_at → время миграции,\ncreated_at_estimated = true
+job -> bdb : сдвигает счётчик ID за максимальный
+job -> job : сверяет количество и контрольную сумму
+job --> ops : отчёт сверки
+ops -> bs : запустить
+ops -> mono : запустить с BOOKING_SERVICE_EXTERNAL_HOST
+== Работа после переключения ==
+client -> mono : POST/GET /api/bookings
+mono -> bs : CreateBooking / ListBookings [gRPC]
+bs -> mono : проверки пользователя, отеля,\nотзывов, промокода [REST]
+bs -> bdb : бронирование + outbox (одна транзакция)
+bs --> mono : бронирование (числовой id, ISO-дата)
+mono --> client : ответ в прежнем формате
+== Откат, только если нужен ==
+ops -> mono : остановить
+ops -> bs : остановить (кабинет временно без бронирований)
+ops -> job : запустить перенос назад
+job -> bdb : читает бронирования, созданные после переключения
+job -> mdb : дописывает их в booking с теми же ID
+job --> ops : отчёт сверки
+ops -> mono : запустить без BOOKING_SERVICE_EXTERNAL_HOST
+@enduml

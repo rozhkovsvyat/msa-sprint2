@@ -1,6 +1,6 @@
 @startuml
 !define RELATIVE_INCLUDE true
-!include vendor/c4-plantuml/C4_Container.puml
+!include <C4/C4_Container>
 LAYOUT_TOP_DOWN()
 skinparam nodesep 35
 skinparam ranksep 75
@@ -48,7 +48,7 @@ Rel(gw, hsg, "Делегирует поля", "GraphQL")
 Rel(gw, psg, "Делегирует поля", "GraphQL")
 Rel(bsg, bs, "ListBookings", "gRPC")
 Rel(hsg, mono, "GET /api/hotels/{id}", "REST")
-Rel(psg, mono, "GET /api/promos/{code}", "REST")
+Rel(psg, mono, "/api/promos/...", "REST")
 
 Rel(mono, bs, "CreateBooking, ListBookings", "gRPC, HTTP/2")
 Rel(bs, mono, "Проверки пользователя, отеля,\nотзывов, промокода (ACL)", "REST")

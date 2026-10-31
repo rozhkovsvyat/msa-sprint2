@@ -9,4 +9,4 @@
   - [Переключение бронирований и откат](diagrams/cutover-sequence.png)
 - [test-log.txt](test-log.txt) — запуск монолита, регрессионные тесты (29 проверок, все прошли), проверка API и кода
 
-Диаграммы рендерятся закреплённой версией C4-PlantUML из [`diagrams/vendor`](diagrams/vendor/c4-plantuml): `plantuml -tpng diagrams/*.puml` в этом каталоге.
+C4 подключается из стандартной библиотеки PlantUML (`!include <C4/...>`), картинки получаются командой `plantuml -tpng diagrams/*.puml` в этом каталоге.

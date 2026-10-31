@@ -1,6 +1,6 @@
 @startuml
 !define RELATIVE_INCLUDE true
-!include vendor/c4-plantuml/C4_Context.puml
+!include <C4/C4_Context>
 LAYOUT_LEFT_RIGHT()
 skinparam nodesep 40
 skinparam ranksep 90

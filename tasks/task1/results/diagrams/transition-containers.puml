@@ -1,6 +1,6 @@
 @startuml
 !define RELATIVE_INCLUDE true
-!include vendor/c4-plantuml/C4_Container.puml
+!include <C4/C4_Container>
 LAYOUT_TOP_DOWN()
 skinparam nodesep 35
 skinparam ranksep 75

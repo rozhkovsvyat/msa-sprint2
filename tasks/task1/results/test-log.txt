@@ -1,7 +1,7 @@
-Hotelio — монолит курса до миграции и регрессионные тесты курса (задание 1)
+Задание 1: монолит до миграции и регрессионные тесты курса
 Дата: 19.10.2026 17:37 MSK. Стенд: macOS 26.6.2 (Apple M5), Colima 0.10.3, Docker 29.5.2 arm64.
-Монолит — tasks/task1/docker-compose.yml курса. Тесты — test/regress.sh и test/init-fixtures.sql курса без изменений
-(из ветки main); образ тестов — test/Dockerfile с актуальным базовым образом, исходный не собирается (ADR-001, Н9).
+Монолит поднят из tasks/task1/docker-compose.yml. Тесты — test/regress.sh и test/init-fixtures.sql без изменений, из ветки main.
+Образ тестов собран из test/Dockerfile с новым базовым образом: исходный уже не собирается.
 Команды выполняются из tasks/task1, проверка кода — из hotelio-monolith.
 
 == Запуск монолита ==

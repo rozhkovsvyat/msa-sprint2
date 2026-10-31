@@ -25,7 +25,7 @@ export async function post(url, query, { userId = 'alice', requestId, variables 
 
 /**
  * Настоящие шлюз, подграфы и транспорт HTTP/gRPC на локальных портах. REST монолита и gRPC booking-service
- * заменены заглушками с фикстурами; журналы и обращения к ним записываются для проверок.
+ * заменены заглушками с фикстурами; логи и обращения к ним записываются для проверок.
  */
 export async function startFixture({ dataSource = ForwardingDataSource, listBookings } = {}) {
   const events = [];

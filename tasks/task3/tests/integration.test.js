@@ -76,7 +76,7 @@ test('ACL: без проброса userid шлюзом даже владелец
 });
 
 test('ACL: userid из пробелов или с управляющими символами отклоняется до вызова booking-service', async () => {
-  for (const userId of [' ', '\t', ' ', 'alice\n', ['alice', 'bob']]) {
+  for (const userId of [' ', '\t', '\u00a0', 'alice\n', ['alice', 'bob']]) {
     let called = false;
     const context = bookingContext({ headers: { userid: userId } }, async () => { called = true; return []; }, undefined, () => {});
     await assert.rejects(() => bookingResolvers.Query.bookingsByUser(null, { userId }, context),
@@ -108,7 +108,7 @@ test('Отказ одного отеля: ошибка с path на hotel, ос�
   } finally { fx.failedHotels.clear(); }
 });
 
-test('Лимиты: глубина, псевдонимы и длина hotelsByIds отклоняются до обращения к источникам', async () => {
+test('Лимиты: глубина, алиасы и длина hotelsByIds отклоняются до обращения к источникам', async () => {
   const calls = () => fx.restCalls.length + fx.grpcCalls.length;
   const before = calls();
   const aliases = Array.from({ length: 21 }, (_, i) => `a${i}: hotelsByIds(ids: ["h1"]) { id }`).join(' ');
@@ -183,4 +183,31 @@ test('Кеш отелей: вытеснение старых записей не
   const quiet = () => {};
   await catalog.loader(quiet).loadMany(Array.from({ length: 500 }, (_, i) => String(i)));
   assert.deepEqual(await catalog.loader(quiet).loadMany(['0', 'new']), [{ id: '0' }, { id: 'new' }]);
+});
+
+test('Кеш отелей: в пределах TTL отель берётся из кеша, после — снова из монолита', async () => {
+  const fetched = [];
+  const catalog = createHotelCatalog({ fetchHotel: async (id) => { fetched.push(id); return { id }; }, ttlMs: 50 });
+  const quiet = () => {};
+  await catalog.loader(quiet).load('h1');
+  await catalog.loader(quiet).load('h1');
+  assert.deepEqual(fetched, ['h1']);
+  await new Promise((resolve) => setTimeout(resolve, 80));
+  await catalog.loader(quiet).load('h1');
+  assert.deepEqual(fetched, ['h1', 'h1']);
+});
+
+test('Кеш отелей: ошибку монолита не кешируем, следующий запрос снова идёт в монолит', async () => {
+  let calls = 0;
+  const catalog = createHotelCatalog({
+    fetchHotel: async (id) => {
+      if (++calls === 1) throw new Error('timeout');
+      return { id };
+    },
+  });
+  const quiet = () => {};
+  const [failed] = await catalog.loader(quiet).loadMany(['h1']);
+  assert.equal(failed.extensions.code, 'HOTEL_UNAVAILABLE');
+  assert.deepEqual(await catalog.loader(quiet).loadMany(['h1']), [{ id: 'h1' }]);
+  assert.equal(calls, 2);
 });

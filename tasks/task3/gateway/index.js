@@ -1,4 +1,5 @@
 import { ApolloServer } from '@apollo/server';
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import { contextFrom, createGateway, log, validationRules } from './gateway.js';
 
@@ -9,7 +10,14 @@ const subgraphs = [
   { name: 'promocode-subgraph', url: process.env.PROMOCODE_SUBGRAPH_URL ?? 'http://promocode-subgraph:4003' },
 ];
 
-const server = new ApolloServer({ gateway: createGateway(subgraphs), validationRules });
+// В образе NODE_ENV=production, а в нём песочница и introspection по умолчанию выключены.
+// Включаем их, чтобы запросы можно было выполнять в Playground на :4000.
+const server = new ApolloServer({
+  gateway: createGateway(subgraphs),
+  validationRules,
+  introspection: true,
+  plugins: [ApolloServerPluginLandingPageLocalDefault()],
+});
 
 startStandaloneServer(server, {
   listen: { port: 4000 },

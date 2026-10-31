@@ -1,7 +1,8 @@
 import { buildSubgraphSchema } from '@apollo/subgraph';
 import DataLoader from 'dataloader';
 import gql from 'graphql-tag';
-import { concurrencyLimit, logger, requestContext } from '../shared/request-context.js';
+import pLimit from 'p-limit';
+import { logger, requestContext } from '../shared/request-context.js';
 
 export const log = logger('promocode-subgraph');
 
@@ -38,8 +39,8 @@ export function createMonolithClient({ baseUrl, fetch = globalThis.fetch, timeou
 
 // DataLoader на каждый запрос: каждый промокод бронирований пользователя читается из монолита один раз.
 export function createLoaders(api, requestId) {
-  const run = concurrencyLimit(4);
-  const perKey = (keys, fn) => Promise.all(keys.map((key) => run(() => fn(key)).catch((error) => error)));
+  const limit = pLimit(4);
+  const perKey = (keys, fn) => Promise.all(keys.map((key) => limit(() => fn(key)).catch((error) => error)));
   return {
     promos: new DataLoader((codes) => perKey(codes, (code) => api.getPromo(code, requestId)), { maxBatchSize: 10 }),
     validity: new DataLoader((keys) => perKey(keys, (key) => {

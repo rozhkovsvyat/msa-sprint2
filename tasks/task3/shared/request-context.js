@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 export const logger = (svc) => (msg, extra = {}) =>
   console.log(JSON.stringify({ ts: new Date().toISOString(), svc, msg, ...extra }));
 
-// userid — учебная модель личности, не JWT. Пробелы и управляющие символы не допускаются.
+// Пока userid — просто заголовок, а не JWT. Пробелы и управляющие символы не пропускаем.
 export const isUserId = (value) => typeof value === 'string' && value.length > 0 && value.length <= 128
   && !/[\s\p{Cc}]/u.test(value);
 
@@ -18,20 +18,4 @@ export function requestContext(req, res, log) {
   const userId = isUserId(req.headers.userid) ? req.headers.userid : null;
   reqLog('request', { userid: userId, operation: req.body?.operationName ?? null });
   return { userId, requestId, log: reqLog };
-}
-
-// Предел одновременных обращений к монолиту, общий для всех пачек DataLoader.
-export function concurrencyLimit(max) {
-  let active = 0;
-  const waiting = [];
-  return async (fn) => {
-    if (active >= max) await new Promise((resolve) => waiting.push(resolve));
-    else active++;
-    try { return await fn(); }
-    finally {
-      const next = waiting.shift();
-      if (next) next();
-      else active--;
-    }
-  };
 }

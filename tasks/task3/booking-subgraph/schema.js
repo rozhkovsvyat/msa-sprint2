@@ -14,8 +14,8 @@ export const toBooking = (b) => ({
   createdAt: b.created_at,
 });
 
-// ACL: пользователь видит только свои бронирования. Личность берём из заголовка userid,
-// который шлюз пробрасывает явно; в To-Be здесь будет идентификатор из проверенного токена.
+// ACL: пользователь видит только свои бронирования. Кто спрашивает, берём из заголовка userid —
+// его явно пробрасывает шлюз; потом здесь будет id пользователя из проверенного токена.
 function requireUser(context) {
   if (!isUserId(context.userId)) {
     throw new GraphQLError('Не передан заголовок userid', { extensions: { code: 'UNAUTHENTICATED' } });
@@ -37,22 +37,22 @@ export const typeDefs = gql`
     userId: ID!
     hotelId: ID!
     promoCode: String
-    "Скидка, сохранённая при бронировании; по паритету с монолитом это сумма скидки (ADR-001, Н2). В API поле отдаёт promocode-subgraph (@override), здесь оно остаётся для отката."
+    "Скидка, сохранённая при бронировании (как в монолите, это сумма). Через шлюз поле отдаёт promocode-subgraph (@override), здесь оно остаётся на случай отката."
     discountPercent: Float
     createdAt: String!
-    "Необязательный блок экрана: при отказе источника — null и ошибка с path, остальные бронирования остаются."
+    "Отель бронирования. Если данные отеля получить не удалось, в errors будет ошибка с path, остальные бронирования вернутся."
     hotel: Hotel
   }
 
-  "Ссылка на сущность отеля; поля отеля разрешает hotel-subgraph."
+  "Ссылка на отель; поля отеля отдаёт hotel-subgraph."
   type Hotel @key(fields: "id", resolvable: false) {
     id: ID!
   }
 
   type Query {
-    "Бронирования пользователя (имя из проверочного запроса задания)."
+    "Бронирования пользователя. Доступны только ему самому: userId должен совпадать с заголовком userid."
     bookingsByUser(userId: ID!): [Booking!]!
-    "То же под именем из описания задания."
+    "То же, что bookingsByUser."
     userBookings(userId: ID!): [Booking!]!
     booking(id: ID!): Booking
   }
@@ -92,7 +92,7 @@ export const resolvers = {
 
 export const schema = buildSubgraphSchema([{ typeDefs, resolvers }]);
 
-// Контекст запроса: личность из заголовка и не больше одного вызова booking-service на пользователя.
+// Контекст запроса: пользователь из заголовка и не больше одного вызова booking-service на пользователя.
 export function contextFrom(req, listBookings, res, reqLogger = log) {
   const context = requestContext(req, res, reqLogger);
   const pending = new Map();

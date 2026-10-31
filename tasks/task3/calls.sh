@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Запросы к личному кабинету: ./calls.sh success | deny | course | batch
-# Каждый запрос получает свой x-request-id: по нему запрос находится в журналах шлюза и подграфов.
+# Каждый запрос получает свой x-request-id: по нему запрос находится в логах шлюза и подграфов.
 set -euo pipefail
 GW="${GW:-http://localhost:4000/}"
 USER_ID="${USER_ID:-test-user-2}"

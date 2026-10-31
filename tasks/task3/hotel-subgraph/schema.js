@@ -2,14 +2,16 @@ import { buildSubgraphSchema } from '@apollo/subgraph';
 import DataLoader from 'dataloader';
 import gql from 'graphql-tag';
 import { GraphQLError } from 'graphql';
-import { concurrencyLimit, logger, requestContext } from '../shared/request-context.js';
+import { LRUCache } from 'lru-cache';
+import pLimit from 'p-limit';
+import { logger, requestContext } from '../shared/request-context.js';
 
 export const log = logger('hotel-subgraph');
 export const MAX_BATCH = 10; // отелей в одной пачке DataLoader
 export const MAX_IDS = 50;   // id в одном запросе hotelsByIds
 
-// Источник данных — REST монолита. Метода «отели по списку id» у монолита нет, а дорабатывать его
-// нельзя (старые модули не дорабатываются), поэтому батч разворачивается в параллельные запросы по id.
+// Источник данных — REST монолита. Метода «отели по списку id» у монолита нет, а монолит мы не
+// дорабатываем, поэтому пачка разворачивается в параллельные запросы по id.
 export function createMonolithClient({ baseUrl, fetch = globalThis.fetch, timeoutMs = 3000 }) {
   return async function fetchHotel(id, requestId) {
     const res = await fetch(`${baseUrl}/api/hotels/${encodeURIComponent(id)}`, {
@@ -20,7 +22,7 @@ export function createMonolithClient({ baseUrl, fetch = globalThis.fetch, timeou
     const h = await res.json();
     return {
       id: h.id,
-      name: null, // у отеля в монолите нет названия (ADR-001, Н3): не выдумываем, поле появится с hotel-service
+      name: null, // в монолите у отеля нет названия, появится вместе с сервисом отелей
       city: h.city,
       rating: h.rating,
       description: h.description,
@@ -30,19 +32,19 @@ export function createMonolithClient({ baseUrl, fetch = globalThis.fetch, timeou
   };
 }
 
-// Справочник отелей: общий короткий кеш между запросами и DataLoader на каждый запрос.
-export function createHotelCatalog({ fetchHotel, ttlMs = 30_000, now = Date.now, maxConcurrent = 4 }) {
-  const cache = new Map(); // id -> { value, expires }
-  const run = concurrencyLimit(maxConcurrent);
+// Справочник отелей: общий короткий кеш между запросами (до 500 отелей) и DataLoader на каждый запрос.
+// Обращений к монолиту одновременно не больше maxConcurrent, чтобы длинный список его не нагружал.
+export function createHotelCatalog({ fetchHotel, ttlMs = 30_000, maxConcurrent = 4 }) {
+  const cache = ttlMs > 0 ? new LRUCache({ max: 500, ttl: ttlMs }) : null;
+  const limit = pLimit(maxConcurrent);
 
   // Батч-функция DataLoader: один вызов на пачку отелей одного GraphQL-запроса.
   async function loadHotels(ids, reqLog, requestId) {
-    const t = now();
-    // Попадания в кеш берём до запросов к монолиту: новые ключи могут вытеснить их из общего кеша.
-    const results = new Map(ids.filter((id) => cache.get(id)?.expires > t).map((id) => [id, cache.get(id).value]));
+    // Попадания в кеш берём до запросов к монолиту: новые ключи могут вытеснить их из кеша.
+    const results = new Map(ids.filter((id) => cache?.has(id)).map((id) => [id, cache.get(id).value]));
     const missing = ids.filter((id) => !results.has(id));
     reqLog('batch', { requested: ids, fromCache: ids.length - missing.length, fetchFromMonolith: missing });
-    const fetched = await Promise.all(missing.map((id) => run(async () => {
+    const fetched = await Promise.all(missing.map((id) => limit(async () => {
       try { return await fetchHotel(id, requestId); }
       catch (error) {
         reqLog('hotel lookup failed', { id, error: error.message });
@@ -51,11 +53,8 @@ export function createHotelCatalog({ fetchHotel, ttlMs = 30_000, now = Date.now,
     })));
     missing.forEach((id, i) => {
       results.set(id, fetched[i]);
-      // Ошибки не кешируем между запросами: следующий запрос может восстановиться.
-      if (!(fetched[i] instanceof Error)) {
-        if (cache.size >= 500) cache.delete(cache.keys().next().value);
-        cache.set(id, { value: fetched[i], expires: now() + ttlMs });
-      }
+      // Ошибки не кешируем: следующий запрос может восстановиться. Отель может быть null (нет в монолите).
+      if (!(fetched[i] instanceof Error)) cache?.set(id, { value: fetched[i] });
     });
     return ids.map((id) => results.get(id) ?? null);
   }

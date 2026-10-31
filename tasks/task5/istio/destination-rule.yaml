@@ -7,8 +7,7 @@ metadata:
 spec:
   host: booking-service
   trafficPolicy:
-    # Circuit breaking: лимиты соединений и очереди. Сверх лимита Envoy сразу отвечает 503 (флаг UO),
-    # а не копит ожидающие запросы, — перегрузка не расползается по цепочке вызовов.
+    # Circuit breaking: лимиты соединений и очереди. Сверх лимита Envoy сразу отвечает 503 (флаг UO).
     connectionPool:
       tcp:
         maxConnections: 10
@@ -22,9 +21,9 @@ spec:
       interval: 5s
       baseEjectionTime: 15s
       maxEjectionPercent: 100
-    # Fallback v1 → v2: эндпоинты version=v1 получают приоритет P0, остальные (v2) — P1.
-    # Пока у v1 есть здоровые поды, P1 не получает трафик этого маршрута; когда v1 недоступна
-    # или выброшена outlier detection, трафик переходит на v2. Действует для маршрута без subset.
+    # Fallback v1 → v2: поды version=v1 получают приоритет P0, остальные (v2) — P1. Пока поды v1 здоровы,
+    # трафик маршрута без subset идёт в v1; чем больше подов v1 недоступно или выброшено outlier detection,
+    # тем больше трафика Envoy переводит на v2.
     loadBalancer:
       simple: ROUND_ROBIN
       localityLbSetting:

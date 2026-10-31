@@ -1,7 +1,7 @@
 # Фича-флаг на входном шлюзе: X-Feature-Enabled: true → внутренний заголовок маршрута x-booking-route: v2,
 # по которому VirtualService отправляет запрос на v2. Присланный клиентом x-booking-route удаляется,
-# поэтому попасть на v2 в обход флага нельзя. Нативная альтернатива — match.headers в VirtualService;
-# EnvoyFilter требует проверки при каждом обновлении Istio (меняется внутренняя конфигурация Envoy).
+# поэтому попасть на v2 в обход флага нельзя. Без фильтра то же делает match.headers в VirtualService.
+# Фильтр надо перепроверять при каждом обновлении Istio: он завязан на внутреннюю конфигурацию Envoy.
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:

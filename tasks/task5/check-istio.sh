@@ -11,6 +11,9 @@ kubectl get pods -l app=booking-service -L version
 # Istio 1.31 внедряет istio-proxy нативным sidecar: initContainer с restartPolicy: Always.
 kubectl get pods -l app=booking-service -o jsonpath='{range .items[*]}{.metadata.name}: {range .spec.containers[*]}{.name}{end} + {range .spec.initContainers[?(@.restartPolicy=="Always")]}{.name} (sidecar){end}{"\n"}{end}'
 
+echo "▶️ Образы v1 и v2"
+kubectl get deployments -l app=booking-service -o 'custom-columns=NAME:.metadata.name,IMAGE:.spec.template.spec.containers[0].image'
+
 echo "▶️ Конфигурация маршрутизации"
 kubectl get gateway,virtualservice,destinationrule -n default
 kubectl get envoyfilter -n istio-system

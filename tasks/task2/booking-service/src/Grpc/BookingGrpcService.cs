@@ -60,7 +60,8 @@ public sealed class BookingGrpcService(MonolithClient legacy, BookingStore store
 
     public override async Task<BookingListResponse> ListBookings(BookingListRequest request, ServerCallContext context)
     {
-        // Пустой user_id — общий список (прокси монолита этот режим не использует, см. ADR-001, Н10).
+        // Пустой user_id — все бронирования (так их читает регресс по gRPC). Прокси монолита присылает пустую
+        // строку и на GET /api/bookings?userId=, хотя без прокси монолит вернул бы пустой список.
         var bookings = await store.ListAsync(request.UserId.Length == 0 ? null : request.UserId, context.CancellationToken);
         var response = new BookingListResponse();
         response.Bookings.AddRange(bookings.Select(ToResponse));
@@ -74,7 +75,7 @@ public sealed class BookingGrpcService(MonolithClient legacy, BookingStore store
         UserId = b.UserId,
         HotelId = b.HotelId,
         PromoCode = b.PromoCode ?? string.Empty,
-        // В контракте прокси поле называется discount_percent, хотя монолит хранит в нём сумму скидки (ADR-001, Н2).
+        // Поле называется discount_percent, но монолит хранит в нём сумму скидки — отдаём так же.
         DiscountPercent = (double)b.DiscountAmount,
         Price = (double)b.Price,
         CreatedAt = b.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'", CultureInfo.InvariantCulture),

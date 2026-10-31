@@ -3,10 +3,7 @@ using Npgsql;
 
 namespace Hotelio.Bookings.Data;
 
-/// <summary>
-/// Версионные миграции схемы: скрипты db/migrations встроены в сборку, применённые DbUp отмечает в таблице
-/// schemaversions. Применяет их отдельная команда migrate из того же образа до запуска новой версии сервиса.
-/// </summary>
+/// <summary>Миграции схемы из db/migrations (DbUp, журнал — schemaversions). Их применяет команда migrate до запуска сервиса.</summary>
 public static class SchemaMigrations
 {
     // DbUp записывает в schemaversions имя встроенного ресурса скрипта.

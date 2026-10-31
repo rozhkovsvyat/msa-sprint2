@@ -12,5 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="xunit.v3" Version="4.0.2" />
+    <PackageReference Include="Shouldly" Version="4.3.0" />
   </ItemGroup>
 </Project>

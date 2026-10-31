@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Учения по переключению бронирований и откату (ADR-001) на чистом стенде задания 2.
+# Учения по переключению бронирований и откату на чистом стенде задания 2.
 # Запуск из tasks/task2: ./migration/cutover-drill.sh. Нужна сеть hotelio-net.
 # Удаляет тома стенда (docker compose down -v): только для тестового стенда.
 set -euo pipefail
@@ -17,7 +17,7 @@ monolith() { # $1 — значение BOOKING_SERVICE_EXTERNAL_HOST: booking-se
 
 log "0. Чистый стенд"
 docker compose down -v --remove-orphans >/dev/null 2>&1 || true
-docker compose build -q
+docker compose --profile test build -q
 docker compose up -d booking-db history-db zookeeper kafka kafka-init >/dev/null 2>&1
 
 log "1. Монолит без прокси: фикстуры курса и два бронирования через API (регресс курса без переноса)"

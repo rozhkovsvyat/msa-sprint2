@@ -16,10 +16,7 @@ public sealed record HotelFacts(bool Exists, bool Operational, bool FullyBooked,
 
 public sealed record Price(decimal BasePrice, decimal Discount, decimal FinalPrice);
 
-/// <summary>
-/// Правила бронирования, перенесённые из BookingService монолита без изменения поведения.
-/// Порядок проверок и тексты отказов совпадают с монолитом: регресс сравнивает именно их.
-/// </summary>
+/// <summary>Правила BookingService монолита без изменения поведения: тот же порядок проверок и тексты отказов.</summary>
 public static class BookingRules
 {
     public const decimal RegularBasePrice = 100m;
@@ -41,8 +38,7 @@ public static class BookingRules
     {
         var basePrice = user.IsVip ? VipBasePrice : RegularBasePrice;
         var discount = promoDiscount ?? 0m;
-        // Паритет с монолитом (ADR-001, Н2): скидка промокода вычитается как сумма.
-        // Исправление — отдельным шагом после переключения.
+        // Как в монолите: скидка промокода вычитается как сумма, а не как процент.
         return new Price(basePrice, discount, basePrice - discount);
     }
 }

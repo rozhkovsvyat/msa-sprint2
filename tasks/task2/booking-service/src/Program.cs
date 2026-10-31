@@ -23,7 +23,7 @@ if (args is ["migrate"])
     return SchemaMigrations.Apply(config["BOOKING_DB"]!, logging) ? 0 : 1;
 }
 
-// disabled — для окружений без Kafka (Kubernetes заданий 4–5): события копятся в outbox.
+// disabled — для окружения без Kafka: события копятся в outbox, пока публикацию не включат.
 var publisher = config["OUTBOX_PUBLISHER"] ?? "enabled";
 if (publisher is not ("enabled" or "disabled")) return Fail("OUTBOX_PUBLISHER: ожидается enabled или disabled");
 var required = new List<string> { "BOOKING_DB", "MONOLITH_URL" };
@@ -52,7 +52,7 @@ if (publisher == "enabled") builder.Services.AddHostedService<OutboxPublisher>()
 var app = builder.Build();
 var version = config["SERVICE_VERSION"] ?? "v1";
 var featureX = config.GetValue("ENABLE_FEATURE_X", false);
-// Для проверки fallback в Istio (задание 5): живой под отвечает на /version этим кодом.
+// Для проверки fallback в Istio: /version отвечает этим кодом (например, 503), а под остаётся живым.
 var faultStatus = config.GetValue("FAULT_INJECTION_STATUS", 0);
 
 app.Use(async (ctx, next) =>

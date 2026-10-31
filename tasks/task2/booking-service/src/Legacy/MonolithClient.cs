@@ -6,10 +6,7 @@ using Hotelio.Bookings.Domain;
 
 namespace Hotelio.Bookings.Legacy;
 
-/// <summary>
-/// Anti-Corruption Layer к REST API монолита. Знает форматы и коды ответов монолита
-/// и переводит их в модель бронирования. Бизнес-правил здесь нет — только трансляция.
-/// </summary>
+/// <summary>Anti-Corruption Layer: переводит ответы REST API монолита в модель бронирования, без бизнес-правил.</summary>
 public sealed class MonolithClient(HttpClient http, ILogger<MonolithClient> log, IHttpContextAccessor? context = null)
 {
     public async Task<UserFacts> GetUserAsync(string userId, CancellationToken ct)

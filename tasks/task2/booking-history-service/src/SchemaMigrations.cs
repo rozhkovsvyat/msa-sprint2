@@ -6,10 +6,7 @@ using Npgsql;
 
 namespace Hotelio.BookingHistory;
 
-/// <summary>
-/// Версионные миграции схемы (db/migrations, журнал DbUp — schemaversions) и роль аналитика (db/roles).
-/// Применяет их отдельная команда migrate из того же образа до запуска новой версии сервиса.
-/// </summary>
+/// <summary>Миграции схемы (DbUp, журнал — schemaversions) и роль аналитика. Их применяет команда migrate до запуска сервиса.</summary>
 public static class SchemaMigrations
 {
     // DbUp записывает в schemaversions имя встроенного ресурса скрипта.

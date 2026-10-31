@@ -4,7 +4,7 @@ namespace Hotelio.Bookings.Legacy;
 
 public static class LegacyHttp
 {
-    /// <summary>Общий бюджет обращений к монолиту при создании бронирования.</summary>
+    /// <summary>Сколько всего времени даём обращениям к монолиту при создании одного бронирования.</summary>
     public static readonly TimeSpan Budget = TimeSpan.FromSeconds(3);
 
     public static void AddLegacyHttp(this IServiceCollection services, Uri baseAddress) => services
@@ -23,8 +23,7 @@ public static class LegacyHttp
             options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(10);
             options.CircuitBreaker.MinimumThroughput = 8;
             options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(5);
-            // Защита монолита от лавины: до 100 одновременных вызовов с пода (около 30 бронирований),
-            // остальные ждут в очереди в пределах бюджета вызова.
+            // Предел одновременных вызовов монолита с одного пода; остальные ждут в очереди, пока не выйдет это время.
             options.RateLimiter.DefaultRateLimiterOptions.PermitLimit = 100;
             options.RateLimiter.DefaultRateLimiterOptions.QueueLimit = 200;
         });

@@ -16,7 +16,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://monolith-db:5432/hotelio
       SPRING_DATASOURCE_USERNAME: hotelio
       SPRING_DATASOURCE_PASSWORD: ${LEGACY_DB_PASSWORD:-hotelio}
-      # В application.yml монолита ddl-auto: create — перезапуск стирал бы данные (ADR-001, Н1).
+      # В application.yml монолита ddl-auto: create — без этой настройки перезапуск стирает данные.
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       # Имя хоста включает готовый gRPC-прокси бронирований; false возвращает монолиту свою логику (откат).
       BOOKING_SERVICE_EXTERNAL_HOST: ${BOOKING_SERVICE_EXTERNAL_HOST:-booking-service}
@@ -57,6 +57,7 @@ services:
       - "9090:9090"   # gRPC: вызовы прокси монолита
       - "8085:8080"   # /ping, /ready, /version, /diagnostics/outbox
     environment:
+      # GSS Encryption Mode=Disable: Kerberos на стенде нет, GSS-шифрование соединения с PostgreSQL не нужно.
       BOOKING_DB: Host=booking-db;Database=booking;Username=booking;Password=${BOOKING_DB_PASSWORD:-booking};GSS Encryption Mode=Disable
       MONOLITH_URL: http://hotelio-monolith:8080/
       KAFKA_BOOTSTRAP: kafka:9092
@@ -189,7 +190,7 @@ services:
     networks:
       - hotelio-net
 
-  # Ops-джоба переноса бронирований (ADR-001): запускается вручную при переключении и откате.
+  # Ops-джоба переноса бронирований: запускается вручную при переключении и откате.
   booking-migration:
     image: postgres:15
     profiles: ["ops"]

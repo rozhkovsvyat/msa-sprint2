@@ -7,9 +7,8 @@ using Npgsql;
 namespace Hotelio.BookingHistory;
 
 /// <summary>
-/// Читает booking-events своей группой. Смещение фиксируется только после записи в историю или в dead letter.
-/// Неразбираемое сообщение и неподдерживаемая версия уходят в dead letter и не останавливают поток.
-/// Временная ошибка БД повторяется; если повторы не помогли, смещение не фиксируется и сообщение читается снова.
+/// Читает booking-events и подтверждает смещение только после записи в историю или в dead letter.
+/// Временную ошибку БД повторяет; если повторы не помогли, сообщение читается снова.
 /// </summary>
 public sealed class BookingEventsConsumer(HistoryStore store, IConfiguration config, ILogger<BookingEventsConsumer> log) : BackgroundService
 {
@@ -21,6 +20,7 @@ public sealed class BookingEventsConsumer(HistoryStore store, IConfiguration con
         RespectRequiredConstructorParameters = true,
     };
 
+    // consumer.Consume блокирует поток, поэтому цикл чтения работает в отдельном потоке и не держит запуск хоста.
     protected override Task ExecuteAsync(CancellationToken ct) =>
         Task.Factory.StartNew(() => RunAsync(ct), ct, TaskCreationOptions.LongRunning, TaskScheduler.Default).Unwrap();
 

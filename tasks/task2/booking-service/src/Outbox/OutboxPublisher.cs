@@ -6,10 +6,8 @@ using Npgsql;
 namespace Hotelio.Bookings.Outbox;
 
 /// <summary>
-/// Публикует события outbox в Kafka. Каждая строка обрабатывается в своей транзакции, поэтому сбой одной не задерживает
-/// остальные. Временные ошибки повторяются с растущей паузой, пока брокер не станет доступен; ошибки, которые повтором
-/// не исправить, переводят строку в карантин (dead_lettered_at). Доставка «хотя бы один раз»: сбой после подтверждения
-/// Kafka допускает повторную публикацию, booking-history-service отсеивает её по eventId.
+/// Публикует события outbox в Kafka, каждую строку в своей транзакции. Временные ошибки повторяются с растущей паузой,
+/// неисправимые откладывают строку в dead letter. Доставка «хотя бы один раз»: дубли отсеивает история по eventId.
 /// </summary>
 public sealed class OutboxPublisher(NpgsqlDataSource db, IConfiguration config, ILogger<OutboxPublisher> log) : BackgroundService
 {

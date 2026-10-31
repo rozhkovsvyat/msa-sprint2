@@ -25,6 +25,6 @@ create table outbox (
     failure_count    integer     not null default 0,
     last_error       text,
     next_attempt_at  timestamptz not null default now(),
-    dead_lettered_at timestamptz  -- карантин: ошибку повтором не исправить, нужен разбор
+    dead_lettered_at timestamptz  -- dead letter: повтором не исправить, нужен ручной разбор
 );
 create index outbox_pending_idx on outbox (next_attempt_at, id) where published_at is null and dead_lettered_at is null;

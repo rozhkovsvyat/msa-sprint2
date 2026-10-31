@@ -4,8 +4,8 @@ info:
   version: 1.0.0
   description: >
     События бронирований. Публикует booking-service через transactional outbox (доставка «хотя бы один раз»),
-    потребитель отсеивает повторы по eventId. Цель — событие опубликовано не позже 1 минуты после создания
-    бронирования; фактическое отставание показывает oldestAgeSeconds в /diagnostics/outbox booking-service.
+    потребитель отсеивает повторы по eventId. Отставание публикации показывает oldestAgeSeconds
+    в /diagnostics/outbox booking-service.
 servers:
   stand:
     host: kafka:9092

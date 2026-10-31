@@ -8,7 +8,7 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Контракт задания не меняем: booking.proto из tasks/task2 -->
+    <!-- Контракт общий с прокси монолита, файл не меняем -->
     <Protobuf Include="..\..\booking.proto" GrpcServices="Server" Link="Protos\booking.proto" />
   </ItemGroup>
   <ItemGroup>

@@ -8,6 +8,7 @@ public sealed record BookingCreated(
     Guid EventId, string EventType, int SchemaVersion, DateTimeOffset OccurredAt,
     string Source, string CorrelationId, BookingPayload Booking);
 
+// PromoCode последний и необязательный: в событии этого поля может не быть.
 public sealed record BookingPayload(
     long Id, string UserId, string HotelId, decimal DiscountAmount, decimal Price,
     DateTimeOffset CreatedAt, bool CreatedAtEstimated, string? PromoCode = null);

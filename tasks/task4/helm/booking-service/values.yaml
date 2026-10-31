@@ -20,17 +20,12 @@ featureFlags:
 
 serviceVersion: v1
 
-# Внешние зависимости. Без BOOKING_DB и MONOLITH_URL сервис не стартует, публикацию outbox
-# нужно явно включить (с KAFKA_BOOTSTRAP) или выключить. В учебном кластере заданий 4–5 PostgreSQL,
-# Kafka и монолита нет: под отвечает на /ping, /version и /feature, /ready = 503, outbox не публикуется.
-# Бизнес-путь (gRPC → БД → outbox → Kafka) проверен в docker compose задания 2.
+# Без BOOKING_DB и MONOLITH_URL сервис не стартует. В этом кластере нет PostgreSQL, Kafka и монолита:
+# под отвечает на /ping, /version и /feature, /ready — 503, публикация событий выключена.
 dependencies:
   bookingDb: "Host=booking-db;Database=booking;Username=booking;GSS Encryption Mode=Disable"
   monolithUrl: http://hotelio-monolith:8080/
-  outboxPublisher: disabled    # enabled — нужен kafkaBootstrap
-  kafkaBootstrap: ""
-  # Secret с переменной BOOKING_DB (строка с паролем); если задан, bookingDb из values не используется
-  existingSecret: ""
+  outboxPublisher: disabled
 
 # Дополнительные переменные окружения контейнера
 env: []
@@ -43,11 +38,9 @@ resources:
     cpu: 500m
     memory: 256Mi
 
-# Задание требует /ping для обеих проб. Когда у пода появится БД, readiness переводится на /ready:
-# под без доступа к БД перестанет получать трафик, а liveness на /ping не будет его перезапускать.
+# Обе пробы — /ping. Когда у пода будет БД, readiness стоит перевести на /ready.
 probes:
   path: /ping
-  readinessPath: /ping
   liveness:
     initialDelaySeconds: 5
     periodSeconds: 10
@@ -56,7 +49,3 @@ probes:
     initialDelaySeconds: 2
     periodSeconds: 5
     failureThreshold: 3
-
-# Для полного сервиса с БД: схема из того же образа до rollout. В HTTP-стенде выключено.
-migrations:
-  enabled: false

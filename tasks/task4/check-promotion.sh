@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Сравниваем реально запущенный артефакт, а не только текстовый тег Deployment.
+# Сверяет imageID готовых подов в staging и prod: в prod работает тот же образ, без пересборки.
 set -euo pipefail
 RELEASE="${RELEASE:-booking-service}"
 STAGING_NAMESPACE="${STAGING_NAMESPACE:-staging}"

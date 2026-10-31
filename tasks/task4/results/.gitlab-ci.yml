@@ -1,18 +1,21 @@
-# Пайплайн booking-service: gitlab-ci-local build test deploy tag
-# Выпуск в prod и откат — ручные задания: gitlab-ci-local deploy-prod, gitlab-ci-local rollback-prod.
-# Задания выполняются на машине с Docker, Minikube, Helm и kubectl (shell-исполнитель).
+# Пайплайн booking-service: gitlab-ci-local запускает все джобы, кроме ручных.
+# Задание требует build, test, deploy и tag; тесты сервиса и регресс курса — отдельные джобы test:unit, test:integration и test:api.
+# Ручные джобы: выпуск в prod и откат (deploy:prod, rollback:prod) и учения на стенде задания 2 (ops:*).
+# Джобы выполняются на машине с Docker, Minikube, Helm и kubectl (shell-исполнитель).
 stages:
   - build
   - test
   - deploy
   - tag
   - release
+  - ops
 
 variables:
   IMAGE_TAG: ${CI_COMMIT_SHORT_SHA}   # неизменяемый тег: staging и prod получают один и тот же образ
   IMAGE_NAME: booking-service
   RELEASE: booking-service
   PUSH_TAG: "false"                   # true — отправить git-тег в origin
+  DOTNET_SDK: mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
 
 # Развёртывание в namespace NAMESPACE с values-NAMESPACE.yaml и проверка DNS изнутри кластера.
 .helm-deploy: &helm_deploy |
@@ -30,21 +33,12 @@ build:
     - docker build -f ../task2/booking-service/Dockerfile -t "${IMAGE_NAME}:${IMAGE_TAG}" ../task2
     - docker image ls "${IMAGE_NAME}:${IMAGE_TAG}"
 
-unit-tests:
-  stage: test
-  needs: []
-  script:
-    # Исходники монтируются только на чтение и копируются внутрь контейнера без каталогов сборки хоста.
-    - docker run --rm -v "$(cd ../task2 && pwd)":/src:ro mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
-      sh -c 'cp -r /src /work && find /work -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + &&
-             cd /work/booking-service && dotnet test --project tests/BookingService.Tests.csproj'
-
+# Обязательная проверка образа: контейнер без БД, Kafka и монолита отвечает на /ping и включает /feature по флагу.
 test:
   stage: test
   needs: [build]
   script:
-    # Контейнер без БД, Kafka и монолита: проверяются /ping и фича-флаг. Адреса зависимостей сервис требует —
-    # передаём недоступные, публикация outbox выключена.
+    # Адреса зависимостей сервис требует — передаём недоступные, публикация outbox выключена.
     - docker rm -f booking-service-ci >/dev/null 2>&1 || true
     - docker run -d --name booking-service-ci -p 18080:8080 -e ENABLE_FEATURE_X=true
       -e BOOKING_DB="Host=absent-db;Database=booking;Username=booking" -e MONOLITH_URL=http://absent-monolith:8080/
@@ -62,9 +56,40 @@ test:
       docker rm -f booking-service-ci >/dev/null
       [ "$body" = "pong" ] && [ "$feature" = "Feature X is enabled!" ] && [ "$ready" = "503" ]
 
+# dotnet test в контейнере SDK: исходники монтируются только на чтение и копируются без каталогов сборки хоста.
+.dotnet-test:
+  stage: test
+  needs: []
+  script:
+    - docker run --rm ${DOCKER_ARGS} -v "$(cd ../task2 && pwd)":/src:ro "${DOTNET_SDK}"
+      sh -c 'cp -r /src /work && find /work -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + &&
+             cd /work/booking-service && dotnet test --project '"${TEST_PROJECT}"
+
+test:unit:
+  extends: .dotnet-test
+  variables:
+    TEST_PROJECT: tests/BookingService.Tests.csproj
+
+# PostgreSQL и Kafka для тестов поднимает Testcontainers, поэтому контейнеру с тестами нужен Docker хоста.
+test:integration:
+  extends: .dotnet-test
+  variables:
+    TEST_PROJECT: integration-tests/BookingService.IntegrationTests.csproj
+    DOCKER_ARGS: --network host -v /var/run/docker.sock:/var/run/docker.sock
+
+# Регресс курса на стенде задания 2: монолит с прокси, booking-service, Kafka и сервис истории.
+test:api:
+  stage: test
+  needs: []
+  script:
+    - cd ../task2
+    - docker compose up -d --build
+    # образ регресса в профиле test, поэтому up его не собирает
+    - docker compose run --rm --build regress
+
 deploy:
   stage: deploy
-  needs: [build, test, unit-tests]
+  needs: [build, test, test:unit, test:integration, test:api]
   variables:
     NAMESPACE: staging
   script:
@@ -80,7 +105,7 @@ tag:
     - git tag --list "${RELEASE}-*" | tail -3
 
 # Выпуск в prod: тот же образ, что прошёл staging, без пересборки; отличаются только values-prod.yaml.
-deploy-prod:
+deploy:prod:
   stage: release
   needs: [tag]
   when: manual
@@ -91,7 +116,7 @@ deploy-prod:
     - ./check-promotion.sh
 
 # Откат prod на предыдущую ревизию Helm: образ и values той ревизии.
-rollback-prod:
+rollback:prod:
   stage: release
   needs: []
   when: manual
@@ -100,3 +125,18 @@ rollback-prod:
     - helm -n prod history "${RELEASE}" --max 3
     - kubectl -n prod get deployment "${RELEASE}" -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
     - NAMESPACE=prod ./check-dns.sh
+
+# Учения на стенде задания 2. Переключение и откат удаляют тома стенда, проверка доставки останавливает Kafka.
+ops:cutover-drill:
+  stage: ops
+  needs: []
+  when: manual
+  script:
+    - cd ../task2 && ./migration/cutover-drill.sh
+
+ops:delivery-check:
+  stage: ops
+  needs: []
+  when: manual
+  script:
+    - cd ../task2 && ./check-delivery.sh

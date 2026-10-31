@@ -1,0 +1,24 @@
+Интеграционные тесты booking-service на PostgreSQL и Kafka из Testcontainers, 31.10.2026: в контейнере .NET SDK с Docker хоста, как джоба test:integration в пайплайне задания 4.
+$ cd tasks/task2 && docker run --rm --network host -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD":/src:ro mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa sh -c 'cp -r /src /work && find /work -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + && cd /work/booking-service && dotnet test --project integration-tests/BookingService.IntegrationTests.csproj --output detailed'
+Running tests from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Event_is_read_again_after_history_database_was_down (16s 779ms)
+  from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Event_waits_in_outbox_while_kafka_is_down (5s 026ms)
+  from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Event_reaches_history_once_even_if_published_twice (4s 867ms)
+  from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Booking_and_its_event_are_saved_together (50ms)
+  from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Offset_is_committed_only_after_history_is_written (1s 629ms)
+  from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Booking_is_rolled_back_when_its_event_cannot_be_saved (44ms)
+  from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
+/work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64) passed (32s 962ms)
+
+Test run summary: Passed!
+  total: 6
+  failed: 0
+  succeeded: 6
+  skipped: 0
+  duration: 33s 024ms
+(код выхода 0)

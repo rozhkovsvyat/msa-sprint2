@@ -4,7 +4,7 @@
 
 $ ./calls.sh course
 
-POST http://localhost:4000/  userid=user1  x-request-id=calls-1792421043-6800
+POST http://localhost:4000/  userid=user1  x-request-id=calls-1793465920-1721
 {
   "data": {
     "bookingsByUser": []
@@ -14,7 +14,7 @@ POST http://localhost:4000/  userid=user1  x-request-id=calls-1792421043-6800
 
 $ ./calls.sh batch
 
-POST http://localhost:4000/  userid=test-user-2  x-request-id=calls-1792421078-21164
+POST http://localhost:4000/  userid=test-user-2  x-request-id=calls-1793465955-15292
 {
   "data": {
     "hotelsByIds": [

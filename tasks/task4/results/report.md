@@ -1,15 +1,16 @@
 # Задание 4. Автоматизация развёртывания и тестирования
 
-Вместо Go-заготовки разворачивается настоящий booking-service (C#, .NET 10) из задания 2. Образ собирается тем же Dockerfile, что и в задании 2: [`tasks/task2/booking-service/Dockerfile`](../../task2/booking-service/Dockerfile), контекст сборки — `tasks/task2`.
+Вместо Go-заготовки разворачивается настоящий booking-service (C#, .NET 10) из задания 2. Dockerfile обоих сервисов лежат рядом с их кодом в задании 2, копии — в этой папке: [booking-service.Dockerfile](booking-service.Dockerfile) и [booking-history-service.Dockerfile](booking-history-service.Dockerfile). Пайплайн этого задания собирает booking-service, контекст сборки — `tasks/task2`.
 
 ## Развёртывание
 
 ```bash
 minikube start --driver=docker --cpus=4 --memory=8192
 cd tasks/task4
-gitlab-ci-local build unit-tests test deploy tag   # пайплайн: сборка, тесты, staging, git-тег
-gitlab-ci-local deploy-prod                         # тот же образ в namespace prod с values-prod.yaml
-gitlab-ci-local rollback-prod                       # откат prod на предыдущую ревизию Helm
+gitlab-ci-local                         # пайплайн без ручных джоб: сборка, тесты, staging, git-тег
+gitlab-ci-local build test deploy tag   # только обязательные джобы задания
+gitlab-ci-local deploy:prod             # тот же образ в namespace prod с values-prod.yaml
+gitlab-ci-local rollback:prod           # откат prod на предыдущую ревизию Helm
 
 # то же вручную
 TAG=$(git rev-parse --short=8 HEAD)
@@ -33,22 +34,16 @@ NAMESPACE=staging ./check-status.sh                   # под, Service, рел�
 
 Сборка в два этапа (SDK → runtime), базовые образы закреплены по digest, процесс работает не от root.
 
-| Требование | Как сделано |
-| :- | :- |
-| Сборка `docker build` | `docker build -f booking-service/Dockerfile -t booking-service:<tag> .` в `tasks/task2` |
-| Порт 8080, `/ping` → `pong` | Служебный HTTP на 8080; gRPC для прокси монолита — на 9090 |
-| Поведение при `ENABLE_FEATURE_X=true` | Открывается `GET /feature`, `/version` показывает `featureX: true` |
+Образ собирается командой `docker build -f booking-service/Dockerfile -t booking-service:<tag> .` из `tasks/task2`. Служебный HTTP слушает 8080 (`/ping` → `pong`), gRPC для прокси монолита — 9090. При `ENABLE_FEATURE_X=true` открывается `GET /feature`, а `/version` показывает `featureX: true`.
 
-В кластере заданий 4–5 нет БД, Kafka и монолита: под отвечает на `/ping`, `/version` и `/feature`, а бизнес-путь бронирования проверяется на стенде задания 2. Адреса зависимостей сервис требует при старте, поэтому чарт передаёт их явно, а публикацию событий выключает (`OUTBOX_PUBLISHER=disabled`). `/ready` проверяет БД и здесь отвечает 503, поэтому обе пробы смотрят на `/ping`, как и требует задание; в окружении с БД readiness переводится на `/ready`.
+В кластере заданий 4–5 нет БД, Kafka и монолита: под отвечает на `/ping`, `/version` и `/feature`, а само бронирование, с БД, Kafka и монолитом, проверено на стенде задания 2. Адреса зависимостей сервис требует при старте, поэтому чарт передаёт их явно, а публикацию событий выключает (`OUTBOX_PUBLISHER=disabled`). `/ready` проверяет БД и здесь отвечает 503, поэтому обе пробы смотрят на `/ping`, как и требует задание; в окружении с БД readiness переводится на `/ready`.
 
 ## Helm-чарт
 
 [`helm/booking-service`](../helm/booking-service):
 - Deployment с `livenessProbe` и `readinessProbe` по `/ping`, Service типа ClusterIP: порт 80 → 8080;
 - в `values.yaml` — `replicaCount`, `image.name/tag/pullPolicy`, `env[]`, `resources`, `featureFlags.enableFeatureX` (→ `ENABLE_FEATURE_X`), адреса зависимостей;
-- тег образа обязателен: без него рендер чарта завершается ошибкой, и плавающий `latest` в релиз не попадает;
-- `imagePullPolicy` задаётся в values, а не в шаблоне;
-- для окружения с БД: `migrations.enabled=true` запускает Job с командой `migrate` из того же образа перед установкой и обновлением, строка подключения — из Secret (`dependencies.existingSecret`).
+- тег образа обязателен, чтобы в релиз не попал плавающий `latest`.
 
 | Параметр | [staging](values-staging.yaml) | [prod](values-prod.yaml) |
 | :- | :- | :- |
@@ -61,28 +56,35 @@ NAMESPACE=staging ./check-status.sh                   # под, Service, рел�
 
 [`.gitlab-ci.yml`](.gitlab-ci.yml):
 
-| Стадия | Задание | Что делает |
+| Стадия | Джоба | Что делает |
 | :- | :- | :- |
 | build | `build` | `docker build` с тегом — коротким SHA коммита |
-| test | `unit-tests` | Тесты сервиса (`dotnet test`) в контейнере .NET SDK |
 | test | `test` | `docker run`: `/ping` → `pong`, `/feature` при `ENABLE_FEATURE_X=true`, `/ready` без БД → 503 |
-| deploy | `deploy` | `minikube image load`, `helm upgrade --install` в namespace staging, проверка DNS |
+| test | `test:unit` | Юнит-тесты сервиса (`dotnet test`) в контейнере .NET SDK |
+| test | `test:integration` | Интеграционные тесты outbox на PostgreSQL и Kafka из Testcontainers |
+| test | `test:api` | Регресс курса (`test/regress.sh`) на стенде задания 2: монолит с прокси, booking-service, Kafka, сервис истории |
+| deploy | `deploy` | После всех тестов: `minikube image load`, `helm upgrade --install` в namespace staging, проверка DNS |
 | tag | `tag` | Аннотированный git-тег `booking-service-<дата-время>`; отправка в origin — при `PUSH_TAG=true` |
-| release | `deploy-prod`, `rollback-prod` | Вручную: тот же образ в prod без пересборки, `check-promotion.sh` сверяет imageID подов staging и prod; откат — `helm rollback` |
+| release | `deploy:prod`, `rollback:prod` | Вручную: тот же образ в prod без пересборки, `check-promotion.sh` сверяет imageID подов staging и prod; откат — `helm rollback` |
+| ops | `ops:cutover-drill`, `ops:delivery-check` | Вручную: учения по переключению и откату и проверка доставки при остановленной Kafka на стенде задания 2 — они удаляют тома стенда или останавливают Kafka |
 
-Чтобы было что откатывать, вторая ревизия prod включает фича-флаг (`helm upgrade --reuse-values --set featureFlags.enableFeatureX=true`); `rollback-prod` возвращает ревизию 1 — флаг снова выключен, образ тот же ([helm-rollback.log](helm-rollback.log)).
+Сеть `hotelio-net` для `test:api` нужно создать заранее ([README задания 2](../../task2/results/README.md)). Образ booking-service compose собирает сам из тех же исходников, так что `test:api` проверяет код, а не образ из `build`.
+
+Чтобы было что откатывать, следующая ревизия prod включает фича-флаг (`helm upgrade --reuse-values --set featureFlags.enableFeatureX=true`); `rollback:prod` возвращает предыдущую ревизию — флаг снова выключен, образ тот же ([helm-rollback.log](helm-rollback.log)).
 
 Registry нет, поэтому образ попадает в Minikube через `minikube image load`. Для внешнего кластера здесь будут публикация образа в registry и доступ к нему из кластера.
 
 ## Service discovery через DNS
 
-`check-dns.sh` из шаблона запускал `kubectl run --rm -it` без терминала: под завершался раньше, чем kubectl подключался к выводу, ответ печатался дважды (`pongpong`), и проверка падала. Теперь скрипт запускает под с `curl` без sidecar, ждёт его завершения, читает журнал и сравнивает ответ с `pong`. Недоступный сервис даёт ненулевой код выхода.
+`check-dns.sh` из шаблона запускал `kubectl run --rm -it` без терминала: под завершался раньше, чем kubectl подключался к выводу, ответ печатался дважды (`pongpong`), и проверка падала. Теперь скрипт запускает под с `curl` без sidecar, ждёт его завершения, читает лог пода и сравнивает ответ с `pong`. Недоступный сервис даёт ненулевой код выхода. `check-status.sh` тоже переписан: ждёт готовности Deployment, принимает namespace через `NAMESPACE` и сверяет ответ `/ping` с `pong`.
 
 ## Результаты
 
 | Что | Файл |
 | :- | :- |
-| Пайплайн build → test → deploy → tag | [pipeline-build-log.txt](pipeline-build-log.txt) |
+| Описание изменений и инструкция по развёртыванию в Minikube | этот файл; коротко — в конце [README.md](../README.md) задания |
+| Dockerfile сервисов | [booking-service.Dockerfile](booking-service.Dockerfile), [booking-history-service.Dockerfile](booking-history-service.Dockerfile) — копии файлов из `tasks/task2` |
+| Пайплайн build → test → deploy → tag, с джобами `test:unit`, `test:integration`, `test:api` | [pipeline-build-log.txt](pipeline-build-log.txt) |
 | Продвижение того же образа в prod и откат | [prod-promotion.log](prod-promotion.log), [helm-rollback.log](helm-rollback.log) |
 | `curl /ping` через port-forward | [скриншот](screenshot-curl-ping.png), [текст](curl-ping.txt) |
 | `./check-dns.sh` | [скриншот](screenshot-check-dns.png), [текст](check-dns.txt) |

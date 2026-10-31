@@ -1,27 +1,27 @@
 $ kubectl -n staging port-forward svc/booking-service 8080:80 &
-Forwarding from 127.0.0.1:8080 -> 8080
+[1] 47149
+$ Forwarding from 127.0.0.1:8080 -> 8080
 Forwarding from [::1]:8080 -> 8080
-Handling connection for 8080
-$ curl -i http://localhost:8080/ping
+
+$ curl -i http://localhost:8080/ping; echo
 Handling connection for 8080
 HTTP/1.1 200 OK
 Content-Type: text/plain; charset=utf-8
-Date: Mon, 19 Oct 2026 14:56:57 GMT
+Date: Sat, 31 Oct 2026 16:57:45 GMT
 Server: Kestrel
 Transfer-Encoding: chunked
-x-request-id: 1a6d1c17-5ffc-41c4-9113-4d3e76012dd9
+x-request-id: 711a5995-1034-45fa-9c0a-95bcc7525e0d
 X-Booking-Service-Version: v1
 
 pong
-
-$ curl -i http://localhost:8080/version
+$ curl -i http://localhost:8080/version; echo
 Handling connection for 8080
 HTTP/1.1 200 OK
 Content-Type: application/json; charset=utf-8
-Date: Mon, 19 Oct 2026 14:56:57 GMT
+Date: Sat, 31 Oct 2026 16:57:48 GMT
 Server: Kestrel
 Transfer-Encoding: chunked
-x-request-id: c5fe5dd5-b4d6-4acd-91fe-609014b550d2
+x-request-id: 38d6dc75-d673-4581-aea8-1b17b98ec221
 X-Booking-Service-Version: v1
 
 {"version":"v1","featureX":true}

@@ -1,16 +1,16 @@
-Журнал booking-subgraph по x-request-id запросов ./calls.sh success и ./calls.sh deny (задание 3). Команды выполняются из tasks/task3.
+Логи booking-subgraph по x-request-id запросов ./calls.sh success и ./calls.sh deny (задание 3). Команды выполняются из tasks/task3.
 
 $ ./calls.sh success
 
-POST http://localhost:4000/  userid=test-user-2  x-request-id=calls-1792421043-29573
+POST http://localhost:4000/  userid=test-user-2  x-request-id=calls-1793465920-24494
 {
   "data": {
     "bookingsByUser": [
       {
-        "id": "3",
+        "id": "11",
         "promoCode": "TESTCODE1",
         "discountPercent": 10,
-        "createdAt": "2026-10-19T14:40:02.530507Z",
+        "createdAt": "2026-10-31T16:53:36.902402Z",
         "discountInfo": {
           "code": "TESTCODE1",
           "isValid": true,
@@ -28,10 +28,10 @@ POST http://localhost:4000/  userid=test-user-2  x-request-id=calls-1792421043-2
         }
       },
       {
-        "id": "6",
+        "id": "15",
         "promoCode": "TESTCODE1",
         "discountPercent": 10,
-        "createdAt": "2026-10-19T14:40:03.110457Z",
+        "createdAt": "2026-10-31T16:53:37.833154Z",
         "discountInfo": {
           "code": "TESTCODE1",
           "isValid": true,
@@ -40,20 +40,6 @@ POST http://localhost:4000/  userid=test-user-2  x-request-id=calls-1792421043-2
           "expired": false,
           "validUntil": "2099-12-31"
         },
-        "hotel": {
-          "id": "test-hotel-1",
-          "name": null,
-          "city": "Seoul",
-          "rating": 4.7,
-          "description": "Modern hotel in Seoul downtown with spa and skybar."
-        }
-      },
-      {
-        "id": "7",
-        "promoCode": null,
-        "discountPercent": 0,
-        "createdAt": "2026-10-19T14:40:34.563876Z",
-        "discountInfo": null,
         "hotel": {
           "id": "test-hotel-1",
           "name": null,
@@ -69,7 +55,7 @@ POST http://localhost:4000/  userid=test-user-2  x-request-id=calls-1792421043-2
 
 $ ./calls.sh deny
 
-POST http://localhost:4000/  userid=test-user-3  x-request-id=calls-1792421043-439
+POST http://localhost:4000/  userid=test-user-3  x-request-id=calls-1793465920-28128
 {
   "errors": [
     {
@@ -86,7 +72,7 @@ POST http://localhost:4000/  userid=test-user-3  x-request-id=calls-1792421043-4
   "data": null
 }
 
-POST http://localhost:4000/  userid=<нет>  x-request-id=calls-1792421043-954
+POST http://localhost:4000/  userid=<нет>  x-request-id=calls-1793465920-516
 {
   "errors": [
     {
@@ -104,10 +90,10 @@ POST http://localhost:4000/  userid=<нет>  x-request-id=calls-1792421043-954
 }
 (код выхода 0)
 
-$ docker logs booking-subgraph 2>&1 | grep -e calls-1792421043-29573 -e calls-1792421043-439 -e calls-1792421043-954
-{"ts":"2026-10-19T14:44:03.290Z","svc":"booking-subgraph","msg":"request","userid":"test-user-2","operation":"MyBookings__booking_subgraph__0","requestId":"calls-1792421043-29573"}
-{"ts":"2026-10-19T14:44:03.293Z","svc":"booking-subgraph","msg":"gRPC ListBookings","userId":"test-user-2","requestId":"calls-1792421043-29573"}
-{"ts":"2026-10-19T14:44:03.328Z","svc":"booking-subgraph","msg":"bookings returned","userId":"test-user-2","count":3,"ids":["3","6","7"],"requestId":"calls-1792421043-29573"}
-{"ts":"2026-10-19T14:44:03.431Z","svc":"booking-subgraph","msg":"request","userid":"test-user-3","operation":"MyBookings__booking_subgraph__0","requestId":"calls-1792421043-439"}
-{"ts":"2026-10-19T14:44:03.431Z","svc":"booking-subgraph","msg":"ACL deny","requester":"test-user-3","owner":"test-user-2","requestId":"calls-1792421043-439"}
-{"ts":"2026-10-19T14:44:03.458Z","svc":"booking-subgraph","msg":"request","userid":null,"operation":"MyBookings__booking_subgraph__0","requestId":"calls-1792421043-954"}
+$ docker logs booking-subgraph 2>&1 | grep -e calls-1793465920-24494 -e calls-1793465920-28128 -e calls-1793465920-516
+{"ts":"2026-10-31T16:58:40.606Z","svc":"booking-subgraph","msg":"request","userid":"test-user-2","operation":"MyBookings__booking_subgraph__0","requestId":"calls-1793465920-24494"}
+{"ts":"2026-10-31T16:58:40.607Z","svc":"booking-subgraph","msg":"gRPC ListBookings","userId":"test-user-2","requestId":"calls-1793465920-24494"}
+{"ts":"2026-10-31T16:58:40.616Z","svc":"booking-subgraph","msg":"bookings returned","userId":"test-user-2","count":2,"ids":["11","15"],"requestId":"calls-1793465920-24494"}
+{"ts":"2026-10-31T16:58:40.698Z","svc":"booking-subgraph","msg":"request","userid":"test-user-3","operation":"MyBookings__booking_subgraph__0","requestId":"calls-1793465920-28128"}
+{"ts":"2026-10-31T16:58:40.698Z","svc":"booking-subgraph","msg":"ACL deny","requester":"test-user-3","owner":"test-user-2","requestId":"calls-1793465920-28128"}
+{"ts":"2026-10-31T16:58:40.717Z","svc":"booking-subgraph","msg":"request","userid":null,"operation":"MyBookings__booking_subgraph__0","requestId":"calls-1793465920-516"}

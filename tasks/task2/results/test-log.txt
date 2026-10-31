@@ -136,7 +136,7 @@ $ docker compose up -d --build --quiet-build
  Container booking-service Started 
  Container booking-history-service Started 
 
-== 1. Отрицательный контроль: booking-service остановлен, регресс должен упасть на бронированиях ==
+== 1. booking-service остановлен: по заданию тесты на booking должны упасть ==
 $ docker compose stop booking-service; docker compose run --rm regress; docker compose start booking-service
  Container booking-service Stopping 
  Container booking-service Stopped 
@@ -300,3 +300,42 @@ INSERT 0 11
 ✅ Бронирование 5 попало в историю ровно один раз
 ✅ Бронирование 6 попало в историю ровно один раз
 ✅ Все HTTP-тесты пройдены!
+
+== 3. Дополнительно, 30.10.2026 09:34 MSK: booking-service остановлен, запросы через монолит ==
+-- В части 1 регресс останавливается на первой проверке бронирований, а она обращается к booking-service напрямую по gRPC.
+-- Здесь запросы бронирований идут через REST монолита: прокси вызывает booking-service, и без него монолит отвечает 500.
+$ docker compose stop booking-service
+ Container booking-service Stopping 
+ Container booking-service Stopped 
+$ curl -i "http://localhost:8084/api/bookings?userId=test-user-2"
+HTTP/1.1 500 
+Content-Type: application/json
+Transfer-Encoding: chunked
+Date: Fri, 30 Oct 2026 06:34:52 GMT
+Connection: close
+
+{"timestamp":"2026-10-30T06:34:52.227+00:00","status":500,"error":"Internal Server Error","path":"/api/bookings"}
+$ curl -i -X POST "http://localhost:8084/api/bookings?userId=test-user-3&hotelId=test-hotel-1"
+HTTP/1.1 500 
+Content-Type: application/json
+Transfer-Encoding: chunked
+Date: Fri, 30 Oct 2026 06:34:52 GMT
+Connection: close
+
+{"timestamp":"2026-10-30T06:34:52.237+00:00","status":500,"error":"Internal Server Error","path":"/api/bookings"}
+$ docker compose logs --no-log-prefix --since 2026-10-30T06:34:51Z monolith | grep "Request processing failed"
+2026-10-30T06:34:52.225Z ERROR 1 --- [nio-8080-exec-3] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: io.grpc.StatusRuntimeException: UNAVAILABLE: Unable to resolve host booking-service] with root cause
+2026-10-30T06:34:52.236Z ERROR 1 --- [nio-8080-exec-5] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: io.grpc.StatusRuntimeException: UNAVAILABLE: Unable to resolve host booking-service] with root cause
+$ docker compose start booking-service
+ Container booking-db Waiting 
+ Container task2-kafka-init-1 Starting 
+ Container task2-kafka-init-1 Started 
+ Container booking-db Healthy 
+ Container task2-booking-schema-1 Starting 
+ Container task2-booking-schema-1 Started 
+ Container task2-kafka-init-1 Waiting 
+ Container task2-booking-schema-1 Waiting 
+ Container task2-booking-schema-1 Exited 
+ Container task2-kafka-init-1 Exited 
+ Container booking-service Starting 
+ Container booking-service Started 

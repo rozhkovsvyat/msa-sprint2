@@ -55,3 +55,10 @@ $ docker logs --since 1m hotelio-monolith 2>&1 | grep -m1 -A3 NullPointerExcepti
 
 java.lang.NullPointerException: null
 	at com.hotelio.proto.booking.BookingListRequest$Builder.setUserId(BookingListRequest.java:449) ~[p-o-y-1.0.0.jar!/:na]
+== 30.10.2026: пустой userId через монолит — прокси передаёт пустую строку, сервис отдаёт все бронирования ==
+$ curl -s 'http://localhost:8084/api/bookings?userId=' | jq -c '.[] | {id, userId, hotelId}'
+{"id":3,"userId":"test-user-2","hotelId":"test-hotel-1"}
+{"id":4,"userId":"test-user-3","hotelId":"test-hotel-1"}
+{"id":5,"userId":"test-user-3","hotelId":"test-hotel-1"}
+{"id":6,"userId":"test-user-2","hotelId":"test-hotel-1"}
+{"id":7,"userId":"test-user-2","hotelId":"test-hotel-1"}

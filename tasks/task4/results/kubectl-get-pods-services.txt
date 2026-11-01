@@ -1,14 +1,14 @@
 $ kubectl get pods,services -n staging
 NAME                                   READY   STATUS    RESTARTS   AGE
-pod/booking-service-54c69f475d-dddmq   1/1     Running   0          4m
+pod/booking-service-7474bfbc46-vd98s   1/1     Running   0          5m
 
 NAME                      TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
-service/booking-service   ClusterIP   10.97.72.184   <none>        80/TCP    12d
+service/booking-service   ClusterIP   10.97.72.184   <none>        80/TCP    13d
 $ kubectl get pods,services -n prod
 NAME                                   READY   STATUS    RESTARTS   AGE
-pod/booking-service-69bd9d6d6c-5dfqx   1/1     Running   0          2m53s
-pod/booking-service-69bd9d6d6c-7zzjh   1/1     Running   0          2m58s
-pod/booking-service-69bd9d6d6c-cpmxp   1/1     Running   0          2m47s
+pod/booking-service-54866bcb87-8zqxn   1/1     Running   0          3m35s
+pod/booking-service-54866bcb87-kcv4n   1/1     Running   0          3m41s
+pod/booking-service-54866bcb87-rdk4x   1/1     Running   0          3m47s
 
 NAME                      TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
-service/booking-service   ClusterIP   10.102.254.124   <none>        80/TCP    12d
+service/booking-service   ClusterIP   10.102.254.124   <none>        80/TCP    13d

@@ -62,7 +62,7 @@ NAMESPACE=staging ./check-status.sh                   # под, Service, рел�
 | test | `test` | `docker run`: `/ping` → `pong`, `/feature` при `ENABLE_FEATURE_X=true`, `/ready` без БД → 503 |
 | test | `test:unit` | Юнит-тесты сервиса (`dotnet test`) в контейнере .NET SDK |
 | test | `test:integration` | Интеграционные тесты outbox на PostgreSQL и Kafka из Testcontainers |
-| test | `test:api` | Регресс курса (`test/regress.sh`) на стенде задания 2: монолит с прокси, booking-service, Kafka, сервис истории |
+| test | `test:api` | Регресс курса (`test/regress.sh`) на чистом стенде задания 2: монолит с прокси, booking-service, Kafka, сервис истории |
 | deploy | `deploy` | После всех тестов: `minikube image load`, `helm upgrade --install` в namespace staging, проверка DNS |
 | tag | `tag` | Аннотированный git-тег `booking-service-<дата-время>`; отправка в origin — при `PUSH_TAG=true` |
 | release | `deploy:prod`, `rollback:prod` | Вручную: тот же образ в prod без пересборки, `check-promotion.sh` сверяет imageID подов staging и prod; откат — `helm rollback` |

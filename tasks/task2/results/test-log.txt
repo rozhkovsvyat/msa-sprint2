@@ -339,3 +339,98 @@ $ docker compose start booking-service
  Container task2-kafka-init-1 Exited 
  Container booking-service Starting 
  Container booking-service Started 
+
+== 4. Дополнительно, 01.11.2026 22:02 MSK: dead letter перенесён в DLQ-топик Kafka, стенд с чистыми томами, полный регресс ==
+$ docker compose down -v --remove-orphans
+$ docker compose build && docker compose build regress
+-- вывод остановки и сборки образов опущен
+$ docker compose up -d --wait booking-service booking-history-service monolith
+$ docker compose ps
+NAME                      IMAGE                             COMMAND                  SERVICE                   CREATED          STATUS                    PORTS
+booking-db                postgres:15                       "docker-entrypoint.s…"   booking-db                11 seconds ago   Up 10 seconds (healthy)   0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp
+booking-history-service   hotelio-booking-history-service   "dotnet BookingHisto…"   booking-history-service   10 seconds ago   Up Less than a second     0.0.0.0:8086->8080/tcp, [::]:8086->8080/tcp
+booking-service           hotelio-booking-service           "dotnet BookingServi…"   booking-service           10 seconds ago   Up Less than a second     0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp, 0.0.0.0:8085->8080/tcp, [::]:8085->8080/tcp
+history-db                postgres:15                       "docker-entrypoint.s…"   history-db                11 seconds ago   Up 10 seconds (healthy)   0.0.0.0:5434->5432/tcp, [::]:5434->5432/tcp
+hotelio-db                postgres:15                       "docker-entrypoint.s…"   monolith-db               11 seconds ago   Up 10 seconds (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+hotelio-monolith          task2-monolith                    "java -jar app.jar"      monolith                  10 seconds ago   Up 8 seconds (healthy)    0.0.0.0:8084->8080/tcp, [::]:8084->8080/tcp
+kafka                     confluentinc/cp-kafka:7.2.1       "/etc/confluent/dock…"   kafka                     10 seconds ago   Up 10 seconds             0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp
+zookeeper                 confluentinc/cp-zookeeper:7.2.1   "/etc/confluent/dock…"   zookeeper                 11 seconds ago   Up 10 seconds             2888/tcp, 0.0.0.0:2181->2181/tcp, [::]:2181->2181/tcp, 3888/tcp
+$ docker compose run --rm regress
+ Container hotelio-monolith Running 
+ Container hotelio-db Running 
+ Container hotelio-db Waiting 
+ Container hotelio-db Healthy 
+ Container hotelio-monolith Waiting 
+ Container hotelio-monolith Healthy 
+ Container task2-regress-run-cca8d06fae7c Creating 
+ Container task2-regress-run-cca8d06fae7c Created 
+🏁 Регрессионный тест до миграции Hotelio
+🧪 Проверка подключения к БД...
+🧪 Загрузка фикстур...
+DELETE 0
+DELETE 0
+DELETE 0
+DELETE 0
+DELETE 0
+INSERT 0 4
+INSERT 0 3
+INSERT 0 12
+INSERT 0 3
+INSERT 0 2
+INSERT 0 2
+INSERT 0 11
+🧪 Перенос бронирований в booking-service (ops-джоба, режим тестового стенда)...
+[migration] в монолите бронирований: 2, максимальный id: 2
+[migration] перенесено новых: 2, из них с подставленной датой: 0
+[migration] счётчик id booking-service: 2
+[migration] источник: 2 e4d5bdf7954d1c33d83ac1adb1fd3fd2
+[migration] приёмник: 2 e4d5bdf7954d1c33d83ac1adb1fd3fd2
+[migration] длительность: 0 с
+[migration] OK: количество и контрольная сумма совпадают
+🧪 Выполнение HTTP-тестов...
+
+Тесты пользователей...
+✅ Получение test-user-1 по ID работает
+✅ Статус test-user-1: ACTIVE
+✅ test-user-1 в блэклисте
+✅ test-user-1 активен
+✅ test-user-1 не авторизован (в блэклисте)
+✅ test-user-3 — VIP-пользователь
+✅ test-user-2 авторизован
+
+Тесты отелей...
+✅ test-hotel-1 получен по ID
+✅ test-hotel-1 работает
+✅ test-hotel-3 не работает
+✅ test-hotel-2 полностью забронирован
+✅ Поиск отелей в Сеуле работает
+✅ Топ-отели в Сеуле загружены
+
+Тесты ревью...
+✅ Отзывы test-hotel-1 найдены
+✅ test-hotel-1 признан надёжным
+✅ test-hotel-3 НЕ признан надёжным (ожидаемо)
+
+Тесты промокодов...
+✅ Промокод TESTCODE1 найден
+✅ VIP-промо доступен VIP
+✅ VIP-промо недоступен обычному
+✅ Обычный промо доступен
+✅ Истекший промо недоступен
+✅ POST /validate промо прошёл
+
+Тесты бронирования...
+✅ Все бронирования получены (gRPC ListBookings в booking-service)
+✅ Бронирования test-user-2 найдены
+✅ Бронирование прошло (без промо)
+✅ Бронирование с промо прошло
+✅ Отклонено: неактивный пользователь
+✅ Отклонено: отключённый отель из исходной фикстуры
+✅ Отклонено: отель с недостатком отзывов и без мест
+✅ Отклонено: недоверенный отель (работает, места есть) — Hotel is not trusted based on reviews, записи нет
+✅ Отклонено: полностью занятый отель (работает, доверенный) — Hotel is fully booked, записи нет
+
+Тесты истории бронирований...
+✅ Бронирование 3 попало в историю ровно один раз
+✅ Бронирование 4 попало в историю ровно один раз
+✅ Все HTTP-тесты пройдены!

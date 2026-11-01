@@ -16,7 +16,7 @@
 ```bash
 docker network create hotelio-net   # если сети ещё нет
 cd tasks/task2
-docker compose up -d --build
+docker compose up -d --build --wait booking-service booking-history-service monolith
 docker compose run --rm --build regress   # регресс курса через монолит с прокси
 ```
 
@@ -104,7 +104,7 @@ cd ..
 ./migration/cutover-drill.sh   # учения по переключению; удаляет тома стенда
 ```
 
-В пайплайне задания 4 это джобы `test:unit` и `test:integration`, а регресс курса на этом стенде — `test:api`.
+В пайплайне задания 4 это джобы `test:unit` и `test:integration`, а регресс курса на чистом стенде — `test:api`.
 
 Что чем проверяется. Набор шёл от того, что обещает ADR: поведение как в монолите, перевод ответов монолита, доставка «хотя бы один раз» без потерь и дублей, перенос с откатом. Интеграционные тесты проверены от обратного: если сломать то, что тест защищает (разделить транзакцию, убрать защиту от дублей, подтвердить смещение до записи, не отправить сообщение в DLQ или отправить туда событие при неверном пароле к БД истории, удалить при очистке неотправленное событие), он падает.
 
@@ -124,10 +124,10 @@ cd ..
 | :- | :- |
 | Лог `docker ps` | [docker-ps.txt](docker-ps.txt) |
 | Доработанный `regress.sh` | [regress.sh](regress.sh), [init-fixtures.sql](init-fixtures.sql) — фикстуры с двумя отелями, у которых нарушено ровно одно правило |
-| `test-log.txt` с тестовыми запросами | [test-log.txt](test-log.txt): без booking-service тесты бронирования падают и монолит отвечает 500 на запросы бронирований, с ним проходят 29 проверок курса, две проверки причин отказа и две проверки истории |
+| `test-log.txt` с тестовыми запросами | [test-log.txt](test-log.txt): без booking-service тесты бронирования падают и монолит отвечает 500 на запросы бронирований, с ним проходят 29 проверок курса, две проверки причин отказа и две проверки истории; часть 4 — тот же регресс 01.11 на чистом стенде после перевода dead letter в DLQ-топик |
 | `select * from bookings` из новой и старой системы | [bookings-old-vs-new.txt](bookings-old-vs-new.txt) |
 | README со стратегией миграции данных и To-Be | этот файл |
 | Листинг бронирований через REST монолита и gRPC сервиса | [listing-rest-vs-grpc.txt](listing-rest-vs-grpc.txt) |
 | `select *` из таблицы истории | [history.txt](history.txt): история, статистика, права аналитика, DLQ-топик, отставание группы |
 | Бины `bookingService` и `grpcBookingService` в логе монолита | [cutover-drill-log.txt](cutover-drill-log.txt): до переноса только `bookingService`, после включения прокси — оба |
-| Дополнительно | [cutover-drill-log.txt](cutover-drill-log.txt) — учения по переключению и откату, [delivery-check.log](delivery-check.log) — доставка при остановке Kafka и DLQ, [unit-tests.txt](unit-tests.txt) и [integration-tests.txt](integration-tests.txt) — 52 юнит-теста и 11 интеграционных тестов .NET |
+| Дополнительно | [cutover-drill-log.txt](cutover-drill-log.txt) — учения по переключению и откату, [delivery-check.log](delivery-check.log) — доставка при остановке Kafka и DLQ, [unit-tests.txt](unit-tests.txt) и [integration-tests.txt](integration-tests.txt) — 53 юнит-теста и 11 интеграционных тестов .NET |

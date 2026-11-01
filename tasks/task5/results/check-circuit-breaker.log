@@ -2,9 +2,9 @@ $ ./check-circuit-breaker.sh
 ▶️ 1 соединение, 20 запросов — в пределах лимита
 Code 200 : 20 (100.0 %)
 ▶️ 40 соединений, 400 запросов — сверх лимита, лишние запросы сразу получают 503
-Code 200 : 180 (45.0 %)
-Code 503 : 220 (55.0 %)
+Code 200 : 214 (53.5 %)
+Code 503 : 186 (46.5 %)
 ▶️ Счётчик переполнения в sidecar fortio (upstream_rq_pending_overflow)
-cluster.outbound|80||booking-service.default.svc.cluster.local;.upstream_rq_pending_overflow: 220
-✅ OK
+cluster.outbound|80||booking-service.default.svc.cluster.local;.upstream_rq_pending_overflow: 186
+✅ OK: 186 ответов 503, все — из-за переполнения очереди
 (код выхода 0)

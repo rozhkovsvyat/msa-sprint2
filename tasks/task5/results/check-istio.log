@@ -3,35 +3,36 @@ $ ./check-istio.sh
 client version: 1.31.2
 control plane version: 1.31.2
 data plane version: 1.31.2 (5 proxies)
-NAME                                   READY   STATUS    RESTARTS      AGE
-istio-egressgateway-5f778cbf8b-gqd9v   1/1     Running   1 (31h ago)   12d
-istio-ingressgateway-7498b6878-nf7nk   1/1     Running   1 (31h ago)   12d
-istiod-5b97c568c5-dhnc6                1/1     Running   1 (31h ago)   12d
+NAME                                   READY   STATUS    RESTARTS       AGE
+istio-egressgateway-5f778cbf8b-gqd9v   1/1     Running   1 (2d9h ago)   14d
+istio-ingressgateway-7498b6878-nf7nk   1/1     Running   1 (2d9h ago)   14d
+istiod-5b97c568c5-dhnc6                1/1     Running   1 (2d9h ago)   14d
 ▶️ Поды booking-service: 2/2 = контейнер сервиса + sidecar Envoy
 NAME                                  READY   STATUS    RESTARTS   AGE   VERSION
-booking-service-v1-79c847bb64-4scbt   2/2     Running   0          22s   v1
-booking-service-v1-79c847bb64-k5m5g   2/2     Running   0          17s   v1
-booking-service-v2-6b99c4b996-2g5gq   2/2     Running   0          12s   v2
-booking-service-v1-79c847bb64-4scbt: booking-service + istio-proxy (sidecar)
-booking-service-v1-79c847bb64-k5m5g: booking-service + istio-proxy (sidecar)
-booking-service-v2-6b99c4b996-2g5gq: booking-service + istio-proxy (sidecar)
+booking-service-v1-d57497dd8-464h5    2/2     Running   0          32s   v1
+booking-service-v1-d57497dd8-tjkzj    2/2     Running   0          23s   v1
+booking-service-v2-7d5465cffb-mtd9s   2/2     Running   0          14s   v2
+booking-service-v1-d57497dd8-464h5: booking-service + istio-proxy (sidecar)
+booking-service-v1-d57497dd8-tjkzj: booking-service + istio-proxy (sidecar)
+booking-service-v2-7d5465cffb-mtd9s: booking-service + istio-proxy (sidecar)
 ▶️ Образы v1 и v2
 NAME                 IMAGE
-booking-service-v1   booking-service:6201a7d2
-booking-service-v2   booking-service:6201a7d2
+booking-service-v1   booking-service:d2457cc5
+booking-service-v2   booking-service:d2457cc5
 ▶️ Конфигурация маршрутизации
 NAME                                          AGE
-gateway.networking.istio.io/booking-gateway   12d
+gateway.networking.istio.io/booking-gateway   14d
 
 NAME                                                 GATEWAYS              HOSTS   AGE
-virtualservice.networking.istio.io/booking-service   ["booking-gateway"]   ["*"]   12d
+virtualservice.networking.istio.io/booking-service   ["booking-gateway"]   ["*"]   14d
 
 NAME                                                  HOST              AGE
-destinationrule.networking.istio.io/booking-service   booking-service   12d
+destinationrule.networking.istio.io/booking-service   booking-service   14d
 NAME                   AGE
-booking-feature-flag   12d
+booking-feature-flag   14d
 
 ✔ No validation issues found when analyzing namespace: default.
 ▶️ Проверка Istio инъекции в default namespace...
 "enabled"
+✅ OK: инъекция включена, у подов v1 и v2 есть sidecar, все готовы
 (код выхода 0)

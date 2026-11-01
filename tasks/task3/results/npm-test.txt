@@ -7,35 +7,41 @@ v24.21.0
 Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
 Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
 Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
-✔ Свои бронирования приходят одним запросом вместе с отелями и промокодами (118.467958ms)
-✔ @override: discountPercent отдаёт promocode-subgraph по справочнику промокодов (12.510833ms)
-✔ ACL: чужие бронирования и запрос без userid отклоняются, чужое бронирование по id не находится (11.004833ms)
+✔ Свои бронирования приходят одним запросом вместе с отелями и промокодами (212.288125ms)
+✔ @override: discountPercent отдаёт promocode-subgraph по справочнику промокодов (29.305916ms)
+✔ ACL: чужие бронирования и запрос без userid отклоняются, чужое бронирование по id не находится (32.020291ms)
 Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
 Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
 Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
-✔ ACL: без проброса userid шлюзом даже владелец получает UNAUTHENTICATED (6060.4525ms)
-✔ ACL: userid из пробелов или с управляющими символами отклоняется до вызова booking-service (0.997792ms)
+✔ ACL: без проброса userid шлюзом даже владелец получает UNAUTHENTICATED (9532.614291ms)
+✔ ACL: userid из пробелов или с управляющими символами отклоняется до вызова booking-service (0.622375ms)
 Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
 Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
 Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
-✔ ACL: чужое бронирование в ответе booking-service не попадает к пользователю (1931.3885ms)
-✔ Отказ одного отеля: ошибка с path на hotel, остальные бронирования и скидки целы (16.216083ms)
-✔ Лимиты: глубина, алиасы и длина hotelsByIds отклоняются до обращения к источникам (13.54675ms)
+✔ ACL: чужое бронирование в ответе booking-service не попадает к пользователю (1899.109208ms)
+✔ Отказ одного отеля: ошибка с path на hotel, остальные бронирования и скидки целы (13.245083ms)
 Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
 Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
 Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
-✔ 51 бронирование с отелями и скидками читается через Federation целиком (1601.633583ms)
-✔ x-request-id клиента проходит через шлюз, подграфы, REST и gRPC; недопустимый заменяется новым (24.630458ms)
-✔ DataLoader: пачки до 10 отелей, без повторов, не больше 4 одновременных запросов к монолиту (41.074958ms)
-✔ Кеш отелей: вытеснение старых записей не портит результат текущей пачки (4.120584ms)
-✔ Кеш отелей: в пределах TTL отель берётся из кеша, после — снова из монолита (81.01475ms)
-✔ Кеш отелей: ошибку монолита не кешируем, следующий запрос снова идёт в монолит (0.688084ms)
-ℹ tests 14
+✔ Отказ booking-service: клиент получает BOOKING_UNAVAILABLE, подробности gRPC остаются в логе (1903.697375ms)
+✔ Отказ справочника промокодов: PROMO_UNAVAILABLE вместо ответа монолита, бронирования и отели целы (9.691375ms)
+✔ validatePromoCode: проверить промокод можно только для себя — VIP-статус другого не раскрывается (8.055416ms)
+✔ Лимиты: глубина, алиасы и длина hotelsByIds отклоняются до обращения к источникам (9.253416ms)
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+✔ 51 бронирование с отелями и скидками читается через Federation целиком (1719.879792ms)
+✔ x-request-id клиента проходит через шлюз, подграфы, REST и gRPC; недопустимый заменяется новым (21.140417ms)
+✔ DataLoader: пачки до 10 отелей, без повторов, не больше 4 одновременных запросов к монолиту (41.881791ms)
+✔ Кеш отелей: вытеснение старых записей не портит результат текущей пачки (8.716292ms)
+✔ Кеш отелей: в пределах TTL отель берётся из кеша, после — снова из монолита (82.464ms)
+✔ Кеш отелей: ошибку монолита не кешируем, следующий запрос снова идёт в монолит (0.72975ms)
+ℹ tests 17
 ℹ suites 0
-ℹ pass 14
+ℹ pass 17
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 10997.423041
+ℹ duration_ms 16950.776459
 (код выхода 0)

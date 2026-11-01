@@ -2,14 +2,14 @@ using System.Collections.Concurrent;
 using System.Net;
 using Hotelio.Bookings.Domain;
 using Hotelio.Bookings.Legacy;
-using Hotelio.Bookings.Tests.Support;
+using Hotelio.Bookings.Tests.Fakes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Polly.Timeout;
 using Shouldly;
 using Xunit;
-using static Hotelio.Bookings.Tests.Support.MonolithStub;
+using static Hotelio.Bookings.Tests.Fakes.MonolithStub;
 
 namespace Hotelio.Bookings.Tests;
 

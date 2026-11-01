@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Hotelio.Bookings.Data;
 
-namespace Hotelio.Bookings.Tests.Support;
+namespace Hotelio.Bookings.Tests.TestData;
 
 /// <summary>Событие BookingCreated, которое booking-service пишет в outbox для бронирования 42.</summary>
 internal static class SampleEvent

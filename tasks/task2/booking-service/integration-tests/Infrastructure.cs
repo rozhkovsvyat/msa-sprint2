@@ -1,3 +1,4 @@
+using System.Text;
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -78,6 +79,41 @@ public sealed class Infrastructure : IAsyncLifetime
             }
         }
     }
+
+    /// <summary>Топик событий и его DLQ с суффиксом .dlq, как на стенде.</summary>
+    public async Task CreateTopicsAsync(string topic)
+    {
+        await CreateTopicAsync(topic);
+        await CreateTopicAsync(topic + ".dlq");
+    }
+
+    public async Task ProduceAsync(string topic, string key, byte[] value, params (string Name, string Value)[] headers)
+    {
+        using var producer = new ProducerBuilder<string, byte[]>(new ProducerConfig { BootstrapServers = KafkaBootstrap }).Build();
+        var message = new Message<string, byte[]> { Key = key, Value = value, Headers = [] };
+        foreach (var (name, headerValue) in headers) message.Headers.Add(name, Encoding.UTF8.GetBytes(headerValue));
+        await producer.ProduceAsync(topic, message);
+    }
+
+    /// <summary>Первые сообщения партиции 0 как есть: ключ, байты значения, заголовки.</summary>
+    public List<(string Key, byte[] Value, Dictionary<string, string> Headers)> Read(string topic, int count)
+    {
+        using var consumer = new ConsumerBuilder<string, byte[]>(new ConsumerConfig
+        {
+            BootstrapServers = KafkaBootstrap, GroupId = "test-reader-" + Guid.NewGuid(), EnableAutoCommit = false,
+        }).Build();
+        consumer.Assign(new TopicPartitionOffset(topic, 0, Offset.Beginning));
+        var messages = Enumerable.Range(0, count)
+            .Select(_ => consumer.Consume(TimeSpan.FromSeconds(30)).ShouldNotBeNull($"в {topic} меньше {count} сообщений").Message)
+            .Select(m => (m.Key, m.Value, m.Headers.ToDictionary(h => h.Key, h => Encoding.UTF8.GetString(h.GetValueBytes()))))
+            .ToList();
+        consumer.Close();
+        return messages;
+    }
+
+    /// <summary>Та же БД, но с неверным паролем: PostgreSQL отклоняет вход (28P01).</summary>
+    public NpgsqlDataSource WithWrongPassword(string database) =>
+        NpgsqlDataSource.Create(new NpgsqlConnectionStringBuilder(ConnectionString(database)) { Password = "wrong" }.ConnectionString);
 
     /// <summary>Сколько сообщений записано в топик (конец партиции 0).</summary>
     public async Task<long> EndOffsetAsync(string topic)

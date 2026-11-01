@@ -1,10 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Confluent.Kafka;
 using Hotelio.Bookings.Data;
 using Hotelio.Bookings.Outbox;
-using Hotelio.Bookings.Tests.Support;
+using Hotelio.Bookings.Tests.TestData;
 using Shouldly;
 using Xunit;
 using BookingEventsConsumer = Hotelio.BookingHistory.BookingEventsConsumer;
+using HistoryEvent = Hotelio.BookingHistory.BookingCreated;
 using HistoryPayload = Hotelio.BookingHistory.BookingPayload;
 
 namespace Hotelio.Bookings.Tests;
@@ -20,7 +23,7 @@ public sealed class DeliveryTests
     [Fact]
     public void Event_from_booking_service_is_read_by_history_service()
     {
-        BookingEventsConsumer.TryParse(SampleEvent.Json(), out var evt, out var reason).ShouldBeTrue(reason);
+        TryParse(SampleEvent.Json(), out var evt, out var reason).ShouldBeTrue(reason);
 
         evt.ShouldSatisfyAllConditions(
             () => evt.EventId.ShouldBe(BookingCreatedEvent.IdFor(42)),
@@ -33,7 +36,7 @@ public sealed class DeliveryTests
     [Fact]
     public void Event_without_promo_code_is_valid()
     {
-        BookingEventsConsumer.TryParse(SampleEvent.With("booking.promoCode", null), out var evt, out var reason).ShouldBeTrue(reason);
+        TryParse(SampleEvent.With("booking.promoCode", null), out var evt, out var reason).ShouldBeTrue(reason);
         evt.Booking.PromoCode.ShouldBeNull();
     }
 
@@ -43,7 +46,7 @@ public sealed class DeliveryTests
     [InlineData("null")]
     public void Unreadable_message_goes_to_dead_letter(string payload)
     {
-        BookingEventsConsumer.TryParse(payload, out _, out var reason).ShouldBeFalse();
+        TryParse(payload, out _, out var reason).ShouldBeFalse();
         reason.ShouldNotBeEmpty();
     }
 
@@ -62,10 +65,30 @@ public sealed class DeliveryTests
 
         foreach (var payload in payloads)
         {
-            BookingEventsConsumer.TryParse(payload, out _, out var reason).ShouldBeFalse(payload);
+            TryParse(payload, out _, out var reason).ShouldBeFalse(payload);
             reason.ShouldNotBeEmpty();
         }
     }
+
+    [Fact]
+    public void Message_that_is_not_valid_utf8_goes_to_dead_letter()
+    {
+        var payload = Encoding.UTF8.GetBytes(SampleEvent.Json());
+        payload[payload.AsSpan().IndexOf("test-user-2"u8) + "test-user-".Length] = 0xC0; // такого байта в UTF-8 не бывает
+
+        BookingEventsConsumer.TryParse(payload, out _, out var reason).ShouldBeFalse();
+        reason.ShouldStartWith("invalid JSON");
+    }
+
+    [Theory]
+    [InlineData("22003", true)]  // число не помещается в numeric(10, 2)
+    [InlineData("23502", true)]  // NOT NULL
+    [InlineData("28P01", false)] // неверный пароль
+    [InlineData("42501", false)] // нет прав на таблицу
+    [InlineData("42P01", false)] // нет таблицы
+    [InlineData("25006", false)] // реплика только для чтения
+    public void Only_data_rejected_by_postgresql_sends_the_message_to_dead_letter(string sqlState, bool toDeadLetter) =>
+        BookingEventsConsumer.IsDataError(sqlState).ShouldBe(toDeadLetter);
 
     [Theory]
     [InlineData(ErrorCode.Local_MsgTimedOut, false)]
@@ -73,7 +96,7 @@ public sealed class DeliveryTests
     [InlineData(ErrorCode.LeaderNotAvailable, false)]
     [InlineData(ErrorCode.MsgSizeTooLarge, true)]
     [InlineData(ErrorCode.TopicAuthorizationFailed, true)]
-    public void Only_unrecoverable_kafka_errors_send_the_event_to_dead_letter(ErrorCode code, bool permanent) =>
+    public void Only_unrecoverable_kafka_errors_put_the_event_in_quarantine(ErrorCode code, bool permanent) =>
         OutboxPublisher.IsPermanent(code).ShouldBe(permanent);
 
     [Theory]
@@ -84,4 +107,7 @@ public sealed class DeliveryTests
     [InlineData(50, 30)]
     public void Retry_delay_grows_up_to_thirty_seconds(int attempt, int seconds) =>
         OutboxPublisher.RetryDelay(attempt).ShouldBe(TimeSpan.FromSeconds(seconds));
+
+    private static bool TryParse(string payload, [NotNullWhen(true)] out HistoryEvent? evt, out string reason) =>
+        BookingEventsConsumer.TryParse(Encoding.UTF8.GetBytes(payload), out evt, out reason);
 }

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
 
-namespace Hotelio.Bookings.Tests.Support;
+namespace Hotelio.Bookings.Tests.Fakes;
 
 /// <summary>Заглушка REST монолита: отвечает заданной функцией и считает обращения.</summary>
 internal sealed class MonolithStub(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond) : HttpMessageHandler

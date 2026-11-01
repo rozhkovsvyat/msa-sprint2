@@ -1,5 +1,5 @@
 using Hotelio.Bookings.Domain;
-using Hotelio.Bookings.Tests.Support;
+using Hotelio.Bookings.Tests.TestData;
 using Shouldly;
 using Xunit;
 

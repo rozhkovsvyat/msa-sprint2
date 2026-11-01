@@ -1,6 +1,6 @@
 using Hotelio.Bookings.Domain;
 
-namespace Hotelio.Bookings.Tests.Support;
+namespace Hotelio.Bookings.Tests.TestData;
 
 internal static class Users
 {

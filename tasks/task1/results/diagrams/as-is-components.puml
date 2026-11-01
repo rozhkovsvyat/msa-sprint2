@@ -1,5 +1,4 @@
 @startuml
-!define RELATIVE_INCLUDE true
 !include <C4/C4_Component>
 LAYOUT_TOP_DOWN()
 skinparam nodesep 40

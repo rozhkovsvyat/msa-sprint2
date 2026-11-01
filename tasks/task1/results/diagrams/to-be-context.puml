@@ -1,5 +1,4 @@
 @startuml
-!define RELATIVE_INCLUDE true
 !include <C4/C4_Context>
 LAYOUT_LEFT_RIGHT()
 skinparam nodesep 40

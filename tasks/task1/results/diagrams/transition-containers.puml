@@ -24,7 +24,7 @@ System_Boundary(hotelio, "Hotelio") {
 
   Container(bs, "booking-service", "C#, .NET 10, gRPC", "Создание и список бронирований,\nцена и скидка, outbox")
   ContainerDb(bsdb, "БД бронирований", "PostgreSQL", "booking, outbox")
-  Container(kafka, "Kafka", "Apache Kafka", "Топик booking-events")
+  Container(kafka, "Kafka", "Apache Kafka", "Топики booking-events\nи booking-events.dlq")
   Container(hs, "booking-history-service", "C#, .NET 10", "История и агрегаты")
   ContainerDb(hsdb, "БД истории", "PostgreSQL", "booking_history, статистика")
   Container(mig, "Ops-джоба миграции", "psql-скрипт, ручной запуск", "Выполнена в окне переключения;\nобратный перенос — при откате")
@@ -39,7 +39,7 @@ Rel(bs, mono, "Проверки пользователя, отеля,\nотзы�
 Rel(mono, monodb, "Читает и пишет, кроме booking", "JPA")
 Rel(bs, bsdb, "Бронирование и outbox\nв одной транзакции", "SQL")
 Rel(bs, kafka, "Публикует BookingCreated", "Kafka")
-Rel(hs, kafka, "Читает booking-events", "Kafka")
+Rel(hs, kafka, "Читает booking-events,\nнеобработанные — в DLQ", "Kafka")
 Rel(hs, hsdb, "Пишет историю идемпотентно", "SQL")
 Rel(analyst, hsdb, "Читает статистику", "SQL, только чтение")
 Rel(mig, monodb, "Читает booking (только чтение)\n/ дописывает при откате", "SQL")

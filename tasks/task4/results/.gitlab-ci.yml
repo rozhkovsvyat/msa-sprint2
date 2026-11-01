@@ -61,7 +61,9 @@ test:
   stage: test
   needs: []
   script:
-    - docker run --rm ${DOCKER_ARGS} -v "$(cd ../task2 && pwd)":/src:ro "${DOTNET_SDK}"
+    # Кеш пакетов NuGet хоста подключается только на чтение: пакеты не скачиваются заново в каждом прогоне.
+    - docker run --rm ${DOCKER_ARGS} -v "$(cd ../task2 && pwd)":/src:ro -v "${HOME}/.nuget/packages":/nuget:ro
+      -e NUGET_FALLBACK_PACKAGES=/nuget "${DOTNET_SDK}"
       sh -c 'cp -r /src /work && find /work -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + &&
              cd /work/booking-service && dotnet test --project '"${TEST_PROJECT}"
 
@@ -83,13 +85,15 @@ test:api:
   needs: []
   script:
     - cd ../task2
-    - docker compose up -d --build
+    # чистый стенд: id бронирований регресса не совпадают с id прошлых прогонов в истории
+    - docker compose down -v --remove-orphans
+    - docker compose up -d --build --wait booking-service booking-history-service monolith
     # образ регресса в профиле test, поэтому up его не собирает
     - docker compose run --rm --build regress
 
 deploy:
   stage: deploy
-  needs: [build, test, test:unit, test:integration, test:api]
+  needs: [build, test, "test:unit", "test:integration", "test:api"]
   variables:
     NAMESPACE: staging
   script:

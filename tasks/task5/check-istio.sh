@@ -21,3 +21,14 @@ istioctl analyze -n default
 
 echo "▶️ Проверка Istio инъекции в default namespace..."
 kubectl get namespace default -o json | jq '.metadata.labels."istio-injection"'
+
+[ "$(kubectl get namespace default -o jsonpath='{.metadata.labels.istio-injection}')" = enabled ] \
+  || { echo "❌ инъекция sidecar в namespace default выключена"; exit 1; }
+# Без sidecar маршруты, повторы и лимиты Istio на под не действуют.
+without=$(kubectl get pods -l app=booking-service -o jsonpath='{range .items[*]}{.metadata.name} {.spec.initContainers[*].name} {.spec.containers[*].name}{"\n"}{end}' | grep -v istio-proxy || true)
+[ -z "$without" ] || { echo "❌ поды без sidecar: $without"; exit 1; }
+for v in v1 v2; do
+  [ -n "$(kubectl get pods -l app=booking-service,version=$v -o name)" ] || { echo "❌ нет подов $v"; exit 1; }
+done
+kubectl wait --for=condition=Ready pod -l app=booking-service --timeout=60s >/dev/null
+echo "✅ OK: инъекция включена, у подов v1 и v2 есть sidecar, все готовы"

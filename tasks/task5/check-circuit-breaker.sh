@@ -5,6 +5,7 @@
 set -e
 
 kubectl delete pod fortio --ignore-not-found >/dev/null
+trap 'kubectl delete pod fortio --ignore-not-found --wait=false >/dev/null' EXIT
 kubectl apply -f - >/dev/null <<'YAML'
 apiVersion: v1
 kind: Pod
@@ -25,15 +26,21 @@ YAML
 kubectl wait --for=condition=Ready pod/fortio --timeout=120s >/dev/null
 
 echo "▶️ 1 соединение, 20 запросов — в пределах лимита"
-kubectl exec fortio -c fortio -- fortio load -c 1 -qps 0 -n 20 -loglevel Warning http://booking-service/ping 2>&1 | grep '^Code'
+within=$(kubectl exec fortio -c fortio -- fortio load -c 1 -qps 0 -n 20 -loglevel Warning http://booking-service/ping 2>&1 | grep '^Code' || true)
+echo "$within"
 
 echo "▶️ 40 соединений, 400 запросов — сверх лимита, лишние запросы сразу получают 503"
-out=$(kubectl exec fortio -c fortio -- fortio load -c 40 -qps 0 -n 400 -loglevel Warning http://booking-service/ping 2>&1 | grep '^Code')
+out=$(kubectl exec fortio -c fortio -- fortio load -c 40 -qps 0 -n 400 -loglevel Warning http://booking-service/ping 2>&1 | grep '^Code' || true)
 echo "$out"
 
 echo "▶️ Счётчик переполнения в sidecar fortio (upstream_rq_pending_overflow)"
-kubectl exec fortio -c istio-proxy -- pilot-agent request GET stats 2>/dev/null | grep 'booking-service.default' | grep 'pending_overflow'
+stats=$(kubectl exec fortio -c istio-proxy -- pilot-agent request GET stats 2>/dev/null | grep 'booking-service.default' | grep 'pending_overflow' || true)
+echo "$stats"
 
-kubectl delete pod fortio --wait=false >/dev/null
-echo "$out" | grep -q '^Code 503' || { echo "❌ ответов 503 нет — лимит не сработал"; exit 1; }
-echo "✅ OK"
+rejected=$(echo "$out" | awk '$2 == 503 { print $4 }')
+overflow=$(echo "$stats" | awk -F': ' '{ s += $2 } END { print s + 0 }')
+[[ $within == "Code 200 : 20 "* ]] || { echo "❌ в пределах лимита есть ошибки"; exit 1; }
+(( ${rejected:-0} > 0 )) || { echo "❌ ответов 503 нет — лимит не сработал"; exit 1; }
+# Под fortio создаётся заново, поэтому счётчик относится только к этому прогону.
+(( overflow >= rejected )) || { echo "❌ не все 503 — от лимита: переполнений $overflow, ответов 503 $rejected"; exit 1; }
+echo "✅ OK: $rejected ответов 503, все — из-за переполнения очереди"

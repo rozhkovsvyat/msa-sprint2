@@ -59,12 +59,19 @@ public sealed class BookingEventsConsumer(HistoryStore store, IConfiguration con
                 {
                     var error = ex is ProduceException<byte[]?, byte[]?> ? $"DLQ {DeadLetterTopic}: {ex.Message}" : ex.Message;
                     log.LogWarning("Processing failed: {Error}; offset not committed, message will be read again", error);
-                    if (record is not null) consumer.Seek(record.TopicPartitionOffset);
+                    if (record is not null) SeekBack(consumer, record);
                     await Task.Delay(TimeSpan.FromSeconds(2), ct);
                 }
             }
         }
         finally { consumer.Close(); }
+    }
+
+    // После ребаланса партиция может быть уже не нашей: тогда сообщение прочитает её новый владелец.
+    private void SeekBack(IConsumer<byte[]?, byte[]?> consumer, ConsumeResult<byte[]?, byte[]?> record)
+    {
+        try { consumer.Seek(record.TopicPartitionOffset); }
+        catch (KafkaException ex) { log.LogWarning("Seek {Partition}@{Offset} failed: {Error}", record.Partition.Value, record.Offset.Value, ex.Error.Reason); }
     }
 
     private async Task ProcessAsync(ConsumeResult<byte[]?, byte[]?> record, IProducer<byte[]?, byte[]?> deadLetters, CancellationToken ct)

@@ -14,24 +14,32 @@ public sealed class OutboxPublisher(NpgsqlDataSource db, IConfiguration config, 
 {
     private readonly string topic = config["KAFKA_TOPIC"] ?? "booking-events";
 
+    private bool producerFailed;
+
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        using var producer = new ProducerBuilder<string, string>(new ProducerConfig
-        {
-            BootstrapServers = config["KAFKA_BOOTSTRAP"], Acks = Acks.All, EnableIdempotence = true, MessageTimeoutMs = 3000,
-        }).Build();
         while (!ct.IsCancellationRequested)
         {
-            try
+            // После фатальной ошибки идемпотентный продюсер librdkafka уже не отправляет — создаём новый.
+            producerFailed = false;
+            using var producer = new ProducerBuilder<string, string>(new ProducerConfig
             {
-                if (await PublishBatchAsync(producer, ct) == 0) await Task.Delay(500, ct);
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested) { break; }
-            catch (Exception ex)
+                BootstrapServers = config["KAFKA_BOOTSTRAP"], Acks = Acks.All, EnableIdempotence = true, MessageTimeoutMs = 3000,
+            }).Build();
+            while (!ct.IsCancellationRequested && !producerFailed)
             {
-                log.LogWarning("Outbox database unavailable: {Error}", ex.GetType().Name);
-                await Task.Delay(TimeSpan.FromSeconds(2), ct);
+                try
+                {
+                    if (await PublishBatchAsync(producer, ct) == 0) await Task.Delay(500, ct);
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
+                catch (Exception ex)
+                {
+                    log.LogWarning("Outbox publishing failed: {Error}", ex.Message);
+                    await Task.Delay(TimeSpan.FromSeconds(2), ct);
+                }
             }
+            if (producerFailed) log.LogError("Kafka producer failed fatally and is recreated");
         }
     }
 
@@ -52,7 +60,11 @@ public sealed class OutboxPublisher(NpgsqlDataSource db, IConfiguration config, 
         await using (var reader = await select.ExecuteReaderAsync(ct))
             while (await reader.ReadAsync(ct)) ids.Add(reader.GetInt64(0));
 
-        foreach (var id in ids) await PublishOneAsync(id, producer, ct);
+        foreach (var id in ids)
+        {
+            if (producerFailed) break;
+            await PublishOneAsync(id, producer, ct);
+        }
         return ids.Count;
     }
 
@@ -92,6 +104,7 @@ public sealed class OutboxPublisher(NpgsqlDataSource db, IConfiguration config, 
         catch (KafkaException ex)
         {
             error = ex.Error.Code;
+            producerFailed |= ex.Error.IsFatal;
         }
 
         await using var update = new NpgsqlCommand(error is null

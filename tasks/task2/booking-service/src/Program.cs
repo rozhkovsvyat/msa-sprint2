@@ -89,7 +89,7 @@ app.MapGet("/diagnostics/outbox", async (NpgsqlDataSource db, CancellationToken 
         select count(*) filter (where published_at is null and dead_lettered_at is null),
                count(*) filter (where published_at is null and dead_lettered_at is null and failure_count > 0),
                count(*) filter (where dead_lettered_at is not null),
-               coalesce(extract(epoch from now() - min(created_at) filter (where published_at is null)), 0)::double precision
+               coalesce(extract(epoch from now() - min(created_at) filter (where published_at is null and dead_lettered_at is null)), 0)::double precision
         from outbox
         """);
     await using var r = await cmd.ExecuteReaderAsync(ct);

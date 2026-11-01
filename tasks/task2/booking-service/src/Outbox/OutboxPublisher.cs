@@ -7,7 +7,8 @@ namespace Hotelio.Bookings.Outbox;
 
 /// <summary>
 /// Публикует события outbox в Kafka, каждую строку в своей транзакции. Временные ошибки повторяются с растущей паузой,
-/// неисправимые откладывают строку в dead letter. Доставка «хотя бы один раз»: дубли отсеивает история по eventId.
+/// неисправимые (слишком большое сообщение, нет прав на топик) откладывают строку в карантин — dead_lettered_at — для ручного разбора.
+/// Доставка «хотя бы один раз»: дубли отсеивает история по eventId.
 /// </summary>
 public sealed class OutboxPublisher(NpgsqlDataSource db, IConfiguration config, ILogger<OutboxPublisher> log) : BackgroundService
 {

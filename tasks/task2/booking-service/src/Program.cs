@@ -47,7 +47,11 @@ builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(bookingDb));
 builder.Services.AddSingleton<BookingStore>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddLegacyHttp(monolithUri);
-if (publisher == "enabled") builder.Services.AddHostedService<OutboxPublisher>();
+if (publisher == "enabled")
+{
+    builder.Services.AddHostedService<OutboxPublisher>();
+    builder.Services.AddHostedService<OutboxCleanup>();
+}
 
 var app = builder.Build();
 var version = config["SERVICE_VERSION"] ?? "v1";

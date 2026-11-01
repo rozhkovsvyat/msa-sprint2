@@ -17,6 +17,12 @@ channels:
     messages:
       bookingCreated:
         $ref: '#/components/messages/BookingCreated'
+  bookingEventsDlq:
+    address: booking-events.dlq
+    description: Сообщения booking-events, которые booking-history-service не смог обработать; хранятся 30 дней для ручного разбора.
+    messages:
+      deadLetter:
+        $ref: '#/components/messages/DeadLetter'
 operations:
   publishBookingCreated:
     action: send
@@ -28,6 +34,11 @@ operations:
     channel:
       $ref: '#/channels/bookingEvents'
     summary: booking-history-service ведёт историю и статистику, группа booking-history.
+  sendDeadLetter:
+    action: send
+    channel:
+      $ref: '#/channels/bookingEventsDlq'
+    summary: booking-history-service откладывает сообщение, которое не удалось обработать (не разбирается или его данные отверг PostgreSQL), байт в байт; смещение исходного топика фиксирует после ответа Kafka.
 components:
   messages:
     BookingCreated:
@@ -70,3 +81,16 @@ components:
               price: { type: number, description: Итоговая цена }
               createdAt: { type: string, format: date-time }
               createdAtEstimated: { type: boolean, description: 'true — исходная дата неизвестна, подставлено время переноса' }
+    DeadLetter:
+      name: DeadLetter
+      summary: Исходное сообщение без изменений (тело может быть не JSON); исходные заголовки сохраняются.
+      headers:
+        type: object
+        required: [dlq-reason, dlq-topic, dlq-partition, dlq-offset]
+        properties:
+          dlq-reason: { type: string, description: 'Почему сообщение не обработано, например unsupported schemaVersion 2 или PostgreSQL 22003' }
+          dlq-topic: { type: string }
+          dlq-partition: { type: string }
+          dlq-offset: { type: string }
+      payload:
+        type: string

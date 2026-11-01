@@ -187,6 +187,9 @@ services:
         until kafka-topics --bootstrap-server kafka:9092 --list >/dev/null 2>&1; do sleep 2; done
         kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic booking-events \
           --partitions 3 --replication-factor 1 --config retention.ms=604800000
+        # DLQ: сообщения, которые booking-history-service не смог обработать; хранятся 30 дней для ручного разбора
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic booking-events.dlq \
+          --partitions 1 --replication-factor 1 --config retention.ms=2592000000
     networks:
       - hotelio-net
 

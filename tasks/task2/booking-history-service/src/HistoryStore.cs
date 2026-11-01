@@ -34,27 +34,11 @@ public sealed class HistoryStore(NpgsqlDataSource db)
         cmd.Parameters.Add(new NpgsqlParameter("promo", NpgsqlDbType.Text) { Value = (object?)b.PromoCode ?? DBNull.Value });
         cmd.Parameters.AddWithValue("discount", b.DiscountAmount);
         cmd.Parameters.AddWithValue("price", b.Price);
-        cmd.Parameters.AddWithValue("bookedAt", b.CreatedAt);
+        // В timestamptz Npgsql пишет только время в UTC, а дата в событии может прийти с другим смещением.
+        cmd.Parameters.AddWithValue("bookedAt", b.CreatedAt.ToUniversalTime());
         cmd.Parameters.AddWithValue("estimated", b.CreatedAtEstimated);
         cmd.Parameters.AddWithValue("source", e.Source);
         cmd.Parameters.AddWithValue("correlation", e.CorrelationId);
         return await cmd.ExecuteNonQueryAsync(ct) == 1;
-    }
-
-    /// <summary>Сохраняет сообщение с причиной; повторное чтение той же позиции Kafka вторую запись не создаёт.</summary>
-    public async Task SaveDeadLetterAsync(string topic, int partition, long offset, string? payload, string error, string? correlationId, CancellationToken ct)
-    {
-        await using var cmd = db.CreateCommand("""
-            insert into dead_letter (topic, kafka_partition, kafka_offset, payload, error, correlation_id)
-            values (@topic, @partition, @offset, @payload, @error, @correlation)
-            on conflict (topic, kafka_partition, kafka_offset) do nothing
-            """);
-        cmd.Parameters.AddWithValue("topic", topic);
-        cmd.Parameters.AddWithValue("partition", partition);
-        cmd.Parameters.AddWithValue("offset", offset);
-        cmd.Parameters.Add(new NpgsqlParameter("payload", NpgsqlDbType.Text) { Value = (object?)payload ?? DBNull.Value });
-        cmd.Parameters.AddWithValue("error", error);
-        cmd.Parameters.Add(new NpgsqlParameter("correlation", NpgsqlDbType.Text) { Value = (object?)correlationId ?? DBNull.Value });
-        await cmd.ExecuteNonQueryAsync(ct);
     }
 }

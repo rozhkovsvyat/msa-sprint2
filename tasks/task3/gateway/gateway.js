@@ -9,7 +9,7 @@ export const log = logger('apollo-gateway');
 export class ForwardingDataSource extends RemoteGraphQLDataSource {
   willSendRequest({ request, context }) {
     if (context.userId) request.http.headers.set('userid', context.userId);
-    request.http.headers.set('x-request-id', context.requestId);
+    if (context.requestId) request.http.headers.set('x-request-id', context.requestId); // при загрузке схем контекста нет
   }
 }
 

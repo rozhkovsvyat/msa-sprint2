@@ -38,10 +38,14 @@ export function createHotelCatalog({ fetchHotel, ttlMs = 30_000, maxConcurrent =
   const cache = ttlMs > 0 ? new LRUCache({ max: 500, ttl: ttlMs }) : null;
   const limit = pLimit(maxConcurrent);
 
-  // Батч-функция DataLoader: один вызов на пачку отелей одного GraphQL-запроса.
+  // Функция загрузки DataLoader: один вызов на пачку отелей одного GraphQL-запроса.
   async function loadHotels(ids, reqLog, requestId) {
     // Попадания в кеш берём до запросов к монолиту: новые ключи могут вытеснить их из кеша.
-    const results = new Map(ids.filter((id) => cache?.has(id)).map((id) => [id, cache.get(id).value]));
+    const results = new Map();
+    for (const id of ids) {
+      const hit = cache?.get(id);
+      if (hit) results.set(id, hit.value);
+    }
     const missing = ids.filter((id) => !results.has(id));
     reqLog('batch', { requested: ids, fromCache: ids.length - missing.length, fetchFromMonolith: missing });
     const fetched = await Promise.all(missing.map((id) => limit(async () => {
@@ -86,7 +90,7 @@ export const typeDefs = gql`
 
 export const resolvers = {
   Hotel: {
-    // Шлюз присылает представления отелей пачкой (_entities); DataLoader склеивает их в один батч.
+    // Шлюз присылает представления отелей пачкой (_entities); DataLoader собирает их в одну пачку.
     __resolveReference: async ({ id }, { hotelLoader }) => {
       const hotel = await hotelLoader.load(id);
       if (!hotel) throw new GraphQLError('Отель не найден', { extensions: { code: 'HOTEL_NOT_FOUND' } });

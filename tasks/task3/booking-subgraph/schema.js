@@ -61,10 +61,20 @@ export const typeDefs = gql`
 async function bookingsOf(userId, context) {
   const requester = requireUser(context);
   if (requester !== userId) throw forbid(context, requester, userId);
-  const bookings = (await context.listBookings(userId)).map(toBooking);
+  const bookings = (await listOf(userId, context)).map(toBooking);
   if (bookings.some((b) => b.userId !== requester)) throw forbid(context, requester, 'upstream owner mismatch');
   context.log('bookings returned', { userId, count: bookings.length, ids: bookings.map((b) => b.id) });
   return bookings;
+}
+
+// Ошибку транспорта (адрес, код gRPC) клиенту не показываем: она остаётся в логе.
+async function listOf(userId, context) {
+  try {
+    return await context.listBookings(userId);
+  } catch (error) {
+    context.log('booking-service call failed', { userId, error: error.message });
+    throw new GraphQLError('Сервис бронирований временно недоступен', { extensions: { code: 'BOOKING_UNAVAILABLE' } });
+  }
 }
 
 export const resolvers = {

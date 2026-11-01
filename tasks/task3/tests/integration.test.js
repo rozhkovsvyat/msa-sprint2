@@ -108,6 +108,42 @@ test('Отказ одного отеля: ошибка с path на hotel, ос�
   } finally { fx.failedHotels.clear(); }
 });
 
+test('Отказ booking-service: клиент получает BOOKING_UNAVAILABLE, подробности gRPC остаются в логе', async () => {
+  const failing = await startFixture({
+    listBookings: () => Promise.reject(new Error('14 UNAVAILABLE: No connection established. Last error: connect ECONNREFUSED 10.0.0.7:9090')),
+  });
+  try {
+    const { body } = await post(failing.gatewayUrl, MY_BOOKINGS);
+    assert.equal(body.data, null);
+    assert.deepEqual(body.errors.map((e) => e.extensions.code), ['BOOKING_UNAVAILABLE']);
+    assert.ok(!JSON.stringify(body).includes('ECONNREFUSED'));
+    assert.ok(failing.events.some((e) => e.msg === 'booking-service call failed' && e.error.includes('ECONNREFUSED')));
+  } finally { await failing.stop(); }
+});
+
+test('Отказ справочника промокодов: PROMO_UNAVAILABLE вместо ответа монолита, бронирования и отели целы', async () => {
+  fx.failedPromos.add('SUMMER');
+  try {
+    const { body } = await post(fx.gatewayUrl, MY_BOOKINGS);
+    assert.deepEqual([...new Set(body.errors.map((e) => e.extensions.code))], ['PROMO_UNAVAILABLE']);
+    assert.ok(!JSON.stringify(body).includes('HTTP 503'));
+    const rows = body.data.bookingsByUser;
+    assert.equal(rows.length, 4);
+    assert.equal(rows[0].discountPercent, null);
+    assert.equal(rows[1].discountPercent, 5);
+    assert.deepEqual(rows[0].hotel, { id: 'h1', city: 'Seoul' });
+  } finally { fx.failedPromos.clear(); }
+});
+
+test('validatePromoCode: проверить промокод можно только для себя — VIP-статус другого не раскрывается', async () => {
+  const own = await post(fx.gatewayUrl, '{ validatePromoCode(code: "SUMMER", userId: "alice") { code isValid } }');
+  assert.deepEqual(own.body.data.validatePromoCode, { code: 'SUMMER', isValid: true });
+  const other = await post(fx.gatewayUrl, '{ validatePromoCode(code: "VIP", userId: "bob") { isValid } }');
+  assert.equal(other.body.data.validatePromoCode, null);
+  assert.deepEqual(other.body.errors.map((e) => e.extensions.code), ['FORBIDDEN']);
+  assert.ok(!fx.restCalls.some((c) => c.path.includes('userId=bob')));
+});
+
 test('Лимиты: глубина, алиасы и длина hotelsByIds отклоняются до обращения к источникам', async () => {
   const calls = () => fx.restCalls.length + fx.grpcCalls.length;
   const before = calls();

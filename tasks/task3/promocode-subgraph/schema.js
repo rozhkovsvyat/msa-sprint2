@@ -1,5 +1,6 @@
 import { buildSubgraphSchema } from '@apollo/subgraph';
 import DataLoader from 'dataloader';
+import { GraphQLError } from 'graphql';
 import gql from 'graphql-tag';
 import pLimit from 'p-limit';
 import { logger, requestContext } from '../shared/request-context.js';
@@ -37,10 +38,16 @@ export function createMonolithClient({ baseUrl, fetch = globalThis.fetch, timeou
   return { getPromo, isValidFor };
 }
 
+// Ошибку монолита клиенту не показываем: она остаётся в логе, в ответе — код PROMO_UNAVAILABLE.
+function unavailable(reqLog, error) {
+  reqLog('monolith promo call failed', { error: error.message });
+  return new GraphQLError('Справочник промокодов временно недоступен', { extensions: { code: 'PROMO_UNAVAILABLE' } });
+}
+
 // DataLoader на каждый запрос: каждый промокод бронирований пользователя читается из монолита один раз.
-export function createLoaders(api, requestId) {
+export function createLoaders(api, requestId, reqLog = log) {
   const limit = pLimit(4);
-  const perKey = (keys, fn) => Promise.all(keys.map((key) => limit(() => fn(key)).catch((error) => error)));
+  const perKey = (keys, fn) => Promise.all(keys.map((key) => limit(() => fn(key)).catch((error) => unavailable(reqLog, error))));
   return {
     promos: new DataLoader((codes) => perKey(codes, (code) => api.getPromo(code, requestId)), { maxBatchSize: 10 }),
     validity: new DataLoader((keys) => perKey(keys, (key) => {
@@ -106,10 +113,15 @@ export const resolvers = {
     },
   },
   Query: {
-    validatePromoCode: async (_, { code, userId }, { api, promos, requestId }) => {
+    validatePromoCode: async (_, { code, userId }, { api, promos, requestId, userId: requester, log: reqLog }) => {
+      // Ответ с userId раскрывает VIP-статус, поэтому проверить промокод можно только для себя.
+      if (userId && userId !== requester) {
+        throw new GraphQLError('Доступ запрещён: проверять промокод можно только для себя', { extensions: { code: 'FORBIDDEN' } });
+      }
       const promo = await promos.load(code);
       if (!promo) return null;
-      return toDiscountInfo(promo, await api.isValidFor(code, userId ?? null, requestId));
+      const isValid = await api.isValidFor(code, userId ?? null, requestId).catch((error) => { throw unavailable(reqLog, error); });
+      return toDiscountInfo(promo, isValid);
     },
   },
 };
@@ -118,5 +130,5 @@ export const schema = buildSubgraphSchema([{ typeDefs, resolvers }]);
 
 export function contextFrom(req, api, res, reqLogger = log) {
   const context = requestContext(req, res, reqLogger);
-  return { ...context, api, ...createLoaders(api, context.requestId) };
+  return { ...context, api, ...createLoaders(api, context.requestId, context.log) };
 }

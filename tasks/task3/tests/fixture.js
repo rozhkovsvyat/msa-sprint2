@@ -33,6 +33,7 @@ export async function startFixture({ dataSource = ForwardingDataSource, listBook
   const grpcCalls = [];
   const subgraphRequests = [];
   const failedHotels = new Set();
+  const failedPromos = new Set();
   const promos = new Map([
     ['SUMMER', { code: 'SUMMER', discount: 20, vipOnly: false, expired: false }],
     ['OLD', { code: 'OLD', discount: 5, vipOnly: false, expired: true }],
@@ -63,6 +64,8 @@ export async function startFixture({ dataSource = ForwardingDataSource, listBook
       } else if (url.pathname === '/api/promos/validate') {
         const p = promos.get(url.searchParams.get('code'));
         res.writeHead(p && !p.expired && !p.vipOnly ? 200 : 400).end('{}');
+      } else if (promo && failedPromos.has(decodeURIComponent(promo[1]))) {
+        res.writeHead(503).end('{}');
       } else if (promo && promos.has(decodeURIComponent(promo[1]))) {
         res.end(JSON.stringify(promos.get(decodeURIComponent(promo[1]))));
       } else {
@@ -115,7 +118,7 @@ export async function startFixture({ dataSource = ForwardingDataSource, listBook
     }
     const gatewayUrl = await start({ gateway: createGateway(subgraphs, RecordedDataSource), validationRules },
       async ({ req, res }) => gatewayContext(req, res, logTo('apollo-gateway')));
-    return { gatewayUrl, events, restCalls, grpcCalls, subgraphRequests, failedHotels, promos, bookings, stop };
+    return { gatewayUrl, events, restCalls, grpcCalls, subgraphRequests, failedHotels, failedPromos, promos, bookings, stop };
   } catch (error) {
     await stop();
     throw error;

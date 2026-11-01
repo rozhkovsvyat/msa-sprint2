@@ -10,6 +10,8 @@
   <ItemGroup>
     <!-- Контракт общий с прокси монолита, файл не меняем -->
     <Protobuf Include="..\..\booking.proto" GrpcServices="Server" Link="Protos\booking.proto" />
+    <!-- Служебный контракт: полный список бронирований с пагинацией, импорт booking.proto -->
+    <Protobuf Include="..\..\booking-admin.proto" GrpcServices="Server" Link="Protos\booking-admin.proto" ProtoRoot="..\.." />
   </ItemGroup>
   <ItemGroup>
     <!-- Миграции схемы: применяет DbUp по команде migrate (Data/SchemaMigrations.cs) -->

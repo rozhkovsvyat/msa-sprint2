@@ -45,6 +45,8 @@ var reflection = config.GetValue("GRPC_REFLECTION", false); // для grpcurl н
 if (reflection) builder.Services.AddGrpcReflection();
 builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(bookingDb));
 builder.Services.AddSingleton<BookingStore>();
+var adminToken = new AdminToken(config["BOOKING_ADMIN_TOKEN"]);
+builder.Services.AddSingleton(adminToken);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddLegacyHttp(monolithUri);
 if (publisher == "enabled")
@@ -77,6 +79,7 @@ app.Use(async (ctx, next) =>
 });
 
 app.MapGrpcService<BookingGrpcService>();
+app.MapGrpcService<BookingAdminGrpcService>();
 if (reflection) app.MapGrpcReflectionService();
 app.MapGet("/ping", () => "pong");
 app.MapGet("/ready", async (NpgsqlDataSource db, CancellationToken ct) => await SchemaMigrations.IsCurrentAsync(db, ct)
@@ -98,6 +101,7 @@ app.MapGet("/diagnostics/outbox", async (NpgsqlDataSource db, CancellationToken 
 });
 if (featureX) app.MapGet("/feature", () => "Feature X is enabled!");
 
+if (!adminToken.Configured) app.Logger.LogWarning("BOOKING_ADMIN_TOKEN is not set: the admin booking list rejects every call");
 app.Logger.LogInformation("booking-service {Version} started, ENABLE_FEATURE_X={FeatureX}, OUTBOX_PUBLISHER={Publisher}", version, featureX, publisher);
 app.Run();
 return 0;

@@ -111,11 +111,43 @@ echo "Тесты бронирования..."
 
 # 1. Получение всех бронирований
 if [[ -n "${BOOKING_GRPC:-}" ]]; then
+  [[ -n "${BOOKING_ADMIN_TOKEN:-}" ]] || fail "Не задан BOOKING_ADMIN_TOKEN: служебный список не проверить"
   # После включения прокси список без userId через монолит недоступен: готовый p-o-y-1.0.0.jar
   # вызывает BookingListRequest.setUserId(null) и падает с NullPointerException (HTTP 500).
-  # Полный список проверяем напрямую в booking-service — теперь он владелец бронирований.
-  grpcurl -plaintext -d '{}' "${BOOKING_GRPC}" booking.BookingService/ListBookings | grep -q 'test-user-2' \
-    && pass "Все бронирования получены (gRPC ListBookings в booking-service)" || fail "Бронирования не получены"
+  # Полный список отдаёт служебный метод booking-service — с токеном и постранично.
+  admin_list() {
+    grpcurl -plaintext -H "authorization: Bearer ${BOOKING_ADMIN_TOKEN}" \
+      -d "$1" "${BOOKING_GRPC}" booking.admin.BookingAdminService/ListAllBookings
+  }
+  admin_list '{"page_size":500}' | grep -q 'test-user-2' \
+    && pass "Все бронирования получены (служебный gRPC-метод ListAllBookings)" || fail "Бронирования не получены"
+
+  # Обход по одной строке за токеном страницы должен дать тот же набор id, что и одна большая страница.
+  # Ответ grpcurl — JSON по полю в строке, разбираем sed: jq в образе тестировщика нет.
+  ids_of() { sed -n 's/.*"id":[[:space:]]*"\([0-9]*\)".*/\1/p' <<<"$1"; }
+  paged_ids="" token=""
+  for _ in $(seq 1 100); do
+    if [[ -n "$token" ]]; then request="{\"page_size\":1,\"page_token\":\"$token\"}"; else request='{"page_size":1}'; fi
+    page=$(admin_list "$request") || fail "Служебный список не отдал страницу"
+    paged_ids+=" $(ids_of "$page" | tr '\n' ' ')"
+    token=$(sed -n 's/.*"nextPageToken":[[:space:]]*"\([^"]*\)".*/\1/p' <<<"$page")
+    [[ -z "$token" ]] && break
+  done
+  [[ -n "$token" ]] && fail "Служебный список не закончился за 100 страниц"
+  all_ids=$(admin_list '{"page_size":500}' | sed -n 's/.*"id":[[:space:]]*"\([0-9]*\)".*/\1/p' | sort -n | tr '\n' ' ')
+  walked=$(echo "$paged_ids" | tr ' ' '\n' | grep . | sort -n | tr '\n' ' ')
+  [[ "$(echo "$walked" | wc -w | tr -d ' ')" -gt 1 && "$walked" == "$all_ids" ]] \
+    && pass "Пагинация служебного списка: страницы по одной строке дают тот же набор id" \
+    || fail "Пагинация служебного списка вернула не то: [$walked] против [$all_ids]"
+
+  # Публичный метод не подменяется служебным: без токена список закрыт, а пустой user_id не отдаёт чужое.
+  denied=$(grpcurl -plaintext -d '{"page_size":10}' "${BOOKING_GRPC}" \
+    booking.admin.BookingAdminService/ListAllBookings 2>&1 || true)
+  [[ "$denied" == *Unauthenticated* ]] \
+    && pass "Служебный список без токена закрыт" || fail "Служебный список доступен без токена: $denied"
+  empty=$(grpcurl -plaintext -d '{}' "${BOOKING_GRPC}" booking.BookingService/ListBookings 2>&1 || true)
+  [[ "$empty" != *test-user-2* ]] \
+    && pass "Пустой user_id не отдаёт чужие бронирования" || fail "Пустой user_id отдал все бронирования"
 else
   curl -sSf "${BASE}/api/bookings" | grep -q 'test-user-2' && pass "Все бронирования получены" || fail "Бронирования не получены"
 fi

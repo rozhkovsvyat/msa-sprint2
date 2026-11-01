@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package booking.admin;
+
+import "booking.proto";
+
+// Служебный API booking-service. Полный список бронирований отдаётся только администратору:
+// роль подтверждает токен в метаданных authorization: Bearer <BOOKING_ADMIN_TOKEN>.
+service BookingAdminService {
+  // Все бронирования по возрастанию id, постранично.
+  rpc ListAllBookings(ListAllBookingsRequest) returns (ListAllBookingsResponse);
+}
+
+message ListAllBookingsRequest {
+  int32 page_size = 1;    // 1–500, по умолчанию 100
+  string page_token = 2;  // next_page_token предыдущей страницы; пусто — с начала
+}
+
+message ListAllBookingsResponse {
+  repeated booking.BookingResponse bookings = 1;
+  string next_page_token = 2;  // пусто — это последняя страница
+}

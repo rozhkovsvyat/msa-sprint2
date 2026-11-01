@@ -9,7 +9,7 @@
 | [Контракт события](../contracts/booking-events.asyncapi.yaml) | `BookingCreated` в AsyncAPI: версия схемы 1, ключ сообщения — id бронирования |
 | [Ops-джоба](../migration/migrate-bookings.sh) | Перенос бронирований при переключении и обратно при откате, со сверкой количества и контрольной суммы |
 | [Стенд](../docker-compose.yml) | Монолит с прокси, три PostgreSQL, Kafka и ZooKeeper из задания, ops-джоба и регресс |
-| [Регресс](regress.sh) | Доработанный `test/regress.sh`: фикстуры переносятся той же ops-джобой, полный список бронирований проверяется в booking-service по gRPC, у отказов проверяется причина, новые бронирования ищутся в истории |
+| [Регресс](regress.sh) | Доработанный `test/regress.sh`: фикстуры переносятся той же ops-джобой, полный список бронирований читается служебным gRPC-методом с токеном, проверяется отказ без токена и пустой `userId`, у отказов проверяется причина, новые бронирования ищутся в истории |
 
 ## Запуск
 
@@ -74,8 +74,8 @@ BOOKING_SERVICE_EXTERNAL_HOST=false docker compose up -d monolith
 
 ## Ограничения готового прокси
 
-- `GET /api/bookings` без `userId` через монолит падает с 500: прокси вызывает `BookingListRequest.setUserId(null)` ещё до обращения к сервису (конец [listing-rest-vs-grpc.txt](listing-rest-vs-grpc.txt)). Поэтому полный список регресс проверяет в booking-service по gRPC — тесты бронирований задание разрешает менять.
-- `GET /api/bookings?userId=` с пустым параметром прокси передаёт сервису пустой строкой, и сервис отдаёт все бронирования (последний блок [listing-rest-vs-grpc.txt](listing-rest-vs-grpc.txt)); монолит без прокси вернул бы пустой список. Пустой `user_id` в контракте означает «все бронирования» — так полный список читает регресс. Разделить эти случаи можно отдельным методом, когда прокси заменим своим кодом.
+- `GET /api/bookings` без `userId` через монолит падает с 500: прокси вызывает `BookingListRequest.setUserId(null)` ещё до обращения к сервису (конец [listing-rest-vs-grpc.txt](listing-rest-vs-grpc.txt)). Полный список поэтому читают не через монолит, а служебным методом booking-service — тесты бронирований задание разрешает менять.
+- `GET /api/bookings?userId=` с пустым параметром прокси передаёт сервису пустой строкой. Сервис отвечает пустым списком, как монолит без прокси: публичный метод чужие бронирования не отдаёт. Полный список — служебный метод `booking.admin.BookingAdminService/ListAllBookings`, контракт [`booking-admin.proto`](../booking-admin.proto): токен в метаданных `authorization: Bearer …`, страницы до 500 строк по возрастанию `id`, без токена — `UNAUTHENTICATED`. Так список читают регресс, сверка при переносе и разбор инцидентов. Когда прокси заменим своим кодом, запрос без `userId` пойдёт в тот же служебный метод.
 - `promo_code` в `booking.proto` — обычная строка proto3, поэтому монолит отдаёт `"promoCode": ""` вместо `null`.
 - Бизнес-отказ сервис возвращает как gRPC `FAILED_PRECONDITION` с причиной, но монолит по-прежнему отвечает клиенту 500 без текста.
 - Прокси не передаёт сервису `x-request-id` исходного HTTP-запроса, поэтому на этой границе создаётся новый идентификатор.
@@ -87,13 +87,13 @@ BOOKING_SERVICE_EXTERNAL_HOST=false docker compose up -d monolith
 - Форматы REST монолита знает только модуль `Legacy` (Anti-Corruption Layer): он переводит ответы монолита в модель бронирования. Например, 404 на пользователя сервис считает неизвестным пользователем и отказывает с «User is inactive», 400 на промокод — отсутствием скидки, а пустой или неполный ответ — недоступностью монолита (gRPC `UNAVAILABLE`). На все обращения к монолиту при создании одного бронирования отведено 3 с; GET повторяется один раз, POST проверки промокода не повторяется, при потоке ошибок срабатывает circuit breaker (стандартный resilience handler .NET).
 - Схема БД создаётся SQL-миграциями (DbUp) командой `migrate` того же образа до запуска сервиса; пока схема не готова, `/ready` отвечает 503.
 - `x-request-id` передаётся в вызовы монолита, в событие и в историю (`correlation_id`).
-- Настройки приходят из окружения (`BOOKING_DB`, `HISTORY_DB`, `MONOLITH_URL`, `KAFKA_BOOTSTRAP`; необязательные `KAFKA_DLQ_TOPIC` — по умолчанию имя топика с суффиксом `.dlq` и `OUTBOX_RETENTION_DAYS` — по умолчанию 14). В кластере заданий 4–5 нет Kafka, там публикация выключается `OUTBOX_PUBLISHER=disabled`; `FAULT_INJECTION_STATUS` нужен только для проверки fallback в задании 5.
+- Настройки приходят из окружения (`BOOKING_DB`, `HISTORY_DB`, `MONOLITH_URL`, `KAFKA_BOOTSTRAP`; необязательные `KAFKA_DLQ_TOPIC` — по умолчанию имя топика с суффиксом `.dlq`, `OUTBOX_RETENTION_DAYS` — по умолчанию 14 и `BOOKING_ADMIN_TOKEN` — без него служебный список закрыт всем). На стенде значения лежат в [`.env`](../.env), в бою токен и пароли приходят из хранилища секретов. В кластере заданий 4–5 нет Kafka, там публикация выключается `OUTBOX_PUBLISHER=disabled`; `FAULT_INJECTION_STATUS` нужен только для проверки fallback в задании 5.
 
 ## Проверки
 
 ```bash
 cd tasks/task2/booking-service
-# юнит-тесты: правила, ACL, контракт события, ошибки доставки
+# юнит-тесты: правила, ACL, контракт события, ошибки доставки, доступ к служебному списку
 dotnet test --project tests/BookingService.Tests.csproj
 # интеграционные: outbox и доставка в историю на PostgreSQL и Kafka из Testcontainers, нужен Docker;
 # с Colima: export DOCKER_HOST=unix://$HOME/.colima/default/docker.sock TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
@@ -113,6 +113,7 @@ cd ..
 | Правила как в монолите: порядок проверок, причины отказа, цена с VIP и промокодом | юнит-тесты `BookingRulesTests` | [unit-tests.txt](unit-tests.txt) |
 | Перевод ответов монолита: 404, 400, пустые и битые ответы; таймауты, повтор только GET, circuit breaker | юнит-тесты `MonolithContractTests` | [unit-tests.txt](unit-tests.txt) |
 | Контракт события: `eventId` по той же формуле, что в джобе переноса, разбор события историей, причины для DLQ, какие ошибки PostgreSQL и Kafka неисправимы | юнит-тесты `DeliveryTests` | [unit-tests.txt](unit-tests.txt) |
+| Доступ к служебному списку: токен в метаданных, чужой токен страницы | юнит-тесты `AdminAccessTests`; на стенде регресс читает полный список, проверяет отказ без токена и пустой `userId` | [unit-tests.txt](unit-tests.txt), [test-log.txt](test-log.txt) |
 | Outbox и доставка: одна транзакция, Kafka недоступна, повторная публикация, смещение после записи, БД истории недоступна или не пускает, DLQ байт в байт, DLQ не принял сообщение, дата со смещением, очистка | интеграционные тесты на PostgreSQL и Kafka | [integration-tests.txt](integration-tests.txt) |
 | Сценарии курса через монолит с прокси, причины отказа, история один раз | регресс курса, в пайплайне — `test:api` | [test-log.txt](test-log.txt) |
 | Остановка Kafka на стенде, повтор, DLQ | `check-delivery.sh` | [delivery-check.log](delivery-check.log) |
@@ -130,4 +131,4 @@ cd ..
 | Листинг бронирований через REST монолита и gRPC сервиса | [listing-rest-vs-grpc.txt](listing-rest-vs-grpc.txt) |
 | `select *` из таблицы истории | [history.txt](history.txt): история, статистика, права аналитика, DLQ-топик, отставание группы |
 | Бины `bookingService` и `grpcBookingService` в логе монолита | [cutover-drill-log.txt](cutover-drill-log.txt): до переноса только `bookingService`, после включения прокси — оба |
-| Дополнительно | [cutover-drill-log.txt](cutover-drill-log.txt) — учения по переключению и откату, [delivery-check.log](delivery-check.log) — доставка при остановке Kafka и DLQ, [unit-tests.txt](unit-tests.txt) и [integration-tests.txt](integration-tests.txt) — 53 юнит-теста и 11 интеграционных тестов .NET |
+| Дополнительно | [cutover-drill-log.txt](cutover-drill-log.txt) — учения по переключению и откату, [delivery-check.log](delivery-check.log) — доставка при остановке Kafka и DLQ, [unit-tests.txt](unit-tests.txt) и [integration-tests.txt](integration-tests.txt) — 68 юнит-тестов и 11 интеграционных тестов .NET |

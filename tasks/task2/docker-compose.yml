@@ -62,6 +62,7 @@ services:
       MONOLITH_URL: http://hotelio-monolith:8080/
       KAFKA_BOOTSTRAP: kafka:9092
       GRPC_REFLECTION: "true"   # для grpcurl на стенде
+      BOOKING_ADMIN_TOKEN: ${BOOKING_ADMIN_TOKEN:?задайте в .env}   # служебный список бронирований
     depends_on:
       booking-schema:
         condition: service_completed_successfully
@@ -226,6 +227,7 @@ services:
       BOOKING_DB_URL: postgresql://booking:${BOOKING_DB_PASSWORD:-booking}@booking-db:5432/booking
       HISTORY_DB_URL: postgresql://history:${HISTORY_DB_PASSWORD:-history}@history-db:5432/history
       BOOKING_GRPC: booking-service:9090
+      BOOKING_ADMIN_TOKEN: ${BOOKING_ADMIN_TOKEN:?задайте в .env}
     depends_on:
       monolith:
         condition: service_healthy

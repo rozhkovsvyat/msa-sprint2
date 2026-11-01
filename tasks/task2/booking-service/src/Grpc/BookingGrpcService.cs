@@ -1,4 +1,3 @@
-using System.Globalization;
 using Booking;
 using Grpc.Core;
 using Hotelio.Bookings.Data;
@@ -43,7 +42,7 @@ public sealed class BookingGrpcService(MonolithClient legacy, BookingStore store
             var booking = await store.CreateAsync(request.UserId, request.HotelId, promoCode, price, requestId, context.CancellationToken);
             log.LogInformation("Booking {BookingId} created: base={Base} discount={Discount} final={Final} requestId={RequestId}",
                 booking.Id, price.BasePrice, price.Discount, price.FinalPrice, requestId);
-            return ToResponse(booking);
+            return BookingResponses.ToResponse(booking);
         }
         catch (OperationCanceledException) when (budget.IsCancellationRequested && !context.CancellationToken.IsCancellationRequested)
         {
@@ -60,24 +59,12 @@ public sealed class BookingGrpcService(MonolithClient legacy, BookingStore store
 
     public override async Task<BookingListResponse> ListBookings(BookingListRequest request, ServerCallContext context)
     {
-        // Пустой user_id — все бронирования (так их читает регресс по gRPC). Прокси монолита присылает пустую
-        // строку и на GET /api/bookings?userId=, хотя без прокси монолит вернул бы пустой список.
-        var bookings = await store.ListAsync(request.UserId.Length == 0 ? null : request.UserId, context.CancellationToken);
         var response = new BookingListResponse();
-        response.Bookings.AddRange(bookings.Select(ToResponse));
+        // Пустой user_id — пустой список, как в монолите. Полный список — служебным методом с токеном:
+        // прокси передаёт сервису строку из запроса как есть, поэтому пустой фильтр наружу отдавать нельзя.
+        if (request.UserId.Length == 0) return response;
+        var bookings = await store.ListAsync(request.UserId, context.CancellationToken);
+        response.Bookings.AddRange(bookings.Select(BookingResponses.ToResponse));
         return response;
     }
-
-    private static BookingResponse ToResponse(StoredBooking b) => new()
-    {
-        // Прокси монолита делает Long.parseLong(id) и Instant.parse(created_at): числовой id и дата ISO-8601 в UTC.
-        Id = b.Id.ToString(CultureInfo.InvariantCulture),
-        UserId = b.UserId,
-        HotelId = b.HotelId,
-        PromoCode = b.PromoCode ?? string.Empty,
-        // Поле называется discount_percent, но монолит хранит в нём сумму скидки — отдаём так же.
-        DiscountPercent = (double)b.DiscountAmount,
-        Price = (double)b.Price,
-        CreatedAt = b.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'", CultureInfo.InvariantCulture),
-    };
 }

@@ -57,14 +57,27 @@ public sealed class BookingStore(NpgsqlDataSource db)
         return booking;
     }
 
-    public async Task<IReadOnlyList<StoredBooking>> ListAsync(string? userId, CancellationToken ct)
+    public async Task<IReadOnlyList<StoredBooking>> ListAsync(string userId, CancellationToken ct)
     {
-        await using var cmd = db.CreateCommand("""
-            select id, user_id, hotel_id, promo_code, discount_amount, price, created_at, created_at_estimated
-            from booking where @user::text is null or user_id = @user order by id
-            """);
-        cmd.Parameters.Add(new NpgsqlParameter("user", NpgsqlDbType.Text) { Value = (object?)userId ?? DBNull.Value });
+        await using var cmd = db.CreateCommand($"select {Columns} from booking where user_id = @user order by id");
+        cmd.Parameters.AddWithValue("user", userId);
+        return await ReadAsync(cmd, ct);
+    }
 
+    /// <summary>Страница бронирований по возрастанию id после указанного — для служебного списка.</summary>
+    public async Task<IReadOnlyList<StoredBooking>> ListPageAsync(long afterId, int limit, CancellationToken ct)
+    {
+        await using var cmd = db.CreateCommand($"select {Columns} from booking where id > @after order by id limit @limit");
+        cmd.Parameters.AddWithValue("after", afterId);
+        cmd.Parameters.AddWithValue("limit", limit);
+        return await ReadAsync(cmd, ct);
+    }
+
+    private const string Columns =
+        "id, user_id, hotel_id, promo_code, discount_amount, price, created_at, created_at_estimated";
+
+    private static async Task<IReadOnlyList<StoredBooking>> ReadAsync(NpgsqlCommand cmd, CancellationToken ct)
+    {
         var result = new List<StoredBooking>();
         await using var reader = await cmd.ExecuteReaderAsync(ct);
         while (await reader.ReadAsync(ct))

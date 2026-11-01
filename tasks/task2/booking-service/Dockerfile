@@ -1,8 +1,8 @@
-# Контекст сборки — tasks/task2 (нужен контракт booking.proto):
+# Контекст сборки — tasks/task2 (нужны контракты booking.proto и booking-admin.proto):
 #   docker build -f booking-service/Dockerfile -t booking-service:<tag> .
 FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa AS build
 WORKDIR /src
-COPY booking.proto ./
+COPY booking.proto booking-admin.proto ./
 COPY booking-service/src/BookingService.csproj booking-service/src/
 RUN dotnet restore booking-service/src/BookingService.csproj
 COPY booking-service/src/ booking-service/src/

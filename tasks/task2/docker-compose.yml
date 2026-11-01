@@ -18,8 +18,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${LEGACY_DB_PASSWORD:-hotelio}
       # В application.yml монолита ddl-auto: create — без этой настройки перезапуск стирает данные.
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      # Имя хоста включает готовый gRPC-прокси бронирований; false возвращает монолиту свою логику (откат).
-      BOOKING_SERVICE_EXTERNAL_HOST: ${BOOKING_SERVICE_EXTERNAL_HOST:-booking-service}
+      # Значение — в .env: имя хоста включает готовый gRPC-прокси бронирований, false возвращает монолиту свою логику.
+      BOOKING_SERVICE_EXTERNAL_HOST: ${BOOKING_SERVICE_EXTERNAL_HOST:?задайте в .env}
       BOOKING_SERVICE_EXTERNAL_PORT: 9090
     depends_on:
       monolith-db:

@@ -46,7 +46,7 @@ docker compose stop monolith booking-service
 docker compose build
 docker compose run --rm -e MIGRATION_OFFLINE=yes booking-migration forward  # схема, перенос, сверка; дальше — только при коде 0
 docker compose up -d booking-service booking-history-service
-docker compose up -d monolith                                                # по умолчанию прокси включён
+docker compose up -d monolith                                                # прокси включён значением из .env
 ```
 
 Откат: команда `reverse` дописывает в монолит бронирования, созданные после переключения, с теми же id и сдвигает его счётчик. С `BOOKING_SERVICE_EXTERNAL_HOST=false` монолит снова работает сам: бин прокси создаётся только при включённой настройке (`@ConditionalOnProperty`).

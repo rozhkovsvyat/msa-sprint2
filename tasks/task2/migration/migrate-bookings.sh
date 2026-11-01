@@ -38,7 +38,7 @@ report() {
   echo "[migration] источник: $1"
   echo "[migration] приёмник: $2"
   echo "[migration] длительность: $(( $(date +%s) - started )) с"
-  if [[ "$1" != "$2" ]]; then echo "[migration] ОШИБКА: расхождение после переноса" >&2; exit 1; fi
+  if [[ -z "$1" || "$1" != "$2" ]]; then echo "[migration] ОШИБКА: расхождение после переноса" >&2; exit 1; fi
   echo "[migration] OK: количество и контрольная сумма совпадают"
 }
 
@@ -83,7 +83,11 @@ select format('[migration] счётчик id booking-service: %s', setval(pg_get
 from booking having count(*) > 0;
 commit;
 SQL
-  report "$(checksum "$LEGACY_DB_URL" discount_percent "")" "$(checksum "$BOOKING_DB_URL" discount_amount "where id <= $max")"
+  # Сначала в переменные: ошибка запроса внутри аргументов функции не остановила бы скрипт.
+  local src dst
+  src=$(checksum "$LEGACY_DB_URL" discount_percent "")
+  dst=$(checksum "$BOOKING_DB_URL" discount_amount "where id <= $max")
+  report "$src" "$dst"
 }
 
 reverse() {
@@ -104,7 +108,10 @@ select format('[migration] счётчик id монолита: %s', setval(pg_ge
 from booking having count(*) > 0;
 commit;
 SQL
-  report "$(checksum "$BOOKING_DB_URL" discount_amount "")" "$(checksum "$LEGACY_DB_URL" discount_percent "")"
+  local src dst
+  src=$(checksum "$BOOKING_DB_URL" discount_amount "")
+  dst=$(checksum "$LEGACY_DB_URL" discount_percent "")
+  report "$src" "$dst"
 }
 
 "$mode"

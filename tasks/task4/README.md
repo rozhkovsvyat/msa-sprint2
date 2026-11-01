@@ -112,26 +112,3 @@ pong
 kubectl port-forward svc/booking-service 8080:80
 curl http://localhost:8080/ping
 ```
-
-# Развёртывание booking-service в Minikube
-
-Решения и результаты — в [results/report.md](results/report.md). Go-заготовка `booking-service/` удалена: сервис и его Dockerfile лежат в `tasks/task2`.
-
-```bash
-minikube start --driver=docker --cpus=4 --memory=8192
-cd tasks/task4
-gitlab-ci-local                         # сборка, все тесты, staging, git-тег
-gitlab-ci-local build test deploy tag   # только обязательные джобы задания
-
-# то же вручную
-TAG=$(git rev-parse --short=8 HEAD)
-docker build -f ../task2/booking-service/Dockerfile -t booking-service:$TAG ../task2
-minikube image load booking-service:$TAG
-helm upgrade --install booking-service helm/booking-service -n staging --create-namespace \
-  -f helm/booking-service/values-staging.yaml --set image.tag=$TAG --wait
-
-# проверка
-NAMESPACE=staging ./check-dns.sh
-kubectl -n staging port-forward svc/booking-service 8080:80 &
-NAMESPACE=staging ./check-status.sh
-```

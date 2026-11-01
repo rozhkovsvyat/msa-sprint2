@@ -174,6 +174,7 @@ rejected test-hotel-5 "Hotel is fully booked" "полностью занятый
 if [[ -n "${HISTORY_DB_URL:-}" ]]; then
   echo ""
   echo "Тесты истории бронирований..."
+  [[ $(wc -w <<< "$created_ids") -eq 2 ]] || fail "Не удалось прочитать id созданных бронирований: '$created_ids'"
   for id in $created_ids; do
     found=0
     for _ in $(seq 1 30); do

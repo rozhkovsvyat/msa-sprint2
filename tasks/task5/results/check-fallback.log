@@ -1,28 +1,27 @@
 $ ./check-fallback.sh
 ▶️ Testing fallback route...
 ▶️ 1. Гасим один под v1 и сразу шлём 50 запросов
-pod "booking-service-v1-d57497dd8-464h5" deleted from default namespace
-  45 200 v1
-   5 200 v2
+pod "booking-service-v1-8454447cb6-ktktj" deleted from default namespace
+  44 200 v1
+   6 200 v2
 ▶️ 2. v1 работает, но /version отвечает 503 (FAULT_INJECTION_STATUS=503) — 100 запросов на /version
 NAME                                  READY   STATUS    RESTARTS   AGE   VERSION
-booking-service-v1-bf685885d-7pmkp    2/2     Running   0          15s   v1
-booking-service-v1-bf685885d-t95zn    2/2     Running   0          20s   v1
-booking-service-v2-7d5465cffb-mtd9s   2/2     Running   0          39s   v2
+booking-service-v1-668654748-lnwtm    2/2     Running   0          9s    v1
+booking-service-v1-668654748-xkchx    2/2     Running   0          17s   v1
+booking-service-v2-784dbcf598-bslcn   2/2     Running   0          33s   v2
   99 200 v2
    1 503 v1
-10.244.0.149:8080                                       HEALTHY     OK                outbound|80|v2|booking-service.default.svc.cluster.local
-10.244.0.149:8080                                       HEALTHY     OK                outbound|80||booking-service.default.svc.cluster.local
-10.244.0.151:8080                                       HEALTHY     OK                outbound|80|v1|booking-service.default.svc.cluster.local
-10.244.0.151:8080                                       HEALTHY     FAILED            outbound|80||booking-service.default.svc.cluster.local
-10.244.0.152:8080                                       HEALTHY     OK                outbound|80|v1|booking-service.default.svc.cluster.local
-10.244.0.152:8080                                       HEALTHY     FAILED            outbound|80||booking-service.default.svc.cluster.local
+10.244.0.173:8080                                       HEALTHY     OK                outbound|80|v2|booking-service.default.svc.cluster.local
+10.244.0.173:8080                                       HEALTHY     OK                outbound|80||booking-service.default.svc.cluster.local
+10.244.0.175:8080                                       HEALTHY     OK                outbound|80|v1|booking-service.default.svc.cluster.local
+10.244.0.175:8080                                       HEALTHY     FAILED            outbound|80||booking-service.default.svc.cluster.local
+10.244.0.176:8080                                       HEALTHY     OK                outbound|80|v1|booking-service.default.svc.cluster.local
+10.244.0.176:8080                                       HEALTHY     FAILED            outbound|80||booking-service.default.svc.cluster.local
 ▶️ 3. Гасим все поды v1 — 100 запросов
 NAME                                  READY   STATUS    RESTARTS   AGE   VERSION
-booking-service-v2-7d5465cffb-mtd9s   2/2     Running   0          48s   v2
+booking-service-v2-784dbcf598-bslcn   2/2     Running   0          41s   v2
  100 200 v2
 ▶️ 4. Возвращаем v1 — 100 запросов
-  91 200 v1
-   9 200 v2
+  90 200 v1
+  10 200 v2
 ✅ OK
-(код выхода 0)

@@ -123,14 +123,15 @@ if [[ -n "${BOOKING_GRPC:-}" ]]; then
     && pass "Все бронирования получены (служебный gRPC-метод ListAllBookings)" || fail "Бронирования не получены"
 
   # Обход по одной строке за токеном страницы должен дать тот же набор id, что и одна большая страница.
-  # Ответ grpcurl — JSON по полю в строке, разбираем sed: jq в образе тестировщика нет.
+  # Ответ grpcurl — JSON по полю в строке с именами из proto, разбираем sed: jq в образе тестировщика нет.
   ids_of() { sed -n 's/.*"id":[[:space:]]*"\([0-9]*\)".*/\1/p' <<<"$1"; }
+  token_of() { sed -nE 's/.*"(next_page_token|nextPageToken)":[[:space:]]*"([^"]*)".*/\2/p' <<<"$1"; }
   paged_ids="" token=""
   for _ in $(seq 1 100); do
     if [[ -n "$token" ]]; then request="{\"page_size\":1,\"page_token\":\"$token\"}"; else request='{"page_size":1}'; fi
     page=$(admin_list "$request") || fail "Служебный список не отдал страницу"
     paged_ids+=" $(ids_of "$page" | tr '\n' ' ')"
-    token=$(sed -n 's/.*"nextPageToken":[[:space:]]*"\([^"]*\)".*/\1/p' <<<"$page")
+    token=$(token_of "$page")
     [[ -z "$token" ]] && break
   done
   [[ -n "$token" ]] && fail "Служебный список не закончился за 100 страниц"

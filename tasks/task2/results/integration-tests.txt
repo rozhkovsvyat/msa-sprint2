@@ -1,34 +1,35 @@
-Интеграционные тесты booking-service на PostgreSQL и Kafka из Testcontainers, 01.11.2026: в контейнере .NET SDK с Docker хоста, как джоба test:integration в пайплайне задания 4.
+Интеграционные тесты booking-service на PostgreSQL и Kafka из Testcontainers, 02.11.2026: в контейнере .NET SDK с Docker хоста,
+как джоба test:integration в пайплайне задания 4.
 $ cd tasks/task2 && docker run --rm --network host -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD":/src:ro -v ~/.nuget/packages:/nuget:ro -e NUGET_FALLBACK_PACKAGES=/nuget mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa sh -c 'cp -r /src /work && find /work -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + && cd /work/booking-service && dotnet test --project integration-tests/BookingService.IntegrationTests.csproj --output detailed'
 Running tests from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
-passed Hotelio.Bookings.IntegrationTests.OutboxTests.Message_is_read_again_until_dead_letter_topic_accepts_it (14s 720ms)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Message_is_read_again_until_dead_letter_topic_accepts_it (13s 589ms)
   from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
-passed Hotelio.Bookings.IntegrationTests.OutboxTests.Event_waits_in_outbox_while_kafka_is_down (5s 390ms)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Event_waits_in_outbox_while_kafka_is_down (5s 564ms)
   from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
-passed Hotelio.Bookings.IntegrationTests.OutboxTests.Event_is_read_again_after_history_database_was_unavailable(failure: "wrong_password") (5s 212ms)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Event_is_read_again_after_history_database_was_unavailable(failure: "wrong_password") (3s 614ms)
   from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
-passed Hotelio.Bookings.IntegrationTests.OutboxTests.Event_is_read_again_after_history_database_was_unavailable(failure: "port_closed") (17s 637ms)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Event_is_read_again_after_history_database_was_unavailable(failure: "port_closed") (17s 711ms)
   from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
-passed Hotelio.Bookings.IntegrationTests.OutboxTests.Event_reaches_history_once_even_if_published_twice (2s 765ms)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Event_reaches_history_once_even_if_published_twice (2s 265ms)
   from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
-passed Hotelio.Bookings.IntegrationTests.OutboxTests.Cleanup_deletes_only_published_events_older_than_retention (72ms)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Cleanup_deletes_only_published_events_older_than_retention (56ms)
   from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
-passed Hotelio.Bookings.IntegrationTests.OutboxTests.Booking_and_its_event_are_saved_together (50ms)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Booking_and_its_event_are_saved_together (117ms)
   from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
-passed Hotelio.Bookings.IntegrationTests.OutboxTests.Offset_is_committed_only_after_history_is_written (1s 973ms)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Offset_is_committed_only_after_history_is_written (2s 039ms)
   from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
-passed Hotelio.Bookings.IntegrationTests.OutboxTests.Booking_time_with_offset_is_saved_as_the_same_moment (59ms)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Booking_time_with_offset_is_saved_as_the_same_moment (77ms)
   from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
-passed Hotelio.Bookings.IntegrationTests.OutboxTests.Message_that_cannot_be_processed_goes_to_dead_letter_topic_as_is_and_reading_continues (2s 255ms)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Message_that_cannot_be_processed_goes_to_dead_letter_topic_as_is_and_reading_continues (2s 150ms)
   from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
-passed Hotelio.Bookings.IntegrationTests.OutboxTests.Booking_is_rolled_back_when_its_event_cannot_be_saved (70ms)
+passed Hotelio.Bookings.IntegrationTests.OutboxTests.Booking_is_rolled_back_when_its_event_cannot_be_saved (69ms)
   from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
-/work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64) passed (59s 147ms)
+/work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64) passed (52s 696ms)
 
 Test run summary: Passed!
   total: 11
   failed: 0
   succeeded: 11
   skipped: 0
-  duration: 59s 274ms
+  duration: 52s 800ms
 (код выхода 0)

@@ -56,15 +56,15 @@ kubectl -n istio-system port-forward svc/istio-ingressgateway 19090:80   # вх�
 
 ## Проверки
 
-Скрипты из шаблона переписаны под вход через шлюз: `check-canary`, `check-feature-flag` и `check-fallback` считают ответы по версиям (заголовок `X-Booking-Service-Version`) и завершаются с ошибкой, если результат не совпал с ожидаемым; `check-istio` проверяет, что инъекция включена и у подов v1 и v2 есть sidecar. Общие функции — в [lib.sh](../lib.sh). Логи сняты 01.11.2026 на том же образе, что в задании 4, — `booking-service:d2457cc5` (виден в [check-istio.log](check-istio.log)).
+Скрипты из шаблона переписаны под вход через шлюз: `check-canary`, `check-feature-flag` и `check-fallback` считают ответы по версиям (заголовок `X-Booking-Service-Version`) и завершаются с ошибкой, если результат не совпал с ожидаемым; `check-istio` проверяет, что инъекция включена и у подов v1 и v2 есть sidecar. Общие функции — в [lib.sh](../lib.sh). Логи сняты 02.11.2026 на том же образе, что в задании 4, — `booking-service:c2f75254` (виден в [check-istio.log](check-istio.log)).
 
 | Скрипт | Что проверяет | Результат | Лог |
 | :- | :- | :- | :- |
 | [check-istio.sh](../check-istio.sh) | Istio установлен, инъекция включена, поды v1 и v2 — `2/2` (сервис и sidecar), `istioctl analyze` без замечаний | Три пода `2/2`, замечаний нет | [check-istio.log](check-istio.log) |
-| [check-canary.sh](../check-canary.sh) | 200 запросов, доля v2 около 10% | v1 — 189, v2 — 11 | [check-canary.log](check-canary.log) |
-| [check-feature-flag.sh](../check-feature-flag.sh) | С `X-Feature-Enabled: true` все запросы идут на v2 и `/feature` отвечает; без флага и с поддельным `x-booking-route` — обычная канарейка | С флагом 20 из 20 на v2; без флага — 2 из 20, с подделкой — 4 из 20 | [check-feature-flag.log](check-feature-flag.log) |
+| [check-canary.sh](../check-canary.sh) | 200 запросов, доля v2 около 10% | v1 — 183, v2 — 17 | [check-canary.log](check-canary.log) |
+| [check-feature-flag.sh](../check-feature-flag.sh) | С `X-Feature-Enabled: true` все запросы идут на v2 и `/feature` отвечает; без флага и с поддельным `x-booking-route` — обычная канарейка | С флагом 20 из 20 на v2; без флага — 0 из 20, с подделкой — 4 из 20 | [check-feature-flag.log](check-feature-flag.log) |
 | [check-fallback.sh](../check-fallback.sh) | Гасим один под v1, как в задании; затем v1 отвечает 503; затем все поды v1 погашены; в конце v1 возвращается | Удаление пода — без ошибок. При 503 у v1 на 99 запросов из 100 ответила v2; один запрос получил 503 — пока outlier detection не исключил поды v1, повторы тоже уходят на v1. Без v1 — 100 из 100 от v2 | [check-fallback.log](check-fallback.log) |
-| [check-circuit-breaker.sh](../check-circuit-breaker.sh) | Нагрузка из пода fortio внутри mesh: 40 соединений при лимите 10; все 503 должны быть переполнением очереди | Из 400 запросов 214 обслужены, 186 сразу получили 503; счётчик `upstream_rq_pending_overflow` — тоже 186 | [check-circuit-breaker.log](check-circuit-breaker.log) |
+| [check-circuit-breaker.sh](../check-circuit-breaker.sh) | Нагрузка из пода fortio внутри mesh: 40 соединений при лимите 10; все 503 должны быть переполнением очереди | Из 400 запросов 184 обслужены, 216 сразу получили 503; счётчик `upstream_rq_pending_overflow` — тоже 216 | [check-circuit-breaker.log](check-circuit-breaker.log) |
 
 ## Ограничения
 

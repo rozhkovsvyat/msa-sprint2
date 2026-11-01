@@ -98,3 +98,5 @@ Registry нет, поэтому образ попадает в Minikube чере
 ![check-dns.sh](screenshot-check-dns.png)
 
 ![check-status.sh](screenshot-check-status.png)
+
+Изображения — рендер терминальной сессии: те же команды и их вывод, что в соседних `.txt`. Сняты без окон терминала и без перехвата фокуса на машине владельца.

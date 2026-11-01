@@ -3,22 +3,22 @@ $ ./check-istio.sh
 client version: 1.31.2
 control plane version: 1.31.2
 data plane version: 1.31.2 (5 proxies)
-NAME                                   READY   STATUS    RESTARTS       AGE
-istio-egressgateway-5f778cbf8b-gqd9v   1/1     Running   1 (2d9h ago)   14d
-istio-ingressgateway-7498b6878-nf7nk   1/1     Running   1 (2d9h ago)   14d
-istiod-5b97c568c5-dhnc6                1/1     Running   1 (2d9h ago)   14d
+NAME                                   READY   STATUS    RESTARTS        AGE
+istio-egressgateway-5f778cbf8b-gqd9v   1/1     Running   1 (2d13h ago)   14d
+istio-ingressgateway-7498b6878-nf7nk   1/1     Running   1 (2d13h ago)   14d
+istiod-5b97c568c5-dhnc6                1/1     Running   1 (2d13h ago)   14d
 ▶️ Поды booking-service: 2/2 = контейнер сервиса + sidecar Envoy
 NAME                                  READY   STATUS    RESTARTS   AGE   VERSION
-booking-service-v1-d57497dd8-464h5    2/2     Running   0          32s   v1
-booking-service-v1-d57497dd8-tjkzj    2/2     Running   0          23s   v1
-booking-service-v2-7d5465cffb-mtd9s   2/2     Running   0          14s   v2
-booking-service-v1-d57497dd8-464h5: booking-service + istio-proxy (sidecar)
-booking-service-v1-d57497dd8-tjkzj: booking-service + istio-proxy (sidecar)
-booking-service-v2-7d5465cffb-mtd9s: booking-service + istio-proxy (sidecar)
+booking-service-v1-8454447cb6-ktktj   2/2     Running   0          17s   v1
+booking-service-v1-8454447cb6-xzgpt   2/2     Running   0          25s   v1
+booking-service-v2-784dbcf598-bslcn   2/2     Running   0          13s   v2
+booking-service-v1-8454447cb6-ktktj: booking-service + istio-proxy (sidecar)
+booking-service-v1-8454447cb6-xzgpt: booking-service + istio-proxy (sidecar)
+booking-service-v2-784dbcf598-bslcn: booking-service + istio-proxy (sidecar)
 ▶️ Образы v1 и v2
 NAME                 IMAGE
-booking-service-v1   booking-service:d2457cc5
-booking-service-v2   booking-service:d2457cc5
+booking-service-v1   booking-service:c2f75254
+booking-service-v2   booking-service:c2f75254
 ▶️ Конфигурация маршрутизации
 NAME                                          AGE
 gateway.networking.istio.io/booking-gateway   14d
@@ -35,4 +35,3 @@ booking-feature-flag   14d
 ▶️ Проверка Istio инъекции в default namespace...
 "enabled"
 ✅ OK: инъекция включена, у подов v1 и v2 есть sidecar, все готовы
-(код выхода 0)

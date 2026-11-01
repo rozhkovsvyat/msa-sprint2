@@ -6,6 +6,7 @@ using Hotelio.Bookings.Tests.Fakes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Polly.CircuitBreaker;
 using Polly.Timeout;
 using Shouldly;
 using Xunit;
@@ -122,7 +123,7 @@ public sealed class MonolithContractTests
     }
 
     [Fact]
-    public async Task Slow_monolith_is_cut_off_by_attempt_timeout()
+    public async Task Slow_monolith_is_cut_off_by_attempt_timeout_and_retried_once()
     {
         var observed = new ConcurrentBag<CancellationToken>();
         var stub = new MonolithStub(async (_, ct) =>
@@ -131,15 +132,28 @@ public sealed class MonolithContractTests
             await Task.Delay(TimeSpan.FromSeconds(20), ct);
             return Json("{}");
         });
-        using var budget = new CancellationTokenSource(LegacyHttp.Budget);
 
-        var error = await Record.ExceptionAsync(() => ResilientClient(stub).GetUserAsync("u", budget.Token)
+        // Две попытки по 1 с укладываются в бюджет 3 с: ответ обрывает таймаут попытки, а не общий бюджет.
+        await Should.ThrowAsync<TimeoutRejectedException>(() => ResilientClient(stub).GetUserAsync("u", Ct)
             .WaitAsync(TimeSpan.FromSeconds(10), Ct));
 
-        error.ShouldNotBeNull();
-        (error is TimeoutRejectedException or OperationCanceledException).ShouldBeTrue(error.GetType().Name);
-        stub.Calls.ShouldBeInRange(1, 2);
+        stub.Calls.ShouldBe(2);
         observed.ShouldAllBe(token => token.IsCancellationRequested);
+    }
+
+    [Fact]
+    public async Task Circuit_opens_after_a_stream_of_errors_and_stops_calling_the_monolith()
+    {
+        var stub = Returning(_ => Json("{}", HttpStatusCode.ServiceUnavailable));
+        var client = ResilientClient(stub);
+
+        // Четыре запроса по две попытки — восемь ошибок, это минимум для решения circuit breaker.
+        for (var i = 0; i < 4; i++)
+            await Should.ThrowAsync<LegacyUnavailableException>(() => client.GetUserAsync("u", Ct));
+        stub.Calls.ShouldBe(8);
+
+        await Should.ThrowAsync<BrokenCircuitException>(() => client.GetUserAsync("u", Ct));
+        stub.Calls.ShouldBe(8);
     }
 
     [Fact]

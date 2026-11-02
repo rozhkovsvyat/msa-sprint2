@@ -1,21 +1,21 @@
 $ kubectl -n staging port-forward svc/booking-service 8080:80 &
-[1] 26997
+[1] 88562
 $ Forwarding from 127.0.0.1:8080 -> 8080
 Forwarding from [::1]:8080 -> 8080
 
 $ NAMESPACE=staging ./check-status.sh
 ▶️ Checking booking-service deployment (namespace staging)...
 deployment "booking-service" successfully rolled out
-NAME                              READY   STATUS    RESTARTS   AGE
-booking-service-657f74d98-vh984   1/1     Running   0          20h
+NAME                               READY   STATUS    RESTARTS   AGE
+booking-service-689f556558-kjtl6   1/1     Running   0          3m35s
 
 ▶️ Checking service...
 NAME              TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
 booking-service   ClusterIP   10.97.72.184   <none>        80/TCP    14d
 
 ▶️ Helm release:
-NAME           	NAMESPACE	REVISION	UPDATED                             	STATUS  	CHART                	APP VERSION
-booking-service	staging  	7       	2026-11-02 02:20:51.070137 +0400 +04	deployed	booking-service-0.2.2	1.0
+NAME           	NAMESPACE	REVISION	UPDATED                               	STATUS  	CHART                	APP VERSION
+booking-service	staging  	8       	2026-11-02 23:44:08.023346 +0300 +0300	deployed	booking-service-0.2.2	1.0
 
 ▶️ Quick curl http://localhost:8080/ping
 Handling connection for 8080

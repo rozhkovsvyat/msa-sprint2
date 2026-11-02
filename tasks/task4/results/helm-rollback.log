@@ -1,4 +1,4 @@
-Откат prod (задание 4), 02.11.2026 01:29 MSK. Каталог tasks/task4.
+Откат prod (задание 4), 02.11.2026 01:22 MSK. Каталог tasks/task4.
 Ревизия 20 — тот же образ, в prod включается фича-флаг (featureFlags.enableFeatureX=true, остальные values прежние).
 Откат gitlab-ci-local rollback:prod возвращает ревизию 19: флаг снова выключен, образ не меняется.
 

@@ -14,7 +14,7 @@
 - `tasks/monolith/Dockerfile` и `test/Dockerfile` — актуальные базовые образы, исходные больше не собираются; в образ тестов добавлен `grpcurl`;
 - `test/init-fixtures.sql` — два отеля для проверки причин отказа;
 - `test/regress.sh` — регресс после выноса бронирований (задание 2);
-- Go-заготовка `tasks/task4/booking-service/` удалена: в задании 4 разворачивается booking-service из задания 2.
+- Go-заготовка `tasks/task4/booking-service/` удалена: в задании 4 разворачивается booking-service из задания 2; `Makefile` и `package.json` шаблона задания 4 остались как были, пайплайн их не использует.
 
 Код монолита не менялся.
 

@@ -56,7 +56,7 @@ cd tasks/task3
 docker compose up -d --build
 ./calls.sh success   # userid совпадает — бронирования с отелями и скидками
 ./calls.sh deny      # чужой userid — FORBIDDEN; без заголовка — UNAUTHENTICATED
-./calls.sh course    # проверочный запрос задания: у user1 бронирований нет, пустой список
+./calls.sh course    # проверочный запрос задания: у user1 в фикстурах курса бронирований нет, пустой список; с бронированиями — success выше
 ./calls.sh batch     # hotelsByIds с повторённым id
 
 npm ci && npm test   # интеграционные тесты: настоящие шлюз и подграфы по HTTP, монолит и booking-service — заглушки

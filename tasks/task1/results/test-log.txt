@@ -148,3 +148,7 @@ $ docker compose down -v 2>&1 | grep -v 'attribute `version` is obsolete'
  Container hotelio-monolith Removed 
  Volume task1_monolith-db-data Removing 
  Volume task1_monolith-db-data Removed 
+
+== 02.11.2026: базовый образ монолита из курса (Н9 в ADR) ==
+$ curl -s https://hub.docker.com/v2/repositories/library/openjdk/tags/17-jdk-slim; echo
+{"message":"httperror 404: tag '17-jdk-slim' not found","errinfo":{"namespace":"library","repository":"openjdk","tag":"17-jdk-slim"}}

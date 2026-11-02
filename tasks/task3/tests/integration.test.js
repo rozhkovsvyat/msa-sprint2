@@ -29,15 +29,17 @@ test('Свои бронирования приходят одним запрос
 });
 
 test('@override: discountPercent отдаёт promocode-subgraph по справочнику промокодов', async () => {
+  const [requestsFrom, eventsFrom] = [fx.subgraphRequests.length, fx.events.length];
   const { body } = await post(fx.gatewayUrl, MY_BOOKINGS);
   assert.deepEqual(body.data.bookingsByUser.map((b) => b.discountPercent), [20, 5, 30, 0]);
   // Шлюз передаёт promocode-subgraph промокод бронирования (@requires); booking-subgraph поле не запрашивает.
-  const representations = fx.subgraphRequests.filter((r) => r.subgraph === 'promocode-subgraph')
+  const requests = fx.subgraphRequests.slice(requestsFrom);
+  const representations = requests.filter((r) => r.subgraph === 'promocode-subgraph')
     .flatMap((r) => r.variables?.representations ?? []);
   assert.ok(representations.some((ref) => ref.id === 'b1' && ref.promoCode === 'SUMMER'));
   assert.ok(representations.every((ref) => !('discountPercent' in ref)));
-  assert.ok(!fx.subgraphRequests.some((r) => r.subgraph === 'booking-subgraph' && r.query.includes('discountPercent')));
-  assert.ok(fx.events.some((e) => e.svc === 'promocode-subgraph' && e.msg === 'discountPercent resolved'
+  assert.ok(!requests.some((r) => r.subgraph === 'booking-subgraph' && r.query.includes('discountPercent')));
+  assert.ok(fx.events.slice(eventsFrom).some((e) => e.svc === 'promocode-subgraph' && e.msg === 'discountPercent resolved'
     && e.bookingId === 'b1' && e.discountPercent === 20));
 
   fx.promos.get('SUMMER').discount = 25;
@@ -215,10 +217,13 @@ test('DataLoader: пачки до 10 отелей, без повторов, не
 });
 
 test('Кеш отелей: вытеснение старых записей не портит результат текущей пачки', async () => {
-  const catalog = createHotelCatalog({ fetchHotel: async (id) => ({ id }) });
+  const fetched = [];
+  const catalog = createHotelCatalog({ fetchHotel: async (id) => { fetched.push(id); return { id }; }, maxEntries: 2 });
   const quiet = () => {};
-  await catalog.loader(quiet).loadMany(Array.from({ length: 500 }, (_, i) => String(i)));
-  assert.deepEqual(await catalog.loader(quiet).loadMany(['0', 'new']), [{ id: '0' }, { id: 'new' }]);
+  await catalog.loader(quiet).loadMany(['a', 'b']);
+  // В кеше два места: новые c и d вытесняют из него a, но a взят из кеша ещё до запросов к монолиту.
+  assert.deepEqual(await catalog.loader(quiet).loadMany(['a', 'c', 'd']), [{ id: 'a' }, { id: 'c' }, { id: 'd' }]);
+  assert.deepEqual(fetched, ['a', 'b', 'c', 'd']);
 });
 
 test('Кеш отелей: в пределах TTL отель берётся из кеша, после — снова из монолита', async () => {

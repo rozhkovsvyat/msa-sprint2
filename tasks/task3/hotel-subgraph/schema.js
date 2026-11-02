@@ -34,8 +34,8 @@ export function createMonolithClient({ baseUrl, fetch = globalThis.fetch, timeou
 
 // Справочник отелей: общий короткий кеш между запросами (до 500 отелей) и DataLoader на каждый запрос.
 // Обращений к монолиту одновременно не больше maxConcurrent, чтобы длинный список его не нагружал.
-export function createHotelCatalog({ fetchHotel, ttlMs = 30_000, maxConcurrent = 4 }) {
-  const cache = ttlMs > 0 ? new LRUCache({ max: 500, ttl: ttlMs }) : null;
+export function createHotelCatalog({ fetchHotel, ttlMs = 30_000, maxConcurrent = 4, maxEntries = 500 }) {
+  const cache = ttlMs > 0 ? new LRUCache({ max: maxEntries, ttl: ttlMs }) : null;
   const limit = pLimit(maxConcurrent);
 
   // Функция загрузки DataLoader: один вызов на пачку отелей одного GraphQL-запроса.

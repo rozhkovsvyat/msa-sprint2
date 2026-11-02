@@ -6,7 +6,7 @@ using Xunit;
 namespace Hotelio.Bookings.Tests;
 
 /// <summary>Ведёт себя как BookingService монолита: порядок проверок, тексты отказов, расчёт цены.</summary>
-public class BookingRulesTests
+public sealed class BookingRulesTests
 {
     private static readonly Fixture Any = new();
 

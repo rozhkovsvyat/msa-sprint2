@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using AutoFixture;
 using Confluent.Kafka;
@@ -117,7 +116,7 @@ public sealed class DeliveryTests
         OutboxPublisher.RetryDelay(attempt).ShouldBe(TimeSpan.FromSeconds(seconds));
 
     private static string EventJson(StoredBooking booking, string requestId) =>
-        JsonSerializer.Serialize(BookingCreatedEvent.From(booking, "booking-service", requestId), BookingStore.Json);
+        BookingCreatedEvent.From(booking, requestId).ToJson();
 
     /// <summary>Событие с заменённым полем; null удаляет поле. Путь через точку: "booking.userId".</summary>
     private static string Changed(string json, string path, JsonNode? value)

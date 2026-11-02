@@ -31,15 +31,19 @@ public sealed class AdminAccessTests
     [InlineData("Basic stand-admin-token")]
     [InlineData("Bearer ")]
     [InlineData("")]
-    public void Anything_else_does_not(string header) =>
+    public void Other_authorization_headers_are_rejected(string header) =>
         new AdminToken(Token).Accepts(WithAuthorization(header)).ShouldBeFalse();
 
     [Fact]
-    public void Without_a_configured_token_or_a_header_the_admin_list_is_closed()
+    public void Without_an_authorization_header_the_admin_list_is_closed()
     {
         new AdminToken(Token).Accepts(new Metadata()).ShouldBeFalse();
         new AdminToken(Token).Accepts(null).ShouldBeFalse();
-        // Токен не задан — служебный метод не открывается никому, в том числе с пустым значением.
+    }
+
+    [Fact]
+    public void Without_a_configured_token_the_admin_list_is_closed_to_everyone()
+    {
         new AdminToken(null).Accepts(WithAuthorization($"Bearer {Token}")).ShouldBeFalse();
         new AdminToken("").Accepts(WithAuthorization("Bearer ")).ShouldBeFalse();
     }

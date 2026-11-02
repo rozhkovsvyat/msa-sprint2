@@ -17,7 +17,7 @@ public sealed class BookingAdminGrpcService(BookingStore store, AdminToken admin
         if (!admin.Accepts(context.RequestHeaders))
             throw new RpcException(new Status(StatusCode.Unauthenticated, "admin token required"));
         if (request.PageSize is < 0 or > MaxPageSize)
-            throw new RpcException(new Status(StatusCode.InvalidArgument, $"page_size is 1..{MaxPageSize}"));
+            throw new RpcException(new Status(StatusCode.InvalidArgument, $"page_size is 0..{MaxPageSize}, 0 means {DefaultPageSize}"));
         var pageSize = request.PageSize == 0 ? DefaultPageSize : request.PageSize;
         var afterId = DecodePageToken(request.PageToken);
 
@@ -34,9 +34,10 @@ public sealed class BookingAdminGrpcService(BookingStore store, AdminToken admin
     // Токен страницы — id последней строки: строки не нумеруются заново, пока список читают.
     public static string EncodePageToken(long id) => id.ToString(CultureInfo.InvariantCulture);
 
-    public static long DecodePageToken(string token) => token.Length == 0
-        ? 0
-        : long.TryParse(token, NumberStyles.None, CultureInfo.InvariantCulture, out var id) && id >= 0
-            ? id
-            : throw new RpcException(new Status(StatusCode.InvalidArgument, "page_token is next_page_token of the previous page"));
+    public static long DecodePageToken(string token)
+    {
+        if (token.Length == 0) return 0;
+        if (long.TryParse(token, NumberStyles.None, CultureInfo.InvariantCulture, out var id)) return id;
+        throw new RpcException(new Status(StatusCode.InvalidArgument, "page_token is next_page_token of the previous page"));
+    }
 }

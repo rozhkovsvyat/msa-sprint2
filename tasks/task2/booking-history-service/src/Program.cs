@@ -20,6 +20,7 @@ if (missing.Count > 0) return Fail("не заданы " + string.Join(", ", miss
 builder.WebHost.UseUrls($"http://0.0.0.0:{config.GetValue("HTTP_PORT", 8080)}");
 builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(config["HISTORY_DB"]!));
 builder.Services.AddSingleton<HistoryStore>();
+builder.Services.Configure<HistoryConsumerOptions>(config);
 builder.Services.AddHostedService<BookingEventsConsumer>();
 
 var app = builder.Build();

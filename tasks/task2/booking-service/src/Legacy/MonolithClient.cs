@@ -7,7 +7,7 @@ using Hotelio.Bookings.Domain;
 namespace Hotelio.Bookings.Legacy;
 
 /// <summary>Anti-Corruption Layer: переводит ответы REST API монолита в модель бронирования, без бизнес-правил.</summary>
-public sealed class MonolithClient(HttpClient http, ILogger<MonolithClient> log, IHttpContextAccessor? context = null)
+public sealed class MonolithClient(HttpClient http, ILogger<MonolithClient> log)
 {
     public async Task<UserFacts> GetUserAsync(string userId, CancellationToken ct)
     {
@@ -67,7 +67,6 @@ public sealed class MonolithClient(HttpClient http, ILogger<MonolithClient> log,
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(method, path);
-        request.Headers.TryAddWithoutValidation("x-request-id", context?.HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString());
         return await http.SendAsync(request, ct);
     }
 

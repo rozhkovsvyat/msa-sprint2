@@ -8,11 +8,13 @@ public static class LegacyHttp
     public static readonly TimeSpan Budget = TimeSpan.FromSeconds(3);
 
     public static void AddLegacyHttp(this IServiceCollection services, Uri baseAddress) => services
+        .AddTransient<RequestIdHandler>()
         .AddHttpClient<MonolithClient>(http =>
         {
             http.BaseAddress = baseAddress;
             http.Timeout = Timeout.InfiniteTimeSpan; // время ограничивает resilience handler
         })
+        .AddHttpMessageHandler<RequestIdHandler>()
         .AddStandardResilienceHandler(options =>
         {
             options.TotalRequestTimeout.Timeout = Budget;

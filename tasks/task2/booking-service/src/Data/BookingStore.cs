@@ -1,7 +1,5 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using Hotelio.Bookings.Domain;
+using Hotelio.Bookings.Outbox;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -14,7 +12,8 @@ public sealed record StoredBooking(
 /// <summary>Хранилище бронирований. Бронирование и событие о нём пишутся одной транзакцией (outbox).</summary>
 public sealed class BookingStore(NpgsqlDataSource db)
 {
-    public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+    private const string Columns =
+        "id, user_id, hotel_id, promo_code, discount_amount, price, created_at, created_at_estimated";
 
     public async Task<StoredBooking> CreateAsync(string userId, string hotelId, string? promoCode, Price price, string requestId, CancellationToken ct)
     {
@@ -39,7 +38,7 @@ public sealed class BookingStore(NpgsqlDataSource db)
                 price.Discount, price.FinalPrice, reader.GetFieldValue<DateTimeOffset>(1), false);
         }
 
-        var evt = BookingCreatedEvent.From(booking, "booking-service", requestId);
+        var evt = BookingCreatedEvent.From(booking, requestId);
         await using (var outbox = new NpgsqlCommand("""
             insert into outbox (event_id, aggregate_id, event_type, correlation_id, payload)
             values (@eventId, @bookingId, @eventType, @correlation, @payload)
@@ -49,7 +48,7 @@ public sealed class BookingStore(NpgsqlDataSource db)
             outbox.Parameters.AddWithValue("bookingId", booking.Id);
             outbox.Parameters.AddWithValue("eventType", evt.EventType);
             outbox.Parameters.AddWithValue("correlation", requestId);
-            outbox.Parameters.Add(new NpgsqlParameter("payload", NpgsqlDbType.Jsonb) { Value = JsonSerializer.Serialize(evt, Json) });
+            outbox.Parameters.Add(new NpgsqlParameter("payload", NpgsqlDbType.Jsonb) { Value = evt.ToJson() });
             await outbox.ExecuteNonQueryAsync(ct);
         }
 
@@ -73,9 +72,6 @@ public sealed class BookingStore(NpgsqlDataSource db)
         return await ReadAsync(cmd, ct);
     }
 
-    private const string Columns =
-        "id, user_id, hotel_id, promo_code, discount_amount, price, created_at, created_at_estimated";
-
     private static async Task<IReadOnlyList<StoredBooking>> ReadAsync(NpgsqlCommand cmd, CancellationToken ct)
     {
         var result = new List<StoredBooking>();
@@ -91,22 +87,3 @@ public sealed class BookingStore(NpgsqlDataSource db)
         return result;
     }
 }
-
-/// <summary>Событие BookingCreated, версия схемы 1. Контракт: contracts/booking-events.asyncapi.yaml.</summary>
-public sealed record BookingCreatedEvent(
-    Guid EventId, string EventType, int SchemaVersion, DateTimeOffset OccurredAt,
-    string Source, string CorrelationId, BookingPayload Booking)
-{
-    public static BookingCreatedEvent From(StoredBooking b, string source, string correlationId) => new(
-        IdFor(b.Id), "BookingCreated", 1, DateTimeOffset.UtcNow, source, correlationId,
-        new BookingPayload(b.Id, b.UserId, b.HotelId, b.PromoCode, b.DiscountAmount, b.Price, b.CreatedAt, b.CreatedAtEstimated));
-
-    // eventId выводится из id бронирования: повторный перенос того же бронирования не создаёт нового события.
-    // Та же формула в migration/migrate-bookings.sh: md5('hotelio:BookingCreated:v1:' || id)::uuid.
-    public static Guid IdFor(long bookingId) => Guid.ParseExact(Convert.ToHexString(
-        MD5.HashData(Encoding.UTF8.GetBytes($"hotelio:BookingCreated:v1:{bookingId}"))), "N");
-}
-
-public sealed record BookingPayload(
-    long Id, string UserId, string HotelId, string? PromoCode,
-    decimal DiscountAmount, decimal Price, DateTimeOffset CreatedAt, bool CreatedAtEstimated);

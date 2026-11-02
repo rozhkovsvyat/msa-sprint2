@@ -1,10 +1,8 @@
-using System.Diagnostics;
 using Hotelio.Bookings;
 using Hotelio.Bookings.Data;
 using Hotelio.Bookings.Grpc;
 using Hotelio.Bookings.Legacy;
 using Hotelio.Bookings.Outbox;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Npgsql;
 
@@ -51,6 +49,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddLegacyHttp(monolithUri);
 if (publisher == "enabled")
 {
+    builder.Services.Configure<OutboxOptions>(config);
     builder.Services.AddHostedService<OutboxPublisher>();
     builder.Services.AddHostedService<OutboxCleanup>();
 }
@@ -61,22 +60,7 @@ var featureX = config.GetValue("ENABLE_FEATURE_X", false);
 // Для проверки fallback в Istio: /version отвечает этим кодом (например, 503), а под остаётся живым.
 var faultStatus = config.GetValue("FAULT_INJECTION_STATUS", 0);
 
-app.Use(async (ctx, next) =>
-{
-    var requestId = RequestId.Normalize(ctx.Request.Headers["x-request-id"]);
-    ctx.TraceIdentifier = requestId;
-    ctx.Response.Headers["x-request-id"] = requestId;
-    ctx.Response.Headers["X-Booking-Service-Version"] = version;
-    var started = Stopwatch.GetTimestamp();
-    await next();
-    if (ctx.Request.Path == "/ping" || ctx.Request.Path == "/ready") return;
-    // gRPC-статус приходит в трейлерах, а при ошибке без тела ответа — в заголовках.
-    var grpcStatus = ctx.Response.Headers["grpc-status"].FirstOrDefault()
-        ?? ctx.Features.Get<IHttpResponseTrailersFeature>()?.Trailers["grpc-status"].FirstOrDefault();
-    app.Logger.LogInformation("{Method} {Path} {Status} grpc-status={GrpcStatus} {ElapsedMs:F0} ms requestId={RequestId}",
-        ctx.Request.Method, ctx.Request.Path, ctx.Response.StatusCode, grpcStatus ?? "-",
-        Stopwatch.GetElapsedTime(started).TotalMilliseconds, requestId);
-});
+app.UseRequestLogging(version);
 
 app.MapGrpcService<BookingGrpcService>();
 app.MapGrpcService<BookingAdminGrpcService>();
@@ -88,16 +72,8 @@ app.MapGet("/ready", async (NpgsqlDataSource db, CancellationToken ct) => await 
 app.MapGet("/version", () => Results.Json(new { version, featureX }, statusCode: faultStatus == 0 ? 200 : faultStatus));
 app.MapGet("/diagnostics/outbox", async (NpgsqlDataSource db, CancellationToken ct) =>
 {
-    await using var cmd = db.CreateCommand("""
-        select count(*) filter (where published_at is null and dead_lettered_at is null),
-               count(*) filter (where published_at is null and dead_lettered_at is null and failure_count > 0),
-               count(*) filter (where dead_lettered_at is not null),
-               coalesce(extract(epoch from now() - min(created_at) filter (where published_at is null and dead_lettered_at is null)), 0)::double precision
-        from outbox
-        """);
-    await using var r = await cmd.ExecuteReaderAsync(ct);
-    await r.ReadAsync(ct);
-    return Results.Json(new { pending = r.GetInt64(0), retrying = r.GetInt64(1), deadLetters = r.GetInt64(2), oldestAgeSeconds = r.GetDouble(3), publisher });
+    var stats = await OutboxStats.ReadAsync(db, ct);
+    return Results.Json(new { stats.Pending, stats.Retrying, stats.DeadLetters, stats.OldestAgeSeconds, publisher });
 });
 if (featureX) app.MapGet("/feature", () => "Feature X is enabled!");
 

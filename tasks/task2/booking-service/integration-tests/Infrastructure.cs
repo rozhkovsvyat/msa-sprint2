@@ -100,7 +100,9 @@ public sealed class Infrastructure : IAsyncLifetime
     {
         using var consumer = new ConsumerBuilder<string, byte[]>(new ConsumerConfig
         {
-            BootstrapServers = KafkaBootstrap, GroupId = "test-reader-" + Guid.NewGuid(), EnableAutoCommit = false,
+            BootstrapServers = KafkaBootstrap,
+            GroupId = "test-reader-" + Guid.NewGuid(),
+            EnableAutoCommit = false,
         }).Build();
         consumer.Assign(new TopicPartitionOffset(topic, 0, Offset.Beginning));
         var messages = Enumerable.Range(0, count)

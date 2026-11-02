@@ -46,7 +46,7 @@ public sealed class MonolithContractTests
     private static MonolithClient ResilientClient(Mock<HttpMessageHandler> monolith, IHttpContextAccessor? context = null)
     {
         var services = new ServiceCollection().AddLogging();
-        if (context is not null) services.AddSingleton(context);
+        services.AddSingleton(context ?? new HttpContextAccessor());
         services.AddLegacyHttp(new Uri("http://legacy/"));
         services.AddHttpClient<MonolithClient>().ConfigurePrimaryHttpMessageHandler(() => monolith.Object);
         return services.BuildServiceProvider().GetRequiredService<MonolithClient>();

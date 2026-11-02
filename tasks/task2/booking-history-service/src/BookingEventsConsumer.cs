@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Confluent.Kafka;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace Hotelio.BookingHistory;
@@ -11,12 +12,13 @@ namespace Hotelio.BookingHistory;
 /// Читает booking-events и подтверждает смещение только после записи в историю или в DLQ-топик.
 /// Временную ошибку БД повторяет; если повторы не помогли или недоступна сама БД, сообщение читается снова.
 /// </summary>
-public sealed class BookingEventsConsumer(HistoryStore store, IConfiguration config, ILogger<BookingEventsConsumer> log) : BackgroundService
+public sealed class BookingEventsConsumer(HistoryStore store, IOptions<HistoryConsumerOptions> options, ILogger<BookingEventsConsumer> log)
+    : BackgroundService
 {
     private const int MaxAttempts = 5;
 
-    private string Topic => config["KAFKA_TOPIC"] ?? "booking-events";
-    private string DeadLetterTopic => config["KAFKA_DLQ_TOPIC"] ?? Topic + ".dlq";
+    private readonly HistoryConsumerOptions settings = options.Value;
+    private readonly string deadLetterTopic = options.Value.DeadLetterTopic ?? options.Value.Topic + ".dlq";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
@@ -33,16 +35,21 @@ public sealed class BookingEventsConsumer(HistoryStore store, IConfiguration con
         // Ключ и тело читаются байтами, чтобы в DLQ сообщение ушло без перекодирования.
         using var consumer = new ConsumerBuilder<byte[]?, byte[]?>(new ConsumerConfig
         {
-            BootstrapServers = config["KAFKA_BOOTSTRAP"], GroupId = config["KAFKA_GROUP"] ?? "booking-history",
-            AutoOffsetReset = AutoOffsetReset.Earliest, EnableAutoCommit = false,
+            BootstrapServers = settings.KafkaBootstrap,
+            GroupId = settings.Group,
+            AutoOffsetReset = AutoOffsetReset.Earliest,
+            EnableAutoCommit = false,
         }).Build();
         // DLQ-топик с хранением 30 дней создаёт инфраструктура; если его нет, запись падает, а не создаёт топик с настройками брокера.
         using var deadLetters = new ProducerBuilder<byte[]?, byte[]?>(new ProducerConfig
         {
-            BootstrapServers = config["KAFKA_BOOTSTRAP"], Acks = Acks.All, EnableIdempotence = true,
-            MessageTimeoutMs = 10_000, AllowAutoCreateTopics = false,
+            BootstrapServers = settings.KafkaBootstrap,
+            Acks = Acks.All,
+            EnableIdempotence = true,
+            MessageTimeoutMs = 10_000,
+            AllowAutoCreateTopics = false,
         }).Build();
-        consumer.Subscribe(Topic);
+        consumer.Subscribe(settings.Topic);
         try
         {
             while (!ct.IsCancellationRequested)
@@ -57,7 +64,7 @@ public sealed class BookingEventsConsumer(HistoryStore store, IConfiguration con
                 catch (OperationCanceledException) when (ct.IsCancellationRequested) { break; }
                 catch (Exception ex)
                 {
-                    var error = ex is ProduceException<byte[]?, byte[]?> ? $"DLQ {DeadLetterTopic}: {ex.Message}" : ex.Message;
+                    var error = ex is ProduceException<byte[]?, byte[]?> ? $"DLQ {deadLetterTopic}: {ex.Message}" : ex.Message;
                     log.LogWarning("Processing failed: {Error}; offset not committed, message will be read again", error);
                     if (record is not null) SeekBack(consumer, record);
                     await Task.Delay(TimeSpan.FromSeconds(2), ct);
@@ -122,7 +129,7 @@ public sealed class BookingEventsConsumer(HistoryStore store, IConfiguration con
         headers.Add("dlq-partition", Encoding.UTF8.GetBytes(record.Partition.Value.ToString(CultureInfo.InvariantCulture)));
         headers.Add("dlq-offset", Encoding.UTF8.GetBytes(record.Offset.Value.ToString(CultureInfo.InvariantCulture)));
         // Если Kafka не приняла сообщение, исключение не даст подтвердить смещение.
-        await deadLetters.ProduceAsync(DeadLetterTopic, new Message<byte[]?, byte[]?> { Key = record.Message.Key, Value = record.Message.Value, Headers = headers }, ct);
+        await deadLetters.ProduceAsync(deadLetterTopic, new Message<byte[]?, byte[]?> { Key = record.Message.Key, Value = record.Message.Value, Headers = headers }, ct);
         log.LogError("Dead letter {Partition}@{Offset}: {Reason} requestId={RequestId}", record.Partition.Value, record.Offset.Value, reason, requestId);
     }
 
@@ -138,17 +145,20 @@ public sealed class BookingEventsConsumer(HistoryStore store, IConfiguration con
             (evt, reason) = (null, "invalid JSON or missing field: " + ex.Path);
             return false;
         }
-        reason = evt switch
-        {
-            null => "empty message",
-            { EventType: not "BookingCreated" } => "unsupported eventType " + evt.EventType,
-            { SchemaVersion: not 1 } => "unsupported schemaVersion " + evt.SchemaVersion,
-            _ when evt.EventId == Guid.Empty || evt.Booking.Id <= 0 => "empty eventId or booking.id",
-            _ when string.IsNullOrWhiteSpace(evt.Booking.UserId) || string.IsNullOrWhiteSpace(evt.Booking.HotelId) => "empty userId or hotelId",
-            _ => "",
-        };
+        reason = Validate(evt) ?? "";
         if (evt is not null && reason.Length == 0) return true;
         evt = null;
         return false;
     }
+
+    /// <summary>Причина, по которой событие нельзя записать в историю; null — событие годится.</summary>
+    private static string? Validate(BookingCreated? evt) => evt switch
+    {
+        null => "empty message",
+        { EventType: not "BookingCreated" } => "unsupported eventType " + evt.EventType,
+        { SchemaVersion: not 1 } => "unsupported schemaVersion " + evt.SchemaVersion,
+        _ when evt.EventId == Guid.Empty || evt.Booking.Id <= 0 => "empty eventId or booking.id",
+        _ when string.IsNullOrWhiteSpace(evt.Booking.UserId) || string.IsNullOrWhiteSpace(evt.Booking.HotelId) => "empty userId or hotelId",
+        _ => null,
+    };
 }

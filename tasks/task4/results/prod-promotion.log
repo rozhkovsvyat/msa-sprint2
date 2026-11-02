@@ -1,24 +1,24 @@
-Выпуск в prod (задание 4), 02.11.2026 23:44 MSK: тот же образ, что прошёл staging в pipeline-build-log.txt. Каталог tasks/task4.
+Выпуск в prod (задание 4), 03.11.2026 00:32 MSK: тот же образ, что прошёл staging в pipeline-build-log.txt. Каталог tasks/task4.
 $ gitlab-ci-local deploy:prod
-parsing and downloads finished in 76 ms.
-json schema validated in 140 ms
+parsing and downloads finished in 42 ms.
+json schema validated in 70 ms
 deploy:prod starting shell (release)
 deploy:prod $ minikube image load "${IMAGE_NAME}:${IMAGE_TAG}" # collapsed multi-line command
 deploy:prod > still running...
 deploy:prod > still running...
 deploy:prod > Release "booking-service" has been upgraded. Happy Helming!
 deploy:prod > NAME: booking-service
-deploy:prod > LAST DEPLOYED: Mon Nov  2 23:44:29 2026
+deploy:prod > LAST DEPLOYED: Tue Nov  3 00:32:25 2026
 deploy:prod > NAMESPACE: prod
 deploy:prod > STATUS: deployed
-deploy:prod > REVISION: 22
+deploy:prod > REVISION: 28
 deploy:prod > DESCRIPTION: Upgrade complete
 deploy:prod > TEST SUITE: None
 deploy:prod > NAME                                   READY   STATUS      RESTARTS   AGE
-deploy:prod > pod/booking-service-6846698d75-qsg29   1/1     Running     0          19s
-deploy:prod > pod/booking-service-6846698d75-s4mxv   1/1     Running     0          7s
-deploy:prod > pod/booking-service-6846698d75-xqc7p   1/1     Running     0          13s
-deploy:prod > pod/booking-service-69954f45cf-vnmgp   0/1     Completed   0          22h
+deploy:prod > pod/booking-service-5c997f97f5-tzv2v   0/1     Completed   0          16m
+deploy:prod > pod/booking-service-67d98cdcb7-7fcv5   1/1     Running     0          18s
+deploy:prod > pod/booking-service-67d98cdcb7-gp8hr   1/1     Running     0          6s
+deploy:prod > pod/booking-service-67d98cdcb7-nmf9c   1/1     Running     0          12s
 deploy:prod > 
 deploy:prod > NAME                      TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
 deploy:prod > service/booking-service   ClusterIP   10.102.254.124   <none>        80/TCP    14d
@@ -26,14 +26,14 @@ deploy:prod > ▶️ Running in-cluster DNS test (namespace prod)...
 deploy:prod > pong
 deploy:prod > ✅ Success
 deploy:prod > REVISION	UPDATED                 	STATUS    	CHART                	APP VERSION	DESCRIPTION                  
-deploy:prod > 20      	Mon Nov  2 02:22:27 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
-deploy:prod > 21      	Mon Nov  2 02:22:44 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 19               
-deploy:prod > 22      	Mon Nov  2 23:44:29 2026	deployed  	booking-service-0.2.2	1.0        	Upgrade complete             
+deploy:prod > 26      	Tue Nov  3 00:15:58 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
+deploy:prod > 27      	Tue Nov  3 00:16:18 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 25               
+deploy:prod > 28      	Tue Nov  3 00:32:25 2026	deployed  	booking-service-0.2.2	1.0        	Upgrade complete             
 deploy:prod $ ./check-promotion.sh
-deploy:prod > staging (staging): sha256:7d35a220f561080ce879788bdb4d44c4bf2096fde3e93aa9dfe90a36ee4d8996
-deploy:prod > prod (prod): sha256:7d35a220f561080ce879788bdb4d44c4bf2096fde3e93aa9dfe90a36ee4d8996
+deploy:prod > staging (staging): sha256:088d707d03933ce639d12e4602b976c66f6bdbae81c305b257723ddbe6f93b21
+deploy:prod > prod (prod): sha256:088d707d03933ce639d12e4602b976c66f6bdbae81c305b257723ddbe6f93b21
 deploy:prod > [PASS] В обеих средах один imageID; пересборки при продвижении нет
-deploy:prod finished in 30 s
+deploy:prod finished in 28 s
 
  PASS  deploy:prod
 (код выхода 0)

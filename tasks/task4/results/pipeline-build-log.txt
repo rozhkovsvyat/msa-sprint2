@@ -1,29 +1,19 @@
-Пайплайн booking-service (задание 4), 02.11.2026 23:42 MSK. Стенд: macOS 26.6.2, Colima, Minikube 1.39.0, Helm 4.3.0, gitlab-ci-local 4.76.1. Каталог tasks/task4.
+Пайплайн booking-service (задание 4), 03.11.2026 00:30 MSK. Стенд: macOS 26.6.2, Colima, Minikube 1.39.0, Helm 4.3.0, gitlab-ci-local 4.76.1. Каталог tasks/task4.
 $ gitlab-ci-local
-parsing and downloads finished in 84 ms.
-json schema validated in 152 ms
+parsing and downloads finished in 42 ms.
+json schema validated in 70 ms
+test:integration   starting shell (test)
 build              starting shell (build)
 test:unit          starting shell (test)
-test:integration   starting shell (test)
 test:api           starting shell (test)
+test:integration   $ docker run --rm ${DOCKER_ARGS} -v "$(cd ../task2 && pwd)":/src:ro -v "${HOME}/.nuget/packages":/nuget:ro -e NUGET_FALLBACK_PACKAGES=/nuget "${DOTNET_SDK}" sh -c 'cp -r /src /work && find /work -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + && cd /work/booking-service && dotnet test --project '"${TEST_PROJECT}"
 test:unit          $ docker run --rm ${DOCKER_ARGS} -v "$(cd ../task2 && pwd)":/src:ro -v "${HOME}/.nuget/packages":/nuget:ro -e NUGET_FALLBACK_PACKAGES=/nuget "${DOTNET_SDK}" sh -c 'cp -r /src /work && find /work -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + && cd /work/booking-service && dotnet test --project '"${TEST_PROJECT}"
 build              $ docker build -f ../task2/booking-service/Dockerfile -t "${IMAGE_NAME}:${IMAGE_TAG}" ../task2
 test:api           $ cd ../task2
 test:api           $ docker compose down -v --remove-orphans
-test:integration   $ docker run --rm ${DOCKER_ARGS} -v "$(cd ../task2 && pwd)":/src:ro -v "${HOME}/.nuget/packages":/nuget:ro -e NUGET_FALLBACK_PACKAGES=/nuget "${DOTNET_SDK}" sh -c 'cp -r /src /work && find /work -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + && cd /work/booking-service && dotnet test --project '"${TEST_PROJECT}"
-test:api           >  Container booking-service Stopping 
-test:api           >  Container hotelio-monolith Stopping 
 test:api           >  Container booking-history-service Stopping 
-build              > #0 building with "colima" instance using docker driver
-build              > 
-build              > #1 [internal] load build definition from Dockerfile
-build              > #1 transferring dockerfile: 1.02kB 0.0s done
-build              > #1 DONE 0.0s
-build              > 
-build              > #2 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
-build              > #2 DONE 0.1s
-build              > 
-build              > #3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
+test:api           >  Container hotelio-monolith Stopping 
+test:api           >  Container booking-service Stopping 
 test:api           >  Container booking-service Stopped 
 test:api           >  Container booking-service Removing 
 test:api           >  Container booking-history-service Stopped 
@@ -39,131 +29,135 @@ test:api           >  Container task2-history-schema-1 Stopped
 test:api           >  Container task2-history-schema-1 Removing 
 test:api           >  Container task2-kafka-init-1 Stopped 
 test:api           >  Container task2-kafka-init-1 Removing 
+build              > #0 building with "colima" instance using docker driver
+build              > 
+build              > #1 [internal] load build definition from Dockerfile
+build              > #1 transferring dockerfile: 1.11kB done
+build              > #1 DONE 0.0s
+build              > 
+build              > #2 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
+build              > #2 DONE 0.1s
+build              > 
+build              > #3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
 test:api           >  Container task2-booking-schema-1 Removed 
 test:api           >  Container booking-db Stopping 
-test:api           >  Container hotelio-monolith Stopped 
-test:api           >  Container hotelio-monolith Removing 
-build              > #3 DONE 0.7s
 test:api           >  Container task2-kafka-init-1 Removed 
 test:api           >  Container kafka Stopping 
 test:api           >  Container task2-history-schema-1 Removed 
 test:api           >  Container history-db Stopping 
+test:api           >  Container hotelio-monolith Stopped 
+test:api           >  Container hotelio-monolith Removing 
 test:api           >  Container hotelio-monolith Removed 
 test:api           >  Container hotelio-db Stopping 
+test:api           >  Container booking-db Stopped 
+test:api           >  Container booking-db Removing 
+test:api           >  Container history-db Stopped 
+test:api           >  Container history-db Removing 
+test:api           >  Container booking-db Removed 
+test:api           >  Container history-db Removed 
+test:api           >  Container hotelio-db Stopped 
+test:api           >  Container hotelio-db Removing 
+test:api           >  Container hotelio-db Removed 
+test:api           >  Container kafka Stopped 
+test:api           >  Container kafka Removing 
+test:api           >  Container kafka Removed 
+test:api           >  Container zookeeper Stopping 
+build              > #3 DONE 1.3s
 build              > 
 build              > #4 [internal] load .dockerignore
 build              > #4 transferring context: 65B done
 build              > #4 DONE 0.0s
 build              > 
-build              > #5 [internal] load build context
+build              > #5 [stage-1 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
+build              > #5 resolve mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac done
 build              > #5 DONE 0.0s
 build              > 
-build              > #6 [stage-1 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
-build              > #6 resolve mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac 0.1s done
-build              > #6 DONE 0.1s
+build              > #6 [build 1/7] FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
+build              > #6 resolve mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa done
+build              > #6 DONE 0.0s
 build              > 
-build              > #7 [build 1/7] FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
-build              > #7 resolve mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa 0.1s done
-build              > #7 DONE 0.1s
+build              > #7 [internal] load build context
+build              > #7 transferring context: 54.02kB done
+build              > #7 DONE 0.0s
 build              > 
-build              > #5 [internal] load build context
-build              > #5 transferring context: 1.40kB done
-build              > #5 DONE 0.0s
-build              > 
-build              > #8 [build 6/7] COPY booking-service/src/ booking-service/src/
+build              > #8 [stage-1 2/3] WORKDIR /app
 build              > #8 CACHED
 build              > 
-build              > #9 [build 3/7] COPY booking.proto booking-admin.proto ./
+build              > #9 [build 4/7] COPY booking-service/src/BookingService/BookingService.csproj booking-service/src/BookingService/
 build              > #9 CACHED
 build              > 
-build              > #10 [build 4/7] COPY booking-service/src/BookingService.csproj booking-service/src/
+build              > #10 [build 5/7] RUN dotnet restore booking-service/src/BookingService/BookingService.csproj
 build              > #10 CACHED
 build              > 
-build              > #11 [build 5/7] RUN dotnet restore booking-service/src/BookingService.csproj
+build              > #11 [build 2/7] WORKDIR /src
 build              > #11 CACHED
 build              > 
-build              > #12 [stage-1 2/3] WORKDIR /app
+build              > #12 [build 6/7] COPY booking-service/src/BookingService/ booking-service/src/BookingService/
 build              > #12 CACHED
 build              > 
-build              > #13 [build 2/7] WORKDIR /src
+build              > #13 [build 3/7] COPY booking.proto booking-admin.proto ./
 build              > #13 CACHED
 build              > 
-build              > #14 [build 7/7] RUN dotnet publish booking-service/src/BookingService.csproj -c Release -o /app --no-restore
+build              > #14 [build 7/7] RUN dotnet publish booking-service/src/BookingService/BookingService.csproj -c Release -o /app --no-restore
 build              > #14 CACHED
 build              > 
 build              > #15 [stage-1 3/3] COPY --from=build /app ./
 build              > #15 CACHED
 build              > 
 build              > #16 exporting to image
-build              > #16 exporting layers 0.0s done
-build              > #16 exporting manifest sha256:042b3305c706860c6cc97b268487de7dc3a7a07c78a8aad8ca0de711ffb60184 done
-build              > #16 exporting config sha256:7d35a220f561080ce879788bdb4d44c4bf2096fde3e93aa9dfe90a36ee4d8996 done
-build              > #16 exporting attestation manifest sha256:085f12d2d57f32012c8c30c298b123ad86349295dd54aeebeb5656fc54b41229
-test:api           >  Container booking-db Stopped 
-test:api           >  Container booking-db Removing 
-build              > #16 exporting attestation manifest sha256:085f12d2d57f32012c8c30c298b123ad86349295dd54aeebeb5656fc54b41229 0.2s done
-build              > #16 exporting manifest list sha256:87ff94c32769dc032cd990a0930ade4ca783613e6c8db986acb93e77aa9e8933
-test:api           >  Container booking-db Removed 
-test:api           >  Container hotelio-db Stopped 
-test:api           >  Container hotelio-db Removing 
-test:api           >  Container history-db Stopped 
-test:api           >  Container history-db Removing 
-build              > #16 exporting manifest list sha256:87ff94c32769dc032cd990a0930ade4ca783613e6c8db986acb93e77aa9e8933 0.0s done
-build              > #16 naming to docker.io/library/booking-service:519fc242 0.1s done
-build              > #16 unpacking to docker.io/library/booking-service:519fc242 0.0s done
-build              > #16 DONE 0.5s
-test:api           >  Container hotelio-db Removed 
-test:api           >  Container history-db Removed 
+build              > #16 exporting layers done
+build              > #16 exporting manifest sha256:b7999eaa4dbaec50e1a91bb4841bd036734d0f54d19986588fc0378b7a101268 done
+build              > #16 exporting config sha256:088d707d03933ce639d12e4602b976c66f6bdbae81c305b257723ddbe6f93b21 done
+build              > #16 exporting attestation manifest sha256:f4472b933d658949600d8fdc7b4cf83c98e1868079253127152cd086ae21f3f4 done
+build              > #16 exporting manifest list sha256:af62b8100573e3082c40891677e457f13315954976b7eb97339cd1d380c22e3d done
+build              > #16 naming to docker.io/library/booking-service:c28abdda done
+build              > #16 unpacking to docker.io/library/booking-service:c28abdda done
+build              > #16 DONE 0.0s
 build              $ docker image ls "${IMAGE_NAME}:${IMAGE_TAG}"
 build              > IMAGE                      ID             DISK USAGE   CONTENT SIZE   EXTRA
-build              > booking-service:519fc242   87ff94c32769        528MB          139MB        
-build              finished in 2.78 s
-test:api           >  Container kafka Stopped 
-test:api           >  Container kafka Removing 
-test:api           >  Container kafka Removed 
-test:api           >  Container zookeeper Stopping 
+build              > booking-service:c28abdda   af62b8100573        528MB          139MB        
+build              finished in 1.77 s
 test:api           >  Container zookeeper Stopped 
 test:api           >  Container zookeeper Removing 
 test:api           >  Container zookeeper Removed 
 test:api           >  Volume task2_history-db-data Removing 
-test:api           >  Volume task2_booking-db-data Removing 
 test:api           >  Volume task2_monolith-db-data Removing 
+test:api           >  Volume task2_booking-db-data Removing 
+test:api           >  Volume task2_monolith-db-data Removed 
 test:api           >  Volume task2_history-db-data Removed 
 test:api           >  Volume task2_booking-db-data Removed 
-test:api           >  Volume task2_monolith-db-data Removed 
 test:api           $ docker compose up -d --build --wait booking-service booking-history-service monolith
 test:api           >  Image hotelio-booking-history-service Building 
 test:api           >  Image hotelio-booking-service Building 
-test:api           >  Image task2-monolith Building 
 test:api           >  Image hotelio-booking-service Building 
+test:api           >  Image task2-monolith Building 
 test:api           >  Image hotelio-booking-history-service Building 
 test:api           > #1 [internal] load local bake definitions
 test:api           > #1 reading from stdin 2.68kB done
 test:api           > #1 DONE 0.0s
 test:api           > 
 test:api           > #2 [booking-schema internal] load build definition from Dockerfile
-test:api           > #2 transferring dockerfile: 1.02kB 0.0s done
+test:api           > #2 transferring dockerfile: 1.11kB done
 test:api           > #2 DONE 0.0s
 test:api           > 
 test:api           > #3 [history-schema internal] load build definition from Dockerfile
-test:api           > #3 transferring dockerfile: 894B done
+test:api           > #3 transferring dockerfile: 1.03kB done
 test:api           > #3 DONE 0.0s
 test:api           > 
 test:api           > #4 [monolith internal] load build definition from Dockerfile
 test:api           > #4 transferring dockerfile: 167B done
 test:api           > #4 DONE 0.0s
 test:api           > 
-test:api           > #5 [booking-schema internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
-test:api           > #5 DONE 0.1s
+test:api           > #5 [booking-history-service internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
+test:api           > #5 DONE 0.0s
 test:api           > 
-test:api           > #6 [booking-history-service internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
-test:api           > #6 DONE 0.1s
+test:api           > #6 [history-schema internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
+test:api           > #6 DONE 0.0s
 test:api           > 
 test:api           > #7 [monolith internal] load metadata for docker.io/library/eclipse-temurin:17-jre
-test:api           > #7 DONE 0.1s
+test:api           > #7 DONE 0.0s
 test:api           > 
-test:api           > #8 [history-schema internal] load .dockerignore
-test:api           > #8 transferring context: 32B
+test:api           > #8 [booking-schema internal] load .dockerignore
 test:api           > #8 transferring context: 65B done
 test:api           > #8 DONE 0.0s
 test:api           > 
@@ -176,16 +170,16 @@ test:api           > #10 transferring context: 50B done
 test:api           > #10 DONE 0.0s
 test:api           > 
 test:api           > #11 [booking-schema stage-1 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
-test:api           > #11 resolve mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac 0.1s done
-test:api           > #11 DONE 0.1s
+test:api           > #11 resolve mcr.microsoft.com/dotnet/aspnet:10.0@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac done
+test:api           > #11 DONE 0.0s
 test:api           > 
-test:api           > #12 [booking-schema build 1/6] FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
-test:api           > #12 resolve mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa 0.1s done
-test:api           > #12 DONE 0.1s
+test:api           > #12 [booking-service build 1/6] FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa
+test:api           > #12 resolve mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa done
+test:api           > #12 DONE 0.0s
 test:api           > 
 test:api           > #13 [monolith 1/3] FROM docker.io/library/eclipse-temurin:17-jre@sha256:4faa9eaf440514dd4f7ef71fecb92526e13679aea039bed5d2fc98e885c60dee
-test:api           > #13 resolve docker.io/library/eclipse-temurin:17-jre@sha256:4faa9eaf440514dd4f7ef71fecb92526e13679aea039bed5d2fc98e885c60dee 0.1s done
-test:api           > #13 DONE 0.1s
+test:api           > #13 resolve docker.io/library/eclipse-temurin:17-jre@sha256:4faa9eaf440514dd4f7ef71fecb92526e13679aea039bed5d2fc98e885c60dee done
+test:api           > #13 DONE 0.0s
 test:api           > 
 test:api           > #14 [monolith 2/3] WORKDIR /app
 test:api           > #14 CACHED
@@ -193,143 +187,139 @@ test:api           >
 test:api           > #15 [monolith 3/3] COPY hotelio-monolith-1.0.0.jar app.jar
 test:api           > #15 CACHED
 test:api           > 
-test:api           > #16 [monolith] exporting to image
-test:api           > #16 exporting layers
-test:api           > #16 ...
+test:api           > #16 [booking-service internal] load build context
+test:api           > #16 transferring context: 2.17kB done
+test:api           > #16 DONE 0.0s
 test:api           > 
-test:api           > #17 [booking-service internal] load build context
-test:api           > #17 transferring context: 1.40kB done
+test:api           > #17 [booking-history-service internal] load build context
+test:api           > #17 transferring context: 24.26kB done
 test:api           > #17 DONE 0.0s
 test:api           > 
-test:api           > #18 [history-schema internal] load build context
-test:api           > #18 transferring context: 829B done
-test:api           > #18 DONE 0.0s
+test:api           > #18 [booking-service build 5/7] RUN dotnet restore booking-service/src/BookingService/BookingService.csproj
+test:api           > #18 CACHED
 test:api           > 
-test:api           > #19 [booking-schema build 3/7] COPY booking.proto booking-admin.proto ./
+test:api           > #19 [booking-service build 6/7] COPY booking-service/src/BookingService/ booking-service/src/BookingService/
 test:api           > #19 CACHED
 test:api           > 
-test:api           > #20 [booking-schema build 7/7] RUN dotnet publish booking-service/src/BookingService.csproj -c Release -o /app --no-restore
+test:api           > #20 [booking-service build 4/7] COPY booking-service/src/BookingService/BookingService.csproj booking-service/src/BookingService/
 test:api           > #20 CACHED
 test:api           > 
-test:api           > #21 [booking-schema build 5/7] RUN dotnet restore booking-service/src/BookingService.csproj
+test:api           > #21 [booking-service build 7/7] RUN dotnet publish booking-service/src/BookingService/BookingService.csproj -c Release -o /app --no-restore
 test:api           > #21 CACHED
 test:api           > 
-test:api           > #22 [booking-schema build 4/7] COPY booking-service/src/BookingService.csproj booking-service/src/
+test:api           > #22 [booking-service build 3/7] COPY booking.proto booking-admin.proto ./
 test:api           > #22 CACHED
 test:api           > 
-test:api           > #23 [booking-schema build 6/7] COPY booking-service/src/ booking-service/src/
+test:api           > #23 [booking-service stage-1 3/3] COPY --from=build /app ./
 test:api           > #23 CACHED
 test:api           > 
-test:api           > #24 [booking-service stage-1 3/3] COPY --from=build /app ./
+test:api           > #24 [booking-history-service build 4/6] RUN dotnet restore booking-history-service/src/BookingHistoryService/BookingHistoryService.csproj
 test:api           > #24 CACHED
 test:api           > 
-test:api           > #25 [booking-history-service build 5/6] COPY booking-history-service/src/ booking-history-service/src/
+test:api           > #25 [booking-history-service build 6/6] RUN dotnet publish booking-history-service/src/BookingHistoryService/BookingHistoryService.csproj -c Release -o /app --no-restore
 test:api           > #25 CACHED
 test:api           > 
-test:api           > #26 [booking-history-service stage-1 2/3] WORKDIR /app
+test:api           > #26 [booking-history-service build 2/6] WORKDIR /src
 test:api           > #26 CACHED
 test:api           > 
-test:api           > #27 [booking-history-service build 2/6] WORKDIR /src
+test:api           > #27 [booking-history-service stage-1 2/3] WORKDIR /app
 test:api           > #27 CACHED
 test:api           > 
-test:api           > #28 [booking-history-service build 3/6] COPY booking-history-service/src/BookingHistoryService.csproj booking-history-service/src/
+test:api           > #28 [booking-history-service build 5/6] COPY booking-history-service/src/BookingHistoryService/ booking-history-service/src/BookingHistoryService/
 test:api           > #28 CACHED
 test:api           > 
-test:api           > #29 [booking-history-service build 4/6] RUN dotnet restore booking-history-service/src/BookingHistoryService.csproj
+test:api           > #29 [booking-history-service build 3/6] COPY booking-history-service/src/BookingHistoryService/BookingHistoryService.csproj booking-history-service/src/BookingHistoryService/
 test:api           > #29 CACHED
 test:api           > 
-test:api           > #30 [booking-history-service build 6/6] RUN dotnet publish booking-history-service/src/BookingHistoryService.csproj -c Release -o /app --no-restore
+test:api           > #30 [booking-history-service stage-1 3/3] COPY --from=build /app ./
 test:api           > #30 CACHED
 test:api           > 
-test:api           > #31 [booking-history-service stage-1 3/3] COPY --from=build /app ./
-test:api           > #31 CACHED
+test:api           > #31 [booking-history-service] exporting to image
+test:api           > #31 exporting layers done
+test:api           > #31 exporting manifest sha256:8cedf26294db7cd94eaf76c951b65cc7c20ec39096b0bcfb59dd003e109e9954 done
+test:api           > #31 exporting config sha256:9455454a7fe2fe62e9b904508a81cec8a601f3f897f1614b28d9572a53247d66 0.0s done
+test:api           > #31 exporting attestation manifest sha256:9134778fd553ac46f442590afc912dbe51e7f5611747be83dd321e8a354e0a49
+test:api           > #31 exporting attestation manifest sha256:9134778fd553ac46f442590afc912dbe51e7f5611747be83dd321e8a354e0a49 0.0s done
+test:api           > #31 exporting manifest list sha256:00e2e296b1a8a39e11e4c147f62633ef69d754b1faf6b90372eb24750807b108 0.0s done
+test:api           > #31 naming to docker.io/library/hotelio-booking-history-service:latest done
+test:api           > #31 unpacking to docker.io/library/hotelio-booking-history-service:latest done
+test:api           > #31 DONE 0.1s
 test:api           > 
-test:api           > #16 [monolith] exporting to image
-test:api           > #16 exporting layers done
-test:api           > #16 exporting manifest sha256:065728d7f6dba18d7ba8c6c5acd41aa6f38536878a062ac81332ea02df238ce8 done
-test:api           > #16 exporting config sha256:500d47c94b8acb7868cfbd3bf217c45b4768dc526e42570f7ade2706b412f3e7 done
-test:api           > #16 exporting attestation manifest sha256:091badc432408633aba8450d1a42049d225104cba98a108fba16321cbf6e0ba2 0.0s done
-test:api           > #16 exporting manifest list sha256:789498981914ba3155fd9694d314ba5b44f755ad787553a22dce3724d360babe 0.0s done
-test:api           > #16 naming to docker.io/library/task2-monolith:latest
-test:api           > #16 naming to docker.io/library/task2-monolith:latest 0.0s done
-test:api           > #16 unpacking to docker.io/library/task2-monolith:latest 0.0s done
-test:api           > #16 DONE 0.2s
-test:api           > 
-test:api           > #32 [booking-service] exporting to image
+test:api           > #32 [monolith] exporting to image
 test:api           > #32 exporting layers done
-test:api           > #32 exporting manifest sha256:e2ea869747457f0ed755c8f21980c2dc6185586e12e3f645debf9d235291e52a done
-test:api           > #32 exporting config sha256:bebe8195829efe8e506a7eab022d863c0820fe7fb5eab61f33bce652ff4093db done
-test:api           > #32 exporting attestation manifest sha256:21e2ac2135389cf9901061a470bcc7aff60b9cec9eec6ec0818fa58131ecd367 0.1s done
-test:api           > #32 exporting manifest list sha256:dacf6954fea82eb987ed1761005fdaa50d27f1180f4661512a0864c8a32cff1d 0.0s done
-test:api           > #32 naming to docker.io/library/hotelio-booking-service:latest 0.0s done
-test:api           > #32 unpacking to docker.io/library/hotelio-booking-service:latest 0.0s done
-test:api           > #32 DONE 0.2s
+test:api           > #32 exporting manifest sha256:065728d7f6dba18d7ba8c6c5acd41aa6f38536878a062ac81332ea02df238ce8 done
+test:api           > #32 exporting config sha256:500d47c94b8acb7868cfbd3bf217c45b4768dc526e42570f7ade2706b412f3e7 done
+test:api           > #32 exporting attestation manifest sha256:66ff93d0f2b98608ca165c3bc631c32a50bc7d97f67f62a034f2c4260957acd0 0.0s done
+test:api           > #32 exporting manifest list sha256:6d682f58003df42453a9805018b251068d2c68cf9eddcbcd5b9a69051ab0427b 0.0s done
+test:api           > #32 naming to docker.io/library/task2-monolith:latest done
+test:api           > #32 unpacking to docker.io/library/task2-monolith:latest 0.0s done
+test:api           > #32 DONE 0.1s
 test:api           > 
-test:api           > #33 [booking-history-service] exporting to image
+test:api           > #33 [booking-service] exporting to image
 test:api           > #33 exporting layers done
-test:api           > #33 exporting manifest sha256:683b7302b82cf4cfea07c0d0a0482e55f0293e69dd9867a38f96994ed959595a done
-test:api           > #33 exporting config sha256:9ed04be852d95bd30e4a1b7b8618c3d1cae2870f645d53f937f6cf491b1e484e 0.0s done
-test:api           > #33 exporting attestation manifest sha256:b9a51265caf3b0becf1a864a24edfdab8a88fbb85a045554915ddf1904484816 0.1s done
-test:api           > #33 exporting manifest list sha256:05d17eba5062af98f19f845a31a252e2c8cfa12540417c21a4b80ae7e12c3cf5 0.0s done
-test:api           > #33 naming to docker.io/library/hotelio-booking-history-service:latest done
-test:api           > #33 unpacking to docker.io/library/hotelio-booking-history-service:latest 0.0s done
-test:api           > #33 DONE 0.2s
+test:api           > #33 exporting manifest sha256:ea8a1874cf1d7215b6ddfb0d50f3ca7fb23aa2b0c24eabb416976bd432ba1bb5 done
+test:api           > #33 exporting config sha256:a4e69f5a76369264057828d1bbf420683c32937a5af1f344f9cc8988dff40471 done
+test:api           > #33 exporting attestation manifest sha256:ffc093d161971b0f1364304e3b82e9e7ddd4256c816436098225699e5d1a592b 0.0s done
+test:api           > #33 exporting manifest list sha256:2cd8fb1ed7c2430b5432e6dfbcf76e23c3b461d27ab0c668a0a43a71055c1958 0.0s done
+test:api           > #33 naming to docker.io/library/hotelio-booking-service:latest done
+test:api           > #33 unpacking to docker.io/library/hotelio-booking-service:latest done
+test:api           > #33 DONE 0.1s
 test:api           > 
 test:api           > #34 [booking-schema] exporting to image
 test:api           > #34 exporting layers done
-test:api           > #34 exporting manifest sha256:17eccb16b92f3667b7145aeafbfac6994a12b980a903addfcf08c7d9919f0f2f done
-test:api           > #34 exporting config sha256:503f0669ade7be0043188106a6723d35124ab940935f9076ec225f377a59b8b9 0.0s done
-test:api           > #34 exporting attestation manifest sha256:83c463c6156c7d55ba2a6acd982c4dff45cb2c0269fd22121646c842fb0ae3fb 0.1s done
-test:api           > #34 exporting manifest list sha256:c7c20fdf67cd774d30f73c8a1f27d6d394e331959bac18aad391d35f99aaf399 0.0s done
+test:api           > #34 exporting manifest sha256:d0c4c2747ae84146cd2b96577064822fce40a8504a6c12d3ff8033762e5f0f08 done
+test:api           > #34 exporting config sha256:0f50a38755db54f1d12e818b12a0b631125c5fe465f7bbae8ccc654cf9549a8e 0.0s done
+test:api           > #34 exporting attestation manifest sha256:9b26289ebaeb4c5f89e5e83845cd702f9c70295555362da976e2212c40f3f664 0.0s done
+test:api           > #34 exporting manifest list sha256:264bedf5629ffa50f42dc6125609b4202ebf9c4b4286c79aa4c5f0575052a81e 0.0s done
 test:api           > #34 naming to docker.io/library/hotelio-booking-service:latest done
-test:api           > #34 unpacking to docker.io/library/hotelio-booking-service:latest 0.0s done
-test:api           > #34 DONE 0.2s
+test:api           > #34 unpacking to docker.io/library/hotelio-booking-service:latest done
+test:api           > #34 DONE 0.1s
 test:api           > 
 test:api           > #35 [history-schema] exporting to image
 test:api           > #35 exporting layers done
-test:api           > #35 exporting manifest sha256:85e08c4eb11e18f56512e6ae7ce1cad26edec9181332f57708bb02002af12448 done
-test:api           > #35 exporting config sha256:a6574110c9cc1f4af82d10e5b4d7f2fcf3ce8586ec77d91da7a54b40c3ad12cd 0.0s done
-test:api           > #35 exporting attestation manifest sha256:055fe3a5a32136e4aae37ccd9064044e5b1e80f8b2bc1014a46604bb4bbd2c96 0.0s done
-test:api           > #35 exporting manifest list sha256:4d8705cda65a45cd8f14ccf79a5a4037f4f8f303b58fe8e0d63c4515a584474e 0.0s done
+test:api           > #35 exporting manifest sha256:c952758277ef61dbc4f9c3dab730fc81cc807e2b0626687419b44bbed1e11346 0.0s done
+test:api           > #35 exporting config sha256:f368c47b5ef966200d2a0bd68f48aed7eafb5ce67570f2b4a30336e1269d4477 0.0s done
+test:api           > #35 exporting attestation manifest sha256:911283d7541847163612cd622377e342b31c6d11ceb32a87d00f1b77378993c5 0.0s done
+test:api           > #35 exporting manifest list sha256:7b6a198bb775b25bdc26b1e8a308abafcc1f1f68917ab92374165943aaddeb8b done
 test:api           > #35 naming to docker.io/library/hotelio-booking-history-service:latest done
 test:api           > #35 unpacking to docker.io/library/hotelio-booking-history-service:latest 0.0s done
-test:api           > #35 DONE 0.2s
+test:api           > #35 DONE 0.1s
 test:api           > 
-test:api           > #36 [booking-schema] resolving provenance for metadata file
+test:api           > #36 [monolith] resolving provenance for metadata file
 test:api           > #36 DONE 0.1s
 test:api           > 
 test:api           > #37 [booking-history-service] resolving provenance for metadata file
 test:api           > #37 DONE 0.0s
 test:api           > 
-test:api           > #38 [monolith] resolving provenance for metadata file
-test:api           > #38 DONE 0.1s
+test:api           > #38 [history-schema] resolving provenance for metadata file
+test:api           > #38 DONE 0.0s
 test:api           > 
-test:api           > #39 [history-schema] resolving provenance for metadata file
+test:api           > #39 [booking-service] resolving provenance for metadata file
 test:api           > #39 DONE 0.0s
 test:api           > 
-test:api           > #40 [booking-service] resolving provenance for metadata file
-test:api           > #40 DONE 0.1s
+test:api           > #40 [booking-schema] resolving provenance for metadata file
+test:api           > #40 DONE 0.0s
 test:api           >  Image hotelio-booking-service Built 
-test:api           >  Image hotelio-booking-service Built 
+test:api           >  Image hotelio-booking-history-service Built 
+test:api           >  Image hotelio-booking-history-service Built 
 test:api           >  Image task2-monolith Built 
-test:api           >  Image hotelio-booking-history-service Built 
-test:api           >  Image hotelio-booking-history-service Built 
-test:api           >  Volume task2_monolith-db-data Creating 
-test:api           >  Volume task2_booking-db-data Creating 
+test:api           >  Image hotelio-booking-service Built 
 test:api           >  Container zookeeper Creating 
-test:api           >  Volume task2_history-db-data Creating 
-test:api           >  Volume task2_booking-db-data Creating 
 test:api           >  Volume task2_monolith-db-data Creating 
 test:api           >  Volume task2_history-db-data Creating 
+test:api           >  Volume task2_history-db-data Creating 
+test:api           >  Volume task2_monolith-db-data Creating 
+test:api           >  Volume task2_booking-db-data Creating 
+test:api           >  Volume task2_booking-db-data Creating 
+test:api           >  Volume task2_monolith-db-data Created 
+test:api           >  Volume task2_monolith-db-data Created 
+test:api           >  Container hotelio-db Creating 
+test:api           >  Volume task2_history-db-data Created 
+test:api           >  Volume task2_history-db-data Created 
+test:api           >  Container history-db Creating 
 test:api           >  Volume task2_booking-db-data Created 
 test:api           >  Volume task2_booking-db-data Created 
 test:api           >  Container booking-db Creating 
-test:api           >  Volume task2_monolith-db-data Created 
-test:api           >  Volume task2_monolith-db-data Created 
-test:api           >  Volume task2_history-db-data Created 
-test:api           >  Volume task2_history-db-data Created 
-test:api           >  Container hotelio-db Creating 
-test:api           >  Container history-db Creating 
 test:api           >  Container zookeeper Created 
 test:api           >  Container kafka Creating 
 test:api           >  Container history-db Created 
@@ -349,71 +339,65 @@ test:api           >  Container booking-service Creating
 test:api           >  Container booking-history-service Created 
 test:api           >  Container booking-service Created 
 test:api           >  Container zookeeper Starting 
-test:api           >  Container hotelio-db Starting 
 test:api           >  Container booking-db Starting 
 test:api           >  Container history-db Starting 
+test:api           >  Container hotelio-db Starting 
 test:api           >  Container zookeeper Started 
 test:api           >  Container kafka Starting 
-test:api           >  Container hotelio-db Started 
-test:api           >  Container hotelio-db Waiting 
 test:api           >  Container booking-db Started 
 test:api           >  Container booking-db Waiting 
 test:api           >  Container history-db Started 
 test:api           >  Container history-db Waiting 
+test:api           >  Container hotelio-db Started 
+test:api           >  Container hotelio-db Waiting 
 test:api           >  Container kafka Started 
 test:api           >  Container task2-kafka-init-1 Starting 
 test:api           >  Container task2-kafka-init-1 Started 
 test:api           >  Container booking-db Healthy 
 test:api           >  Container task2-booking-schema-1 Starting 
 test:api           >  Container task2-booking-schema-1 Started 
-test:unit          > still running...
-test:api           >  Container task2-kafka-init-1 Waiting 
 test:api           >  Container task2-booking-schema-1 Waiting 
-test:integration   > still running...
-test:api           >  Container task2-booking-schema-1 Exited 
-test:api           >  Container hotelio-db Healthy 
-test:api           >  Container hotelio-monolith Starting 
-test:api           >  Container hotelio-monolith Started 
+test:api           >  Container task2-kafka-init-1 Waiting 
 test:api           >  Container history-db Healthy 
 test:api           >  Container task2-history-schema-1 Starting 
 test:api           >  Container task2-history-schema-1 Started 
 test:api           >  Container task2-history-schema-1 Waiting 
 test:api           >  Container task2-kafka-init-1 Waiting 
+test:api           >  Container hotelio-db Healthy 
+test:api           >  Container hotelio-monolith Starting 
+test:api           >  Container hotelio-monolith Started 
+test:api           >  Container task2-booking-schema-1 Exited 
 test:api           >  Container task2-history-schema-1 Exited 
-test:unit          > still running...
-test:integration   > still running...
-test:api           > still running...
-test:integration   > Running tests from /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
+test:integration   > Running tests from /work/booking-service/tests/BookingService.IntegrationTests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64)
 test:unit          > still running...
 test:api           >  Container task2-kafka-init-1 Exited 
 test:api           >  Container booking-service Starting 
 test:api           >  Container task2-kafka-init-1 Exited 
 test:api           >  Container booking-history-service Starting 
 test:api           >  Container booking-service Started 
-test:unit          > Running tests from /work/booking-service/tests/bin/Debug/net10.0/BookingService.Tests.dll (net10.0|arm64)
 test:api           >  Container booking-history-service Started 
-test:api           >  Container task2-kafka-init-1 Waiting 
-test:api           >  Container task2-booking-schema-1 Waiting 
-test:api           >  Container history-db Waiting 
+test:api           >  Container booking-service Waiting 
+test:api           >  Container hotelio-monolith Waiting 
+test:api           >  Container hotelio-db Waiting 
+test:api           >  Container zookeeper Waiting 
 test:api           >  Container booking-db Waiting 
 test:api           >  Container task2-history-schema-1 Waiting 
-test:api           >  Container zookeeper Waiting 
-test:api           >  Container hotelio-monolith Waiting 
 test:api           >  Container kafka Waiting 
+test:api           >  Container task2-booking-schema-1 Waiting 
+test:api           >  Container task2-kafka-init-1 Waiting 
 test:api           >  Container booking-history-service Waiting 
-test:api           >  Container booking-service Waiting 
-test:api           >  Container hotelio-db Waiting 
-test:api           >  Container hotelio-monolith Healthy 
-test:api           >  Container task2-kafka-init-1 Exited 
-test:api           >  Container hotelio-db Healthy 
+test:api           >  Container history-db Waiting 
 test:api           >  Container task2-booking-schema-1 Exited 
-test:api           >  Container kafka Healthy 
-test:api           >  Container booking-history-service Healthy 
-test:api           >  Container zookeeper Healthy 
-test:api           >  Container booking-service Healthy 
-test:api           >  Container history-db Healthy 
 test:api           >  Container task2-history-schema-1 Exited 
+test:api           >  Container zookeeper Healthy 
 test:api           >  Container booking-db Healthy 
+test:api           >  Container booking-service Healthy 
+test:api           >  Container hotelio-db Healthy 
+test:api           >  Container kafka Healthy 
+test:api           >  Container history-db Healthy 
+test:api           >  Container task2-kafka-init-1 Exited 
+test:api           >  Container booking-history-service Healthy 
+test:api           >  Container hotelio-monolith Healthy 
 test:api           $ docker compose run --rm --build regress
 test:api           >  Image task2-monolith Building 
 test:api           > #1 [internal] load local bake definitions
@@ -421,7 +405,7 @@ test:api           > #1 reading from stdin 564B done
 test:api           > #1 DONE 0.0s
 test:api           > 
 test:api           > #2 [internal] load build definition from Dockerfile
-test:api           > #2 transferring dockerfile: 167B 0.0s done
+test:api           > #2 transferring dockerfile: 167B done
 test:api           > #2 DONE 0.0s
 test:api           > 
 test:api           > #3 [internal] load metadata for docker.io/library/eclipse-temurin:17-jre
@@ -437,46 +421,46 @@ test:api           > #5 DONE 0.0s
 test:api           > 
 test:api           > #6 [1/3] FROM docker.io/library/eclipse-temurin:17-jre@sha256:4faa9eaf440514dd4f7ef71fecb92526e13679aea039bed5d2fc98e885c60dee
 test:api           > #6 resolve docker.io/library/eclipse-temurin:17-jre@sha256:4faa9eaf440514dd4f7ef71fecb92526e13679aea039bed5d2fc98e885c60dee 0.0s done
-test:api           > #6 DONE 0.1s
+test:api           > #6 DONE 0.0s
 test:api           > 
-test:api           > #7 [2/3] WORKDIR /app
-test:api           > #7 CACHED
+test:api           > #7 resolving provenance for metadata file
+test:api           > #7 DONE 0.0s
 test:api           > 
-test:api           > #8 [3/3] COPY hotelio-monolith-1.0.0.jar app.jar
+test:api           > #8 [2/3] WORKDIR /app
 test:api           > #8 CACHED
 test:api           > 
-test:api           > #9 exporting to image
-test:api           > #9 exporting layers done
-test:api           > #9 exporting manifest sha256:065728d7f6dba18d7ba8c6c5acd41aa6f38536878a062ac81332ea02df238ce8 done
-test:api           > #9 exporting config sha256:500d47c94b8acb7868cfbd3bf217c45b4768dc526e42570f7ade2706b412f3e7 done
-test:api           > #9 exporting attestation manifest sha256:8da891165810be09ac46d077016332284d28a82edf76acd61dc16a2f9f861111 0.0s done
-test:api           > #9 exporting manifest list sha256:0ebc29c1db480641c183100f41c5e58c36b903f276ab0fdb1191a2e7400e5b76
-test:api           > #9 exporting manifest list sha256:0ebc29c1db480641c183100f41c5e58c36b903f276ab0fdb1191a2e7400e5b76 done
-test:api           > #9 naming to docker.io/library/task2-monolith:latest done
-test:api           > #9 unpacking to docker.io/library/task2-monolith:latest done
-test:api           > #9 DONE 0.1s
+test:api           > #9 [3/3] COPY hotelio-monolith-1.0.0.jar app.jar
+test:api           > #9 CACHED
 test:api           > 
-test:api           > #10 resolving provenance for metadata file
-test:api           > #10 DONE 0.0s
+test:api           > #10 exporting to image
+test:api           > #10 exporting layers done
+test:api           > #10 exporting manifest sha256:065728d7f6dba18d7ba8c6c5acd41aa6f38536878a062ac81332ea02df238ce8 done
+test:api           > #10 exporting config sha256:500d47c94b8acb7868cfbd3bf217c45b4768dc526e42570f7ade2706b412f3e7 done
+test:api           > #10 exporting attestation manifest sha256:3c462ef236f6f693584dd2f4e8647282c9129d911129e84c35c0398da92e4205 0.0s done
+test:api           > #10 exporting manifest list sha256:c22aeb9228b61461ce517e5bd6836fb6c9c786543c3d5aa9fb586966f39d6a3c done
+test:api           > #10 naming to docker.io/library/task2-monolith:latest done
+test:api           > #10 unpacking to docker.io/library/task2-monolith:latest done
+test:api           > #10 DONE 0.1s
 test:api           >  Image task2-monolith Built 
-test:api           >  Container hotelio-monolith Running 
 test:api           >  Container hotelio-db Running 
+test:api           >  Container hotelio-monolith Running 
 test:api           >  Container hotelio-db Waiting 
 test:api           >  Container hotelio-db Healthy 
 test:api           >  Image hotelio-tester Building 
 test:api           > #1 [internal] load local bake definitions
+test:unit          > Running tests from /work/booking-service/tests/BookingService.Tests/bin/Debug/net10.0/BookingService.Tests.dll (net10.0|arm64)
 test:api           > #1 reading from stdin 998B done
 test:api           > #1 DONE 0.0s
 test:api           > 
 test:api           > #2 [internal] load build definition from Dockerfile
-test:api           > #2 transferring dockerfile: 562B 0.0s done
+test:api           > #2 transferring dockerfile: 562B done
 test:api           > #2 DONE 0.0s
 test:api           > 
 test:api           > #3 [internal] load metadata for docker.io/fullstorydev/grpcurl:v1.9.3
 test:api           > #3 DONE 0.0s
 test:api           > 
 test:api           > #4 [internal] load metadata for docker.io/library/debian:bookworm-slim
-test:api           > #4 DONE 1.5s
+test:api           > #4 DONE 1.3s
 test:api           > 
 test:api           > #5 [internal] load .dockerignore
 test:api           > #5 transferring context: 2B done
@@ -494,19 +478,19 @@ test:api           > #8 [internal] load build context
 test:api           > #8 transferring context: 103B done
 test:api           > #8 DONE 0.0s
 test:api           > 
-test:api           > #9 [stage-0 2/7] WORKDIR /app
+test:api           > #9 [stage-0 6/7] COPY init-fixtures.sql regress.sh ./
 test:api           > #9 CACHED
 test:api           > 
-test:api           > #10 [stage-0 4/7] COPY --from=fullstorydev/grpcurl:v1.9.3 /bin/grpcurl /usr/local/bin/grpcurl
+test:api           > #10 [stage-0 5/7] COPY wait-for-it.sh /usr/local/bin/wait-for-it
 test:api           > #10 CACHED
 test:api           > 
-test:api           > #11 [stage-0 5/7] COPY wait-for-it.sh /usr/local/bin/wait-for-it
+test:api           > #11 [stage-0 2/7] WORKDIR /app
 test:api           > #11 CACHED
 test:api           > 
-test:api           > #12 [stage-0 6/7] COPY init-fixtures.sql regress.sh ./
+test:api           > #12 [stage-0 3/7] RUN apt-get update && apt-get install -y     curl     postgresql-client     bash     && rm -rf /var/lib/apt/lists/*
 test:api           > #12 CACHED
 test:api           > 
-test:api           > #13 [stage-0 3/7] RUN apt-get update && apt-get install -y     curl     postgresql-client     bash     && rm -rf /var/lib/apt/lists/*
+test:api           > #13 [stage-0 4/7] COPY --from=fullstorydev/grpcurl:v1.9.3 /bin/grpcurl /usr/local/bin/grpcurl
 test:api           > #13 CACHED
 test:api           > 
 test:api           > #14 [stage-0 7/7] RUN chmod +x /usr/local/bin/wait-for-it regress.sh
@@ -516,20 +500,19 @@ test:api           > #15 exporting to image
 test:api           > #15 exporting layers done
 test:api           > #15 exporting manifest sha256:62382bc5ecd5f3b0e185355d6a30a253eca99ae21cb9c74cecd7bdfcc57f8475 done
 test:api           > #15 exporting config sha256:9954d9e4e9c6d0ae546612ffa97ecc32cc809dc031d615f5abde8fb38f26ebbf done
-test:api           > #15 exporting attestation manifest sha256:90bf106ee1e51cea7b7ebcd525bb304be50967637265d92acdcd6bd82b5ce5db 0.0s done
-test:api           > #15 exporting manifest list sha256:79cfc9df229754e2705ba0986e293e8411bb9e5e234ed4fab181a8f19a52932f
-test:api           > #15 exporting manifest list sha256:79cfc9df229754e2705ba0986e293e8411bb9e5e234ed4fab181a8f19a52932f 0.0s done
+test:api           > #15 exporting attestation manifest sha256:05096ece815bfc00088aafe924de124ba0159671baa79f164425efed1feff050 0.0s done
+test:api           > #15 exporting manifest list sha256:37e87b4582ba1b7f3db50fae67a3eb11a6e30fd871048e74c84af77fbf743a4d done
 test:api           > #15 naming to docker.io/library/hotelio-tester:latest done
-test:api           > #15 unpacking to docker.io/library/hotelio-tester:latest 0.0s done
-test:api           > #15 DONE 0.1s
+test:api           > #15 unpacking to docker.io/library/hotelio-tester:latest done
+test:api           > #15 DONE 0.0s
 test:api           > 
 test:api           > #16 resolving provenance for metadata file
 test:api           > #16 DONE 0.0s
 test:api           >  Image hotelio-tester Built 
 test:api           >  Container hotelio-monolith Waiting 
 test:api           >  Container hotelio-monolith Healthy 
-test:api           >  Container task2-regress-run-9bfe859e8ec2 Creating 
-test:api           >  Container task2-regress-run-9bfe859e8ec2 Created 
+test:api           >  Container task2-regress-run-119a8ce6648a Creating 
+test:api           >  Container task2-regress-run-119a8ce6648a Created 
 test:api           > 🏁 Регрессионный тест до миграции Hotelio
 test:api           > 🧪 Проверка подключения к БД...
 test:api           > 🧪 Загрузка фикстур...
@@ -551,21 +534,12 @@ test:api           > [migration] перенесено новых: 2, из них
 test:api           > [migration] счётчик id booking-service: 2
 test:api           > [migration] источник: 2 e4d5bdf7954d1c33d83ac1adb1fd3fd2
 test:api           > [migration] приёмник: 2 e4d5bdf7954d1c33d83ac1adb1fd3fd2
-test:api           > [migration] длительность: 1 с
+test:api           > [migration] длительность: 0 с
 test:api           > [migration] OK: количество и контрольная сумма совпадают
 test:api           > 🧪 Выполнение HTTP-тестов...
 test:api           > 
 test:api           > Тесты пользователей...
-test:unit          > /work/booking-service/tests/bin/Debug/net10.0/BookingService.Tests.dll (net10.0|arm64) passed (8s 813ms)
-test:unit          > 
-test:unit          > Test run summary: Passed!
-test:unit          >   total: 73
-test:unit          >   failed: 0
-test:unit          >   succeeded: 73
-test:unit          >   skipped: 0
-test:unit          >   duration: 9s 732ms
 test:api           > ✅ Получение test-user-1 по ID работает
-test:integration   > still running...
 test:api           > ✅ Статус test-user-1: ACTIVE
 test:api           > ✅ test-user-1 в блэклисте
 test:api           > ✅ test-user-1 активен
@@ -578,7 +552,6 @@ test:api           > ✅ test-hotel-1 получен по ID
 test:api           > ✅ test-hotel-1 работает
 test:api           > ✅ test-hotel-3 не работает
 test:api           > ✅ test-hotel-2 полностью забронирован
-test:unit          finished in 40 s
 test:api           > ✅ Поиск отелей в Сеуле работает
 test:api           > ✅ Топ-отели в Сеуле загружены
 test:api           > 
@@ -610,47 +583,56 @@ test:api           > ✅ Отклонено: недоверенный отель
 test:api           > ✅ Отклонено: полностью занятый отель (работает, доверенный) — Hotel is fully booked, записи нет
 test:api           > 
 test:api           > Тесты истории бронирований...
+test:unit          > /work/booking-service/tests/BookingService.Tests/bin/Debug/net10.0/BookingService.Tests.dll (net10.0|arm64) passed (4s 315ms)
+test:unit          > 
+test:unit          > Test run summary: Passed!
+test:unit          >   total: 74
+test:unit          >   failed: 0
+test:unit          >   succeeded: 74
+test:unit          >   skipped: 0
+test:unit          >   duration: 4s 240ms
+test:unit          finished in 18 s
 test:api           > ✅ Бронирование 3 попало в историю ровно один раз
 test:api           > ✅ Бронирование 4 попало в историю ровно один раз
 test:api           > ✅ Все HTTP-тесты пройдены!
-test:api           finished in 44 s
+test:api           finished in 19 s
 test:integration   > still running...
 test:integration   > still running...
 test:integration   > still running...
 test:integration   > still running...
 test:integration   > still running...
-test:integration   > /work/booking-service/integration-tests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64) passed (1m 08s 637ms)
+test:integration   > /work/booking-service/tests/BookingService.IntegrationTests/bin/Debug/net10.0/BookingService.IntegrationTests.dll (net10.0|arm64) passed (58s 441ms)
 test:integration   > 
 test:integration   > Test run summary: Passed!
 test:integration   >   total: 11
 test:integration   >   failed: 0
 test:integration   >   succeeded: 11
 test:integration   >   skipped: 0
-test:integration   >   duration: 1m 08s 473ms
-test:integration   finished in 1.62 min
+test:integration   >   duration: 57s 443ms
+test:integration   finished in 1.12 min
 test               starting shell (test)
 test               $ docker rm -f booking-service-ci >/dev/null 2>&1 || true
 test               $ docker run -d --name booking-service-ci -p 18080:8080 -e ENABLE_FEATURE_X=true -e BOOKING_DB="Host=absent-db;Database=booking;Username=booking" -e MONOLITH_URL=http://absent-monolith:8080/ -e OUTBOX_PUBLISHER=disabled "${IMAGE_NAME}:${IMAGE_TAG}"
-test               > fa5e97d9921dc1b1cf9a9e07940e52a8cdb2f663126ca98184f05bab276d4b06
+test               > 217676b6d005ef47612098b629a4fe98382a32d41ac366a485116e8ad2567acd
 test               $ for i in $(seq 1 30); do # collapsed multi-line command
 test               > /ping -> pong
 test               > /feature (ENABLE_FEATURE_X=true) -> Feature X is enabled!
 test               > /ready без БД -> 503
-test               finished in 1.69 s
+test               finished in 1.86 s
 deploy             starting shell (deploy)
 deploy             $ minikube image load "${IMAGE_NAME}:${IMAGE_TAG}" # collapsed multi-line command
 deploy             > still running...
 deploy             > Release "booking-service" has been upgraded. Happy Helming!
 deploy             > NAME: booking-service
-deploy             > LAST DEPLOYED: Mon Nov  2 23:44:08 2026
+deploy             > LAST DEPLOYED: Tue Nov  3 00:32:06 2026
 deploy             > NAMESPACE: staging
 deploy             > STATUS: deployed
-deploy             > REVISION: 8
+deploy             > REVISION: 10
 deploy             > DESCRIPTION: Upgrade complete
 deploy             > TEST SUITE: None
 deploy             > NAME                                   READY   STATUS      RESTARTS   AGE
-deploy             > pod/booking-service-657f74d98-vh984    0/1     Completed   0          22h
-deploy             > pod/booking-service-689f556558-kjtl6   1/1     Running     0          6s
+deploy             > pod/booking-service-5bdd974f8b-xbm6t   0/1     Completed   0          16m
+deploy             > pod/booking-service-5f55cf5f5d-s9m2g   1/1     Running     0          6s
 deploy             > 
 deploy             > NAME                      TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
 deploy             > service/booking-service   ClusterIP   10.97.72.184   <none>        80/TCP    14d
@@ -658,19 +640,19 @@ deploy             > ▶️ Running in-cluster DNS test (namespace staging)...
 deploy             > pong
 deploy             > ✅ Success
 deploy             > REVISION	UPDATED                 	STATUS    	CHART                	APP VERSION	DESCRIPTION     
-deploy             > 6       	Sun Nov  1 22:06:19 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete
-deploy             > 7       	Mon Nov  2 02:20:51 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete
-deploy             > 8       	Mon Nov  2 23:44:08 2026	deployed  	booking-service-0.2.2	1.0        	Upgrade complete
-deploy             finished in 23 s
+deploy             > 8       	Mon Nov  2 23:44:08 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete
+deploy             > 9       	Tue Nov  3 00:15:14 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete
+deploy             > 10      	Tue Nov  3 00:32:06 2026	deployed  	booking-service-0.2.2	1.0        	Upgrade complete
+deploy             finished in 19 s
 tag                starting shell (tag)
 tag                $ TAG="${RELEASE}-$(date +%Y%m%d-%H%M%S)"
 tag                $ git tag -a "${TAG}" -m "Выпуск ${RELEASE} ${IMAGE_TAG}, проверен в staging"
 tag                $ if [ "${PUSH_TAG}" = "true" ]; then git push origin "${TAG}"; fi
 tag                $ git tag --list "${RELEASE}-*" | tail -3
-tag                > booking-service-20261101-220629
-tag                > booking-service-20261102-022102
 tag                > booking-service-20261102-234421
-tag                finished in 68 ms
+tag                > booking-service-20261103-001524
+tag                > booking-service-20261103-003218
+tag                finished in 33 ms
 
  PASS  build             
  PASS  test              
@@ -679,5 +661,5 @@ tag                finished in 68 ms
  PASS  test:api          
  PASS  deploy            
  PASS  tag               
-pipeline finished in 2.03 min
+pipeline finished in 1.47 min
 (код выхода 0)

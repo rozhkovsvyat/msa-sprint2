@@ -1,5 +1,5 @@
 $ ./check-delivery.sh
-▶️ 1. Kafka остановлена, создаём бронирование (x-request-id: delivery-check-1793570886)
+▶️ 1. Kafka остановлена, создаём бронирование (x-request-id: delivery-check-1793654907)
                event_id               | failure_count |        last_error        | dead_lettered_at 
 --------------------------------------+---------------+--------------------------+------------------
  be213ebd-1c48-1308-255e-99212e8966dd |             6 | Kafka: Local_MsgTimedOut | 
@@ -9,19 +9,19 @@ $ ./check-delivery.sh
 ▶️ 2. Kafka запущена
                event_id               | booking_id |   user_id   | price  |     source      |      correlation_id       
 --------------------------------------+------------+-------------+--------+-----------------+---------------------------
- be213ebd-1c48-1308-255e-99212e8966dd |          5 | test-user-2 | 100.00 | booking-service | delivery-check-1793570886
+ be213ebd-1c48-1308-255e-99212e8966dd |          5 | test-user-2 | 100.00 | booking-service | delivery-check-1793654907
 (1 row)
 
   [PASS] событие опубликовано без ручного вмешательства, в истории одна запись
-22:09:12.506 info: Hotelio.BookingHistory.BookingEventsConsumer[0] Saved eventId=be213ebd-1c48-1308-255e-99212e8966dd bookingId=5 1@3 requestId=delivery-check-1793570886
-22:09:13.017 info: Hotelio.BookingHistory.BookingEventsConsumer[0] Duplicate skipped eventId=be213ebd-1c48-1308-255e-99212e8966dd bookingId=5 1@4 requestId=delivery-check-1793570886
+21:29:33.047 info: Hotelio.BookingHistory.Messaging.BookingEventsConsumer[0] Saved eventId=be213ebd-1c48-1308-255e-99212e8966dd bookingId=5 1@3 requestId=delivery-check-1793654907
+21:29:34.055 info: Hotelio.BookingHistory.Messaging.BookingEventsConsumer[0] Duplicate skipped eventId=be213ebd-1c48-1308-255e-99212e8966dd bookingId=5 1@4 requestId=delivery-check-1793654907
   [PASS] повторная публикация прочитана, история не удвоилась
 ▶️ 3. Сообщение с schemaVersion 2
-dlq-reason:unsupported schemaVersion 2,dlq-topic:booking-events,dlq-partition:0,dlq-offset:0	5	{"source": "booking-service", "booking": {"id": 5, "price": 100, "userId": "test-user-2", "hotelId": "test-hotel-1", "createdAt": "2026-11-01T22:08:07.938654+00:00", "promoCode": null, "discountAmount": 0, "createdAtEstimated": false}, "eventId": "be213ebd-1c48-1308-255e-99212e8966dd", "eventType": "BookingCreated", "occurredAt": "2026-11-01T22:08:07.9388373+00:00", "correlationId": "delivery-check-1793570886", "schemaVersion": 2}
+dlq-reason:unsupported schemaVersion 2,dlq-topic:booking-events,dlq-partition:0,dlq-offset:0	5	{"source": "booking-service", "booking": {"id": 5, "price": 100, "userId": "test-user-2", "hotelId": "test-hotel-1", "createdAt": "2026-11-02T21:28:27.97621+00:00", "promoCode": null, "discountAmount": 0, "createdAtEstimated": false}, "eventId": "be213ebd-1c48-1308-255e-99212e8966dd", "eventType": "BookingCreated", "occurredAt": "2026-11-02T21:28:27.976419+00:00", "correlationId": "delivery-check-1793654907", "schemaVersion": 2}
 
 GROUP           TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID                                  HOST            CLIENT-ID
-booking-history booking-events  0          1               1               0               rdkafka-c7c90d1c-7cb1-415e-ad33-c2033d2a3507 /172.18.0.8     rdkafka
-booking-history booking-events  1          5               5               0               rdkafka-c7c90d1c-7cb1-415e-ad33-c2033d2a3507 /172.18.0.8     rdkafka
-booking-history booking-events  2          1               1               0               rdkafka-c7c90d1c-7cb1-415e-ad33-c2033d2a3507 /172.18.0.8     rdkafka
+booking-history booking-events  0          1               1               0               rdkafka-62cbc736-0f40-426f-a901-a02c3d95748d /172.18.0.8     rdkafka
+booking-history booking-events  1          5               5               0               rdkafka-62cbc736-0f40-426f-a901-a02c3d95748d /172.18.0.8     rdkafka
+booking-history booking-events  2          1               1               0               rdkafka-62cbc736-0f40-426f-a901-a02c3d95748d /172.18.0.8     rdkafka
   [PASS] сообщение в DLQ с причиной в заголовке, история не изменилась, смещение группы сдвинулось дальше
 (код выхода 0)

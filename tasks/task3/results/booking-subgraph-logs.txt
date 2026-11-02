@@ -2,15 +2,15 @@
 
 $ ./calls.sh success
 
-POST http://localhost:4000/  userid=test-user-2  x-request-id=calls-1793465920-24494
+POST http://localhost:4000/  userid=test-user-2  x-request-id=calls-1793654998-5225
 {
   "data": {
     "bookingsByUser": [
       {
-        "id": "11",
+        "id": "1",
         "promoCode": "TESTCODE1",
         "discountPercent": 10,
-        "createdAt": "2026-10-31T16:53:36.902402Z",
+        "createdAt": "2026-11-02T21:28:24.497434Z",
         "discountInfo": {
           "code": "TESTCODE1",
           "isValid": true,
@@ -28,10 +28,10 @@ POST http://localhost:4000/  userid=test-user-2  x-request-id=calls-1793465920-2
         }
       },
       {
-        "id": "15",
+        "id": "4",
         "promoCode": "TESTCODE1",
         "discountPercent": 10,
-        "createdAt": "2026-10-31T16:53:37.833154Z",
+        "createdAt": "2026-11-02T21:28:25.129435Z",
         "discountInfo": {
           "code": "TESTCODE1",
           "isValid": true,
@@ -47,6 +47,20 @@ POST http://localhost:4000/  userid=test-user-2  x-request-id=calls-1793465920-2
           "rating": 4.7,
           "description": "Modern hotel in Seoul downtown with spa and skybar."
         }
+      },
+      {
+        "id": "5",
+        "promoCode": null,
+        "discountPercent": 0,
+        "createdAt": "2026-11-02T21:28:27.976210Z",
+        "discountInfo": null,
+        "hotel": {
+          "id": "test-hotel-1",
+          "name": null,
+          "city": "Seoul",
+          "rating": 4.7,
+          "description": "Modern hotel in Seoul downtown with spa and skybar."
+        }
       }
     ]
   }
@@ -55,7 +69,7 @@ POST http://localhost:4000/  userid=test-user-2  x-request-id=calls-1793465920-2
 
 $ ./calls.sh deny
 
-POST http://localhost:4000/  userid=test-user-3  x-request-id=calls-1793465920-28128
+POST http://localhost:4000/  userid=test-user-3  x-request-id=calls-1793654998-8859
 {
   "errors": [
     {
@@ -72,7 +86,7 @@ POST http://localhost:4000/  userid=test-user-3  x-request-id=calls-1793465920-2
   "data": null
 }
 
-POST http://localhost:4000/  userid=<нет>  x-request-id=calls-1793465920-516
+POST http://localhost:4000/  userid=<нет>  x-request-id=calls-1793654998-28930
 {
   "errors": [
     {
@@ -90,10 +104,10 @@ POST http://localhost:4000/  userid=<нет>  x-request-id=calls-1793465920-516
 }
 (код выхода 0)
 
-$ docker logs booking-subgraph 2>&1 | grep -e calls-1793465920-24494 -e calls-1793465920-28128 -e calls-1793465920-516
-{"ts":"2026-10-31T16:58:40.606Z","svc":"booking-subgraph","msg":"request","userid":"test-user-2","operation":"MyBookings__booking_subgraph__0","requestId":"calls-1793465920-24494"}
-{"ts":"2026-10-31T16:58:40.607Z","svc":"booking-subgraph","msg":"gRPC ListBookings","userId":"test-user-2","requestId":"calls-1793465920-24494"}
-{"ts":"2026-10-31T16:58:40.616Z","svc":"booking-subgraph","msg":"bookings returned","userId":"test-user-2","count":2,"ids":["11","15"],"requestId":"calls-1793465920-24494"}
-{"ts":"2026-10-31T16:58:40.698Z","svc":"booking-subgraph","msg":"request","userid":"test-user-3","operation":"MyBookings__booking_subgraph__0","requestId":"calls-1793465920-28128"}
-{"ts":"2026-10-31T16:58:40.698Z","svc":"booking-subgraph","msg":"ACL deny","requester":"test-user-3","owner":"test-user-2","requestId":"calls-1793465920-28128"}
-{"ts":"2026-10-31T16:58:40.717Z","svc":"booking-subgraph","msg":"request","userid":null,"operation":"MyBookings__booking_subgraph__0","requestId":"calls-1793465920-516"}
+$ docker logs booking-subgraph 2>&1 | grep -e calls-1793654998-5225 -e calls-1793654998-8859 -e calls-1793654998-28930
+{"ts":"2026-11-02T21:29:58.679Z","svc":"booking-subgraph","msg":"request","userid":"test-user-2","operation":"MyBookings__booking_subgraph__0","requestId":"calls-1793654998-5225"}
+{"ts":"2026-11-02T21:29:58.682Z","svc":"booking-subgraph","msg":"gRPC ListBookings","userId":"test-user-2","requestId":"calls-1793654998-5225"}
+{"ts":"2026-11-02T21:29:58.696Z","svc":"booking-subgraph","msg":"bookings returned","userId":"test-user-2","count":3,"ids":["1","4","5"],"requestId":"calls-1793654998-5225"}
+{"ts":"2026-11-02T21:29:58.762Z","svc":"booking-subgraph","msg":"request","userid":"test-user-3","operation":"MyBookings__booking_subgraph__0","requestId":"calls-1793654998-8859"}
+{"ts":"2026-11-02T21:29:58.763Z","svc":"booking-subgraph","msg":"ACL deny","requester":"test-user-3","owner":"test-user-2","requestId":"calls-1793654998-8859"}
+{"ts":"2026-11-02T21:29:58.783Z","svc":"booking-subgraph","msg":"request","userid":null,"operation":"MyBookings__booking_subgraph__0","requestId":"calls-1793654998-28930"}

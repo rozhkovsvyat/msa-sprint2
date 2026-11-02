@@ -435,21 +435,21 @@ INSERT 0 11
 ✅ Бронирование 4 попало в историю ровно один раз
 ✅ Все HTTP-тесты пройдены!
 
-== 5. Дополнительно, 02.11.2026 01:06 MSK: публичный список не отдаёт чужие бронирования, полный список — служебный метод с токеном; стенд с чистыми томами, полный регресс ==
+== 5. Дополнительно, 03.11.2026 00:28 MSK: публичный список не отдаёт чужие бронирования, полный список — служебный метод с токеном; стенд с чистыми томами, полный регресс ==
 $ docker compose down -v --remove-orphans
 $ docker compose build && docker compose build regress
 -- вывод остановки и сборки образов опущен
 $ docker compose up -d --wait booking-service booking-history-service monolith
 $ docker compose ps
-NAME                      IMAGE                             COMMAND                  SERVICE                   CREATED         STATUS                   PORTS
-booking-db                postgres:15                       "docker-entrypoint.s…"   booking-db                7 seconds ago   Up 6 seconds (healthy)   0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp
-booking-history-service   hotelio-booking-history-service   "dotnet BookingHisto…"   booking-history-service   7 seconds ago   Up Less than a second    0.0.0.0:8086->8080/tcp, [::]:8086->8080/tcp
-booking-service           hotelio-booking-service           "dotnet BookingServi…"   booking-service           7 seconds ago   Up Less than a second    0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp, 0.0.0.0:8085->8080/tcp, [::]:8085->8080/tcp
-history-db                postgres:15                       "docker-entrypoint.s…"   history-db                7 seconds ago   Up 6 seconds (healthy)   0.0.0.0:5434->5432/tcp, [::]:5434->5432/tcp
-hotelio-db                postgres:15                       "docker-entrypoint.s…"   monolith-db               7 seconds ago   Up 6 seconds (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
-hotelio-monolith          task2-monolith                    "java -jar app.jar"      monolith                  7 seconds ago   Up 4 seconds (healthy)   0.0.0.0:8084->8080/tcp, [::]:8084->8080/tcp
-kafka                     confluentinc/cp-kafka:7.2.1       "/etc/confluent/dock…"   kafka                     7 seconds ago   Up 6 seconds             0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp
-zookeeper                 confluentinc/cp-zookeeper:7.2.1   "/etc/confluent/dock…"   zookeeper                 7 seconds ago   Up 6 seconds             2888/tcp, 0.0.0.0:2181->2181/tcp, [::]:2181->2181/tcp, 3888/tcp
+NAME                      IMAGE                             COMMAND                  SERVICE                   CREATED          STATUS                   PORTS
+booking-db                postgres:15                       "docker-entrypoint.s…"   booking-db                10 seconds ago   Up 9 seconds (healthy)   0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp
+booking-history-service   hotelio-booking-history-service   "dotnet BookingHisto…"   booking-history-service   10 seconds ago   Up Less than a second    0.0.0.0:8086->8080/tcp, [::]:8086->8080/tcp
+booking-service           hotelio-booking-service           "dotnet BookingServi…"   booking-service           10 seconds ago   Up Less than a second    0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp, 0.0.0.0:8085->8080/tcp, [::]:8085->8080/tcp
+history-db                postgres:15                       "docker-entrypoint.s…"   history-db                10 seconds ago   Up 9 seconds (healthy)   0.0.0.0:5434->5432/tcp, [::]:5434->5432/tcp
+hotelio-db                postgres:15                       "docker-entrypoint.s…"   monolith-db               10 seconds ago   Up 9 seconds (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+hotelio-monolith          task2-monolith                    "java -jar app.jar"      monolith                  10 seconds ago   Up 7 seconds (healthy)   0.0.0.0:8084->8080/tcp, [::]:8084->8080/tcp
+kafka                     confluentinc/cp-kafka:7.2.1       "/etc/confluent/dock…"   kafka                     10 seconds ago   Up 9 seconds             0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp
+zookeeper                 confluentinc/cp-zookeeper:7.2.1   "/etc/confluent/dock…"   zookeeper                 10 seconds ago   Up 9 seconds             2888/tcp, 0.0.0.0:2181->2181/tcp, [::]:2181->2181/tcp, 3888/tcp
 $ docker compose run --rm regress
  Container hotelio-db Running 
  Container hotelio-monolith Running 
@@ -457,8 +457,8 @@ $ docker compose run --rm regress
  Container hotelio-db Healthy 
  Container hotelio-monolith Waiting 
  Container hotelio-monolith Healthy 
- Container task2-regress-run-f4bccc472fad Creating 
- Container task2-regress-run-f4bccc472fad Created 
+ Container task2-regress-run-e4c4c43389a9 Creating 
+ Container task2-regress-run-e4c4c43389a9 Created 
 🏁 Регрессионный тест до миграции Hotelio
 🧪 Проверка подключения к БД...
 🧪 Загрузка фикстур...
@@ -480,7 +480,7 @@ INSERT 0 11
 [migration] счётчик id booking-service: 2
 [migration] источник: 2 e4d5bdf7954d1c33d83ac1adb1fd3fd2
 [migration] приёмник: 2 e4d5bdf7954d1c33d83ac1adb1fd3fd2
-[migration] длительность: 1 с
+[migration] длительность: 0 с
 [migration] OK: количество и контрольная сумма совпадают
 🧪 Выполнение HTTP-тестов...
 

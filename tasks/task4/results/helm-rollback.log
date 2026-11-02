@@ -1,84 +1,84 @@
-Откат prod (задание 4), 02.11.2026 23:44 MSK. Каталог tasks/task4.
-Ревизия 23 — тот же образ, в prod включается фича-флаг (featureFlags.enableFeatureX=true, остальные values прежние).
-Откат gitlab-ci-local rollback:prod возвращает ревизию 22: флаг снова выключен, образ не меняется.
+Откат prod (задание 4), 03.11.2026 00:32 MSK. Каталог tasks/task4.
+Ревизия 29 — тот же образ, в prod включается фича-флаг (featureFlags.enableFeatureX=true, остальные values прежние).
+Откат gitlab-ci-local rollback:prod возвращает ревизию 28: флаг снова выключен, образ не меняется.
 
 == До отката ==
 $ helm -n prod history booking-service
 REVISION	UPDATED                 	STATUS    	CHART                	APP VERSION	DESCRIPTION                  
-13      	Sat Oct 31 19:55:02 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
-14      	Sat Oct 31 19:55:22 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
-15      	Sat Oct 31 19:55:41 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 13               
-16      	Sun Nov  1 22:06:52 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
-17      	Sun Nov  1 22:07:14 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
-18      	Sun Nov  1 22:07:32 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 16               
-19      	Mon Nov  2 02:22:06 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
-20      	Mon Nov  2 02:22:27 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
-21      	Mon Nov  2 02:22:44 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 19               
-22      	Mon Nov  2 23:44:29 2026	deployed  	booking-service-0.2.2	1.0        	Upgrade complete             
-$ helm -n prod upgrade booking-service helm/booking-service --reuse-values --set featureFlags.enableFeatureX=true --description 'ENABLE_FEATURE_X=true in prod' --wait --timeout 180s
-Release "booking-service" has been upgraded. Happy Helming!
-NAME: booking-service
-LAST DEPLOYED: Mon Nov  2 23:44:52 2026
-NAMESPACE: prod
-STATUS: deployed
-REVISION: 23
-DESCRIPTION: ENABLE_FEATURE_X=true in prod
-TEST SUITE: None
-$ helm -n prod history booking-service
-REVISION	UPDATED                 	STATUS    	CHART                	APP VERSION	DESCRIPTION                  
-14      	Sat Oct 31 19:55:22 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
-15      	Sat Oct 31 19:55:41 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 13               
-16      	Sun Nov  1 22:06:52 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
-17      	Sun Nov  1 22:07:14 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
-18      	Sun Nov  1 22:07:32 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 16               
 19      	Mon Nov  2 02:22:06 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
 20      	Mon Nov  2 02:22:27 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
 21      	Mon Nov  2 02:22:44 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 19               
 22      	Mon Nov  2 23:44:29 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
-23      	Mon Nov  2 23:44:52 2026	deployed  	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
+23      	Mon Nov  2 23:44:52 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
+24      	Mon Nov  2 23:45:11 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 22               
+25      	Tue Nov  3 00:15:34 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
+26      	Tue Nov  3 00:15:58 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
+27      	Tue Nov  3 00:16:18 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 25               
+28      	Tue Nov  3 00:32:25 2026	deployed  	booking-service-0.2.2	1.0        	Upgrade complete             
+$ helm -n prod upgrade booking-service helm/booking-service --reuse-values --set featureFlags.enableFeatureX=true --description 'ENABLE_FEATURE_X=true in prod' --wait --timeout 180s
+Release "booking-service" has been upgraded. Happy Helming!
+NAME: booking-service
+LAST DEPLOYED: Tue Nov  3 00:32:46 2026
+NAMESPACE: prod
+STATUS: deployed
+REVISION: 29
+DESCRIPTION: ENABLE_FEATURE_X=true in prod
+TEST SUITE: None
+$ helm -n prod history booking-service
+REVISION	UPDATED                 	STATUS    	CHART                	APP VERSION	DESCRIPTION                  
+20      	Mon Nov  2 02:22:27 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
+21      	Mon Nov  2 02:22:44 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 19               
+22      	Mon Nov  2 23:44:29 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
+23      	Mon Nov  2 23:44:52 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
+24      	Mon Nov  2 23:45:11 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 22               
+25      	Tue Nov  3 00:15:34 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
+26      	Tue Nov  3 00:15:58 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
+27      	Tue Nov  3 00:16:18 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 25               
+28      	Tue Nov  3 00:32:25 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
+29      	Tue Nov  3 00:32:46 2026	deployed  	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
 $ kubectl -n prod get deployment booking-service -o jsonpath='{.spec.template.spec.containers[0].image} ENABLE_FEATURE_X={.spec.template.spec.containers[0].env[?(@.name=="ENABLE_FEATURE_X")].value}{"\n"}'
-booking-service:519fc242 ENABLE_FEATURE_X=true
+booking-service:c28abdda ENABLE_FEATURE_X=true
 
 == Откат ==
 $ gitlab-ci-local rollback:prod
-parsing and downloads finished in 75 ms.
-json schema validated in 152 ms
+parsing and downloads finished in 45 ms.
+json schema validated in 73 ms
 rollback:prod starting shell (release)
 rollback:prod $ helm -n prod rollback "${RELEASE}" --wait --timeout 180s
 rollback:prod > still running...
 rollback:prod > Rollback was a success! Happy Helming!
 rollback:prod $ helm -n prod history "${RELEASE}" --max 3
 rollback:prod > REVISION	UPDATED                 	STATUS    	CHART                	APP VERSION	DESCRIPTION                  
-rollback:prod > 22      	Mon Nov  2 23:44:29 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
-rollback:prod > 23      	Mon Nov  2 23:44:52 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
-rollback:prod > 24      	Mon Nov  2 23:45:11 2026	deployed  	booking-service-0.2.2	1.0        	Rollback to 22               
+rollback:prod > 28      	Tue Nov  3 00:32:25 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
+rollback:prod > 29      	Tue Nov  3 00:32:46 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
+rollback:prod > 30      	Tue Nov  3 00:33:05 2026	deployed  	booking-service-0.2.2	1.0        	Rollback to 28               
 rollback:prod $ kubectl -n prod get deployment "${RELEASE}" -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
-rollback:prod > booking-service:519fc242
+rollback:prod > booking-service:c28abdda
 rollback:prod $ NAMESPACE=prod ./check-dns.sh
 rollback:prod > ▶️ Running in-cluster DNS test (namespace prod)...
 rollback:prod > pong
 rollback:prod > ✅ Success
-rollback:prod finished in 23 s
+rollback:prod finished in 20 s
 
  PASS  rollback:prod
 
 == После отката ==
 $ helm -n prod history booking-service
 REVISION	UPDATED                 	STATUS    	CHART                	APP VERSION	DESCRIPTION                  
-15      	Sat Oct 31 19:55:41 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 13               
-16      	Sun Nov  1 22:06:52 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
-17      	Sun Nov  1 22:07:14 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
-18      	Sun Nov  1 22:07:32 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 16               
-19      	Mon Nov  2 02:22:06 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
-20      	Mon Nov  2 02:22:27 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
 21      	Mon Nov  2 02:22:44 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 19               
 22      	Mon Nov  2 23:44:29 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
 23      	Mon Nov  2 23:44:52 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
-24      	Mon Nov  2 23:45:11 2026	deployed  	booking-service-0.2.2	1.0        	Rollback to 22               
+24      	Mon Nov  2 23:45:11 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 22               
+25      	Tue Nov  3 00:15:34 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
+26      	Tue Nov  3 00:15:58 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
+27      	Tue Nov  3 00:16:18 2026	superseded	booking-service-0.2.2	1.0        	Rollback to 25               
+28      	Tue Nov  3 00:32:25 2026	superseded	booking-service-0.2.2	1.0        	Upgrade complete             
+29      	Tue Nov  3 00:32:46 2026	superseded	booking-service-0.2.2	1.0        	ENABLE_FEATURE_X=true in prod
+30      	Tue Nov  3 00:33:05 2026	deployed  	booking-service-0.2.2	1.0        	Rollback to 28               
 $ kubectl -n prod get deployment booking-service -o jsonpath='{.spec.template.spec.containers[0].image} ENABLE_FEATURE_X={.spec.template.spec.containers[0].env[?(@.name=="ENABLE_FEATURE_X")].value}{"\n"}'
-booking-service:519fc242 ENABLE_FEATURE_X=false
+booking-service:c28abdda ENABLE_FEATURE_X=false
 $ kubectl -n prod get pods -l app=booking-service
 NAME                               READY   STATUS    RESTARTS   AGE
-booking-service-6846698d75-8tbrg   1/1     Running   0          23s
-booking-service-6846698d75-dg8wp   1/1     Running   0          17s
-booking-service-6846698d75-sgwm8   1/1     Running   0          11s
+booking-service-67d98cdcb7-2p4gl   1/1     Running   0          9s
+booking-service-67d98cdcb7-5nflr   1/1     Running   0          20s
+booking-service-67d98cdcb7-s67hv   1/1     Running   0          15s

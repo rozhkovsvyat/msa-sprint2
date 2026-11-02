@@ -3,10 +3,10 @@ $ ./check-feature-flag.sh
   20 200 v2
 /feature: Feature X is enabled!
 ▶️ Без заголовка — обычная канарейка
+  18 200 v1
+   2 200 v2
+▶️ Клиент сам прислал внутренний заголовок x-booking-route: v2 — EnvoyFilter его удаляет
   17 200 v1
    3 200 v2
-▶️ Клиент сам прислал внутренний заголовок x-booking-route: v2 — EnvoyFilter его удаляет
-  19 200 v1
-   1 200 v2
 ✅ OK
 (код выхода 0)

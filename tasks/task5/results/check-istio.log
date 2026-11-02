@@ -4,21 +4,21 @@ client version: 1.31.2
 control plane version: 1.31.2
 data plane version: 1.31.2 (5 proxies)
 NAME                                   READY   STATUS    RESTARTS        AGE
-istio-egressgateway-5f778cbf8b-gqd9v   1/1     Running   1 (3d11h ago)   15d
-istio-ingressgateway-7498b6878-nf7nk   1/1     Running   1 (3d11h ago)   15d
-istiod-5b97c568c5-dhnc6                1/1     Running   1 (3d11h ago)   15d
+istio-egressgateway-5f778cbf8b-gqd9v   1/1     Running   1 (3d12h ago)   15d
+istio-ingressgateway-7498b6878-nf7nk   1/1     Running   1 (3d12h ago)   15d
+istiod-5b97c568c5-dhnc6                1/1     Running   1 (3d12h ago)   15d
 ▶️ Поды booking-service: 2/2 = контейнер сервиса + sidecar Envoy
 NAME                                  READY   STATUS    RESTARTS   AGE   VERSION
-booking-service-v1-5664bffcfd-g9st5   2/2     Running   0          21s   v1
-booking-service-v1-5664bffcfd-mfdn7   2/2     Running   0          30s   v1
-booking-service-v2-6d9b84876b-kcrvr   2/2     Running   0          13s   v2
-booking-service-v1-5664bffcfd-g9st5: booking-service + istio-proxy (sidecar)
-booking-service-v1-5664bffcfd-mfdn7: booking-service + istio-proxy (sidecar)
-booking-service-v2-6d9b84876b-kcrvr: booking-service + istio-proxy (sidecar)
+booking-service-v1-7879d64444-55nrj   2/2     Running   0          21s   v1
+booking-service-v1-7879d64444-wnqjl   2/2     Running   0          29s   v1
+booking-service-v2-9b5646896-xm4cn    2/2     Running   0          13s   v2
+booking-service-v1-7879d64444-55nrj: booking-service + istio-proxy (sidecar)
+booking-service-v1-7879d64444-wnqjl: booking-service + istio-proxy (sidecar)
+booking-service-v2-9b5646896-xm4cn: booking-service + istio-proxy (sidecar)
 ▶️ Образы v1 и v2
 NAME                 IMAGE
-booking-service-v1   booking-service:519fc242
-booking-service-v2   booking-service:519fc242
+booking-service-v1   booking-service:c28abdda
+booking-service-v2   booking-service:c28abdda
 ▶️ Конфигурация маршрутизации
 NAME                                          AGE
 gateway.networking.istio.io/booking-gateway   15d

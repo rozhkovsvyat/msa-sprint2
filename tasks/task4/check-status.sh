@@ -1,24 +1,25 @@
 #!/bin/bash
+# Статус развёртывания и вызов /ping через заранее запущенный port-forward:
+#   kubectl -n <namespace> port-forward svc/booking-service 8080:80
+set -euo pipefail
+NAMESPACE="${NAMESPACE:-default}"
+URL="${URL:-http://localhost:8080}"
+k() { kubectl -n "$NAMESPACE" "$@"; }
 
-set -e
-
-echo "▶️ Checking booking-service deployment..."
-kubectl get pods -l app=booking-service
+echo "▶️ Checking booking-service deployment (namespace $NAMESPACE)..."
+k rollout status deployment/booking-service --timeout=120s
+k get pods -l app=booking-service
 
 echo
 echo "▶️ Checking service..."
-kubectl get svc booking-service || echo "(No service found)"
+k get svc booking-service
 
 echo
 echo "▶️ Helm release:"
-helm list | grep booking-service || echo "(No release found)"
+helm -n "$NAMESPACE" list --filter '^booking-service$'
 
 echo
-echo "▶️ Port-forward to test service locally:"
-echo "  kubectl port-forward svc/booking-service 8080:80"
-echo "  Then in another terminal:"
-echo "    curl http://localhost:8080/ping"
-
-echo
-echo "▶️ Quick curl (if port-forward already running):"
-curl --fail http://localhost:8080/ping && echo "✅ Reachable" || echo "❌ Not responding"
+echo "▶️ Quick curl $URL/ping"
+body=$(curl --connect-timeout 2 --max-time 5 -fsS "$URL/ping")
+echo "$body"
+[ "$body" = pong ] && echo "✅ Reachable"

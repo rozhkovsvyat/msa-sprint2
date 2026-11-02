@@ -1,0 +1,96 @@
+asyncapi: 3.0.0
+info:
+  title: Hotelio booking events
+  version: 1.0.0
+  description: >
+    События бронирований. Публикует booking-service через transactional outbox (доставка «хотя бы один раз»),
+    потребитель отсеивает повторы по eventId. Отставание публикации показывает oldestAgeSeconds
+    в /diagnostics/outbox booking-service.
+servers:
+  stand:
+    host: kafka:9092
+    protocol: kafka
+channels:
+  bookingEvents:
+    address: booking-events
+    description: 3 партиции, ключ сообщения — id бронирования (порядок событий одного бронирования сохраняется).
+    messages:
+      bookingCreated:
+        $ref: '#/components/messages/BookingCreated'
+  bookingEventsDlq:
+    address: booking-events.dlq
+    description: Сообщения booking-events, которые booking-history-service не смог обработать; хранятся 30 дней для ручного разбора.
+    messages:
+      deadLetter:
+        $ref: '#/components/messages/DeadLetter'
+operations:
+  publishBookingCreated:
+    action: send
+    channel:
+      $ref: '#/channels/bookingEvents'
+    summary: booking-service сообщает о созданном или перенесённом бронировании.
+  receiveBookingCreated:
+    action: receive
+    channel:
+      $ref: '#/channels/bookingEvents'
+    summary: booking-history-service ведёт историю и статистику, группа booking-history.
+  sendDeadLetter:
+    action: send
+    channel:
+      $ref: '#/channels/bookingEventsDlq'
+    summary: booking-history-service откладывает сообщение, которое не удалось обработать (не разбирается или его данные отверг PostgreSQL), байт в байт; смещение исходного топика фиксирует после ответа Kafka.
+components:
+  messages:
+    BookingCreated:
+      name: BookingCreated
+      contentType: application/json
+      correlationId:
+        location: $message.header#/correlation-id
+      headers:
+        type: object
+        required: [event-id, event-type, correlation-id]
+        properties:
+          event-id: { type: string, format: uuid }
+          event-type: { type: string, const: BookingCreated }
+          correlation-id: { type: string, description: 'x-request-id исходного запроса или идентификатор запуска ops-джобы' }
+      payload:
+        type: object
+        required: [eventId, eventType, schemaVersion, occurredAt, source, correlationId, booking]
+        properties:
+          eventId:
+            type: string
+            format: uuid
+            description: "md5('hotelio:BookingCreated:v1:' || booking.id) — повторный перенос того же бронирования даёт тот же eventId"
+          eventType: { type: string, const: BookingCreated }
+          schemaVersion: { type: integer, const: 1 }
+          occurredAt: { type: string, format: date-time }
+          source:
+            type: string
+            enum: [booking-service, migration]
+            description: migration — бронирование перенесено из монолита ops-джобой
+          correlationId: { type: string, maxLength: 128 }
+          booking:
+            type: object
+            required: [id, userId, hotelId, discountAmount, price, createdAt, createdAtEstimated]
+            properties:
+              id: { type: integer, format: int64, minimum: 1 }
+              userId: { type: string, minLength: 1 }
+              hotelId: { type: string, minLength: 1 }
+              promoCode: { type: [string, 'null'] }
+              discountAmount: { type: number, description: Сумма скидки по промокоду }
+              price: { type: number, description: Итоговая цена }
+              createdAt: { type: string, format: date-time }
+              createdAtEstimated: { type: boolean, description: 'true — исходная дата неизвестна, подставлено время переноса' }
+    DeadLetter:
+      name: DeadLetter
+      summary: Исходное сообщение без изменений (тело может быть не JSON); исходные заголовки сохраняются.
+      headers:
+        type: object
+        required: [dlq-reason, dlq-topic, dlq-partition, dlq-offset]
+        properties:
+          dlq-reason: { type: string, description: 'Почему сообщение не обработано, например unsupported schemaVersion 2 или PostgreSQL 22003' }
+          dlq-topic: { type: string }
+          dlq-partition: { type: string }
+          dlq-offset: { type: string }
+      payload:
+        type: string

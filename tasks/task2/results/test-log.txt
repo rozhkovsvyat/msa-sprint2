@@ -1,0 +1,534 @@
+Hotelio — регресс курса после выноса бронирований (задание 2)
+Дата: 19.10.2026 17:39 MSK. Стенд: macOS 26.6.2 (Apple M5), Colima 0.10.3, Docker 29.5.2 arm64.
+Команды выполняются из tasks/task2. Стенд поднят по results/README.md с чистыми томами.
+
+== Запуск стенда ==
+$ docker compose down -v --remove-orphans
+ Container booking-history-service Stopping 
+ Container booking-service Stopping 
+ Container hotelio-monolith Stopping 
+ Container booking-service Stopped 
+ Container booking-service Removing 
+ Container booking-history-service Stopped 
+ Container booking-history-service Removing 
+ Container booking-service Removed 
+ Container task2-booking-schema-1 Stopping 
+ Container task2-booking-schema-1 Stopped 
+ Container task2-booking-schema-1 Removing 
+ Container booking-history-service Removed 
+ Container task2-history-schema-1 Stopping 
+ Container task2-kafka-init-1 Stopping 
+ Container task2-history-schema-1 Stopped 
+ Container task2-history-schema-1 Removing 
+ Container task2-kafka-init-1 Stopped 
+ Container task2-kafka-init-1 Removing 
+ Container task2-booking-schema-1 Removed 
+ Container booking-db Stopping 
+ Container task2-history-schema-1 Removed 
+ Container history-db Stopping 
+ Container task2-kafka-init-1 Removed 
+ Container kafka Stopping 
+ Container hotelio-monolith Stopped 
+ Container hotelio-monolith Removing 
+ Container hotelio-monolith Removed 
+ Container hotelio-db Stopping 
+ Container booking-db Stopped 
+ Container booking-db Removing 
+ Container booking-db Removed 
+ Container history-db Stopped 
+ Container history-db Removing 
+ Container history-db Removed 
+ Container hotelio-db Stopped 
+ Container hotelio-db Removing 
+ Container hotelio-db Removed 
+ Container kafka Stopped 
+ Container kafka Removing 
+ Container kafka Removed 
+ Container zookeeper Stopping 
+ Container zookeeper Stopped 
+ Container zookeeper Removing 
+ Container zookeeper Removed 
+ Volume task2_history-db-data Removing 
+ Volume task2_booking-db-data Removing 
+ Volume task2_monolith-db-data Removing 
+ Volume task2_history-db-data Removed 
+ Volume task2_booking-db-data Removed 
+ Volume task2_monolith-db-data Removed 
+$ docker compose up -d --build --quiet-build
+ Image task2-monolith Building 
+ Image hotelio-booking-service Building 
+ Image hotelio-booking-history-service Building 
+ Image hotelio-booking-history-service Building 
+ Image hotelio-booking-service Building 
+ Image hotelio-booking-service Built 
+ Image hotelio-booking-history-service Built 
+ Image hotelio-booking-history-service Built 
+ Image hotelio-booking-service Built 
+ Image task2-monolith Built 
+ Volume task2_booking-db-data Creating 
+ Volume task2_monolith-db-data Creating 
+ Volume task2_history-db-data Creating 
+ Volume task2_history-db-data Creating 
+ Volume task2_monolith-db-data Creating 
+ Container zookeeper Creating 
+ Volume task2_booking-db-data Creating 
+ Volume task2_monolith-db-data Created 
+ Volume task2_monolith-db-data Created 
+ Container hotelio-db Creating 
+ Volume task2_history-db-data Created 
+ Volume task2_history-db-data Created 
+ Container history-db Creating 
+ Volume task2_booking-db-data Created 
+ Volume task2_booking-db-data Created 
+ Container booking-db Creating 
+ Container zookeeper Created 
+ Container history-db Created 
+ Container booking-db Created 
+ Container task2-history-schema-1 Creating 
+ Container kafka Creating 
+ Container task2-booking-schema-1 Creating 
+ Container hotelio-db Created 
+ Container hotelio-monolith Creating 
+ Container kafka Created 
+ Container task2-kafka-init-1 Creating 
+ Container task2-history-schema-1 Created 
+ Container hotelio-monolith Created 
+ Container task2-booking-schema-1 Created 
+ Container task2-kafka-init-1 Created 
+ Container booking-history-service Creating 
+ Container booking-service Creating 
+ Container booking-history-service Created 
+ Container booking-service Created 
+ Container booking-db Starting 
+ Container hotelio-db Starting 
+ Container zookeeper Starting 
+ Container history-db Starting 
+ Container booking-db Started 
+ Container booking-db Waiting 
+ Container hotelio-db Started 
+ Container hotelio-db Waiting 
+ Container zookeeper Started 
+ Container kafka Starting 
+ Container kafka Started 
+ Container task2-kafka-init-1 Starting 
+ Container history-db Started 
+ Container history-db Waiting 
+ Container task2-kafka-init-1 Started 
+ Container booking-db Healthy 
+ Container task2-booking-schema-1 Starting 
+ Container hotelio-db Healthy 
+ Container hotelio-monolith Starting 
+ Container task2-booking-schema-1 Started 
+ Container task2-kafka-init-1 Waiting 
+ Container task2-booking-schema-1 Waiting 
+ Container hotelio-monolith Started 
+ Container history-db Healthy 
+ Container task2-history-schema-1 Starting 
+ Container task2-booking-schema-1 Exited 
+ Container task2-history-schema-1 Started 
+ Container task2-kafka-init-1 Waiting 
+ Container task2-history-schema-1 Waiting 
+ Container task2-history-schema-1 Exited 
+ Container task2-kafka-init-1 Exited 
+ Container booking-service Starting 
+ Container task2-kafka-init-1 Exited 
+ Container booking-history-service Starting 
+ Container booking-service Started 
+ Container booking-history-service Started 
+
+== 1. booking-service остановлен: по заданию тесты на booking должны упасть ==
+$ docker compose stop booking-service; docker compose run --rm regress; docker compose start booking-service
+ Container booking-service Stopping 
+ Container booking-service Stopped 
+ Container hotelio-db Running 
+ Container hotelio-monolith Running 
+ Container hotelio-db Waiting 
+ Container hotelio-db Healthy 
+ Container hotelio-monolith Waiting 
+ Container hotelio-monolith Healthy 
+ Container task2-regress-run-02a2f69802cd Creating 
+ Container task2-regress-run-02a2f69802cd Created 
+🏁 Регрессионный тест до миграции Hotelio
+🧪 Проверка подключения к БД...
+🧪 Загрузка фикстур...
+DELETE 0
+DELETE 0
+DELETE 0
+DELETE 0
+DELETE 0
+INSERT 0 4
+INSERT 0 3
+INSERT 0 12
+INSERT 0 3
+INSERT 0 2
+INSERT 0 2
+INSERT 0 11
+🧪 Перенос бронирований в booking-service (ops-джоба, режим тестового стенда)...
+[migration] в монолите бронирований: 2, максимальный id: 2
+[migration] перенесено новых: 2, из них с подставленной датой: 0
+[migration] счётчик id booking-service: 2
+[migration] источник: 2 e4d5bdf7954d1c33d83ac1adb1fd3fd2
+[migration] приёмник: 2 e4d5bdf7954d1c33d83ac1adb1fd3fd2
+[migration] длительность: 0 с
+[migration] OK: количество и контрольная сумма совпадают
+🧪 Выполнение HTTP-тестов...
+
+Тесты пользователей...
+✅ Получение test-user-1 по ID работает
+✅ Статус test-user-1: ACTIVE
+✅ test-user-1 в блэклисте
+✅ test-user-1 активен
+✅ test-user-1 не авторизован (в блэклисте)
+✅ test-user-3 — VIP-пользователь
+✅ test-user-2 авторизован
+
+Тесты отелей...
+✅ test-hotel-1 получен по ID
+✅ test-hotel-1 работает
+✅ test-hotel-3 не работает
+✅ test-hotel-2 полностью забронирован
+✅ Поиск отелей в Сеуле работает
+✅ Топ-отели в Сеуле загружены
+
+Тесты ревью...
+✅ Отзывы test-hotel-1 найдены
+✅ test-hotel-1 признан надёжным
+✅ test-hotel-3 НЕ признан надёжным (ожидаемо)
+
+Тесты промокодов...
+✅ Промокод TESTCODE1 найден
+✅ VIP-промо доступен VIP
+✅ VIP-промо недоступен обычному
+✅ Обычный промо доступен
+✅ Истекший промо недоступен
+✅ POST /validate промо прошёл
+
+Тесты бронирования...
+Failed to dial target host "booking-service:9090": connection error: desc = "transport: error while dialing: dial tcp: lookup booking-service on 127.0.0.11:53: no such host"
+❌ Бронирования не получены
+
+ Container booking-db Waiting 
+ Container task2-kafka-init-1 Starting 
+ Container task2-kafka-init-1 Started 
+ Container booking-db Healthy 
+ Container task2-booking-schema-1 Starting 
+ Container task2-booking-schema-1 Started 
+ Container task2-kafka-init-1 Waiting 
+ Container task2-booking-schema-1 Waiting 
+ Container task2-booking-schema-1 Exited 
+ Container task2-kafka-init-1 Exited 
+ Container booking-service Starting 
+ Container booking-service Started 
+
+== 2. booking-service работает: полный регресс ==
+$ docker compose run --rm regress
+ Container hotelio-db Running 
+ Container hotelio-monolith Running 
+ Container hotelio-db Waiting 
+ Container hotelio-db Healthy 
+ Container hotelio-monolith Waiting 
+ Container hotelio-monolith Healthy 
+ Container task2-regress-run-e68c2836d38a Creating 
+ Container task2-regress-run-e68c2836d38a Created 
+🏁 Регрессионный тест до миграции Hotelio
+🧪 Проверка подключения к БД...
+🧪 Загрузка фикстур...
+DELETE 4
+DELETE 5
+DELETE 23
+DELETE 3
+DELETE 2
+INSERT 0 4
+INSERT 0 3
+INSERT 0 12
+INSERT 0 3
+INSERT 0 2
+INSERT 0 2
+INSERT 0 11
+🧪 Перенос бронирований в booking-service (ops-джоба, режим тестового стенда)...
+[migration] в монолите бронирований: 2, максимальный id: 4
+[migration] перенесено новых: 2, из них с подставленной датой: 0
+[migration] счётчик id booking-service: 4
+[migration] источник: 2 1e509cce30bca49e9a6ee7a6ad9d6476
+[migration] приёмник: 2 1e509cce30bca49e9a6ee7a6ad9d6476
+[migration] длительность: 0 с
+[migration] OK: количество и контрольная сумма совпадают
+🧪 Выполнение HTTP-тестов...
+
+Тесты пользователей...
+✅ Получение test-user-1 по ID работает
+✅ Статус test-user-1: ACTIVE
+✅ test-user-1 в блэклисте
+✅ test-user-1 активен
+✅ test-user-1 не авторизован (в блэклисте)
+✅ test-user-3 — VIP-пользователь
+✅ test-user-2 авторизован
+
+Тесты отелей...
+✅ test-hotel-1 получен по ID
+✅ test-hotel-1 работает
+✅ test-hotel-3 не работает
+✅ test-hotel-2 полностью забронирован
+✅ Поиск отелей в Сеуле работает
+✅ Топ-отели в Сеуле загружены
+
+Тесты ревью...
+✅ Отзывы test-hotel-1 найдены
+✅ test-hotel-1 признан надёжным
+✅ test-hotel-3 НЕ признан надёжным (ожидаемо)
+
+Тесты промокодов...
+✅ Промокод TESTCODE1 найден
+✅ VIP-промо доступен VIP
+✅ VIP-промо недоступен обычному
+✅ Обычный промо доступен
+✅ Истекший промо недоступен
+✅ POST /validate промо прошёл
+
+Тесты бронирования...
+✅ Все бронирования получены (gRPC ListBookings в booking-service)
+✅ Бронирования test-user-2 найдены
+✅ Бронирование прошло (без промо)
+✅ Бронирование с промо прошло
+✅ Отклонено: неактивный пользователь
+✅ Отклонено: отключённый отель из исходной фикстуры
+✅ Отклонено: отель с недостатком отзывов и без мест
+✅ Отклонено: недоверенный отель (работает, места есть) — Hotel is not trusted based on reviews, записи нет
+✅ Отклонено: полностью занятый отель (работает, доверенный) — Hotel is fully booked, записи нет
+
+Тесты истории бронирований...
+✅ Бронирование 5 попало в историю ровно один раз
+✅ Бронирование 6 попало в историю ровно один раз
+✅ Все HTTP-тесты пройдены!
+
+== 3. Дополнительно, 30.10.2026 09:34 MSK: booking-service остановлен, запросы через монолит ==
+-- В части 1 регресс останавливается на первой проверке бронирований, а она обращается к booking-service напрямую по gRPC.
+-- Здесь запросы бронирований идут через REST монолита: прокси вызывает booking-service, и без него монолит отвечает 500.
+$ docker compose stop booking-service
+ Container booking-service Stopping 
+ Container booking-service Stopped 
+$ curl -i "http://localhost:8084/api/bookings?userId=test-user-2"
+HTTP/1.1 500 
+Content-Type: application/json
+Transfer-Encoding: chunked
+Date: Fri, 30 Oct 2026 06:34:52 GMT
+Connection: close
+
+{"timestamp":"2026-10-30T06:34:52.227+00:00","status":500,"error":"Internal Server Error","path":"/api/bookings"}
+$ curl -i -X POST "http://localhost:8084/api/bookings?userId=test-user-3&hotelId=test-hotel-1"
+HTTP/1.1 500 
+Content-Type: application/json
+Transfer-Encoding: chunked
+Date: Fri, 30 Oct 2026 06:34:52 GMT
+Connection: close
+
+{"timestamp":"2026-10-30T06:34:52.237+00:00","status":500,"error":"Internal Server Error","path":"/api/bookings"}
+$ docker compose logs --no-log-prefix --since 2026-10-30T06:34:51Z monolith | grep "Request processing failed"
+2026-10-30T06:34:52.225Z ERROR 1 --- [nio-8080-exec-3] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: io.grpc.StatusRuntimeException: UNAVAILABLE: Unable to resolve host booking-service] with root cause
+2026-10-30T06:34:52.236Z ERROR 1 --- [nio-8080-exec-5] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: io.grpc.StatusRuntimeException: UNAVAILABLE: Unable to resolve host booking-service] with root cause
+$ docker compose start booking-service
+ Container booking-db Waiting 
+ Container task2-kafka-init-1 Starting 
+ Container task2-kafka-init-1 Started 
+ Container booking-db Healthy 
+ Container task2-booking-schema-1 Starting 
+ Container task2-booking-schema-1 Started 
+ Container task2-kafka-init-1 Waiting 
+ Container task2-booking-schema-1 Waiting 
+ Container task2-booking-schema-1 Exited 
+ Container task2-kafka-init-1 Exited 
+ Container booking-service Starting 
+ Container booking-service Started 
+
+== 4. Дополнительно, 01.11.2026 22:02 MSK: dead letter перенесён в DLQ-топик Kafka, стенд с чистыми томами, полный регресс ==
+$ docker compose down -v --remove-orphans
+$ docker compose build && docker compose build regress
+-- вывод остановки и сборки образов опущен
+$ docker compose up -d --wait booking-service booking-history-service monolith
+$ docker compose ps
+NAME                      IMAGE                             COMMAND                  SERVICE                   CREATED          STATUS                    PORTS
+booking-db                postgres:15                       "docker-entrypoint.s…"   booking-db                11 seconds ago   Up 10 seconds (healthy)   0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp
+booking-history-service   hotelio-booking-history-service   "dotnet BookingHisto…"   booking-history-service   10 seconds ago   Up Less than a second     0.0.0.0:8086->8080/tcp, [::]:8086->8080/tcp
+booking-service           hotelio-booking-service           "dotnet BookingServi…"   booking-service           10 seconds ago   Up Less than a second     0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp, 0.0.0.0:8085->8080/tcp, [::]:8085->8080/tcp
+history-db                postgres:15                       "docker-entrypoint.s…"   history-db                11 seconds ago   Up 10 seconds (healthy)   0.0.0.0:5434->5432/tcp, [::]:5434->5432/tcp
+hotelio-db                postgres:15                       "docker-entrypoint.s…"   monolith-db               11 seconds ago   Up 10 seconds (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+hotelio-monolith          task2-monolith                    "java -jar app.jar"      monolith                  10 seconds ago   Up 8 seconds (healthy)    0.0.0.0:8084->8080/tcp, [::]:8084->8080/tcp
+kafka                     confluentinc/cp-kafka:7.2.1       "/etc/confluent/dock…"   kafka                     10 seconds ago   Up 10 seconds             0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp
+zookeeper                 confluentinc/cp-zookeeper:7.2.1   "/etc/confluent/dock…"   zookeeper                 11 seconds ago   Up 10 seconds             2888/tcp, 0.0.0.0:2181->2181/tcp, [::]:2181->2181/tcp, 3888/tcp
+$ docker compose run --rm regress
+ Container hotelio-monolith Running 
+ Container hotelio-db Running 
+ Container hotelio-db Waiting 
+ Container hotelio-db Healthy 
+ Container hotelio-monolith Waiting 
+ Container hotelio-monolith Healthy 
+ Container task2-regress-run-cca8d06fae7c Creating 
+ Container task2-regress-run-cca8d06fae7c Created 
+🏁 Регрессионный тест до миграции Hotelio
+🧪 Проверка подключения к БД...
+🧪 Загрузка фикстур...
+DELETE 0
+DELETE 0
+DELETE 0
+DELETE 0
+DELETE 0
+INSERT 0 4
+INSERT 0 3
+INSERT 0 12
+INSERT 0 3
+INSERT 0 2
+INSERT 0 2
+INSERT 0 11
+🧪 Перенос бронирований в booking-service (ops-джоба, режим тестового стенда)...
+[migration] в монолите бронирований: 2, максимальный id: 2
+[migration] перенесено новых: 2, из них с подставленной датой: 0
+[migration] счётчик id booking-service: 2
+[migration] источник: 2 e4d5bdf7954d1c33d83ac1adb1fd3fd2
+[migration] приёмник: 2 e4d5bdf7954d1c33d83ac1adb1fd3fd2
+[migration] длительность: 0 с
+[migration] OK: количество и контрольная сумма совпадают
+🧪 Выполнение HTTP-тестов...
+
+Тесты пользователей...
+✅ Получение test-user-1 по ID работает
+✅ Статус test-user-1: ACTIVE
+✅ test-user-1 в блэклисте
+✅ test-user-1 активен
+✅ test-user-1 не авторизован (в блэклисте)
+✅ test-user-3 — VIP-пользователь
+✅ test-user-2 авторизован
+
+Тесты отелей...
+✅ test-hotel-1 получен по ID
+✅ test-hotel-1 работает
+✅ test-hotel-3 не работает
+✅ test-hotel-2 полностью забронирован
+✅ Поиск отелей в Сеуле работает
+✅ Топ-отели в Сеуле загружены
+
+Тесты ревью...
+✅ Отзывы test-hotel-1 найдены
+✅ test-hotel-1 признан надёжным
+✅ test-hotel-3 НЕ признан надёжным (ожидаемо)
+
+Тесты промокодов...
+✅ Промокод TESTCODE1 найден
+✅ VIP-промо доступен VIP
+✅ VIP-промо недоступен обычному
+✅ Обычный промо доступен
+✅ Истекший промо недоступен
+✅ POST /validate промо прошёл
+
+Тесты бронирования...
+✅ Все бронирования получены (gRPC ListBookings в booking-service)
+✅ Бронирования test-user-2 найдены
+✅ Бронирование прошло (без промо)
+✅ Бронирование с промо прошло
+✅ Отклонено: неактивный пользователь
+✅ Отклонено: отключённый отель из исходной фикстуры
+✅ Отклонено: отель с недостатком отзывов и без мест
+✅ Отклонено: недоверенный отель (работает, места есть) — Hotel is not trusted based on reviews, записи нет
+✅ Отклонено: полностью занятый отель (работает, доверенный) — Hotel is fully booked, записи нет
+
+Тесты истории бронирований...
+✅ Бронирование 3 попало в историю ровно один раз
+✅ Бронирование 4 попало в историю ровно один раз
+✅ Все HTTP-тесты пройдены!
+
+== 5. Дополнительно, 03.11.2026 00:28 MSK: публичный список не отдаёт чужие бронирования, полный список — служебный метод с токеном; стенд с чистыми томами, полный регресс ==
+$ docker compose down -v --remove-orphans
+$ docker compose build && docker compose build regress
+-- вывод остановки и сборки образов опущен
+$ docker compose up -d --wait booking-service booking-history-service monolith
+$ docker compose ps
+NAME                      IMAGE                             COMMAND                  SERVICE                   CREATED          STATUS                   PORTS
+booking-db                postgres:15                       "docker-entrypoint.s…"   booking-db                10 seconds ago   Up 9 seconds (healthy)   0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp
+booking-history-service   hotelio-booking-history-service   "dotnet BookingHisto…"   booking-history-service   10 seconds ago   Up Less than a second    0.0.0.0:8086->8080/tcp, [::]:8086->8080/tcp
+booking-service           hotelio-booking-service           "dotnet BookingServi…"   booking-service           10 seconds ago   Up Less than a second    0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp, 0.0.0.0:8085->8080/tcp, [::]:8085->8080/tcp
+history-db                postgres:15                       "docker-entrypoint.s…"   history-db                10 seconds ago   Up 9 seconds (healthy)   0.0.0.0:5434->5432/tcp, [::]:5434->5432/tcp
+hotelio-db                postgres:15                       "docker-entrypoint.s…"   monolith-db               10 seconds ago   Up 9 seconds (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+hotelio-monolith          task2-monolith                    "java -jar app.jar"      monolith                  10 seconds ago   Up 7 seconds (healthy)   0.0.0.0:8084->8080/tcp, [::]:8084->8080/tcp
+kafka                     confluentinc/cp-kafka:7.2.1       "/etc/confluent/dock…"   kafka                     10 seconds ago   Up 9 seconds             0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp
+zookeeper                 confluentinc/cp-zookeeper:7.2.1   "/etc/confluent/dock…"   zookeeper                 10 seconds ago   Up 9 seconds             2888/tcp, 0.0.0.0:2181->2181/tcp, [::]:2181->2181/tcp, 3888/tcp
+$ docker compose run --rm regress
+ Container hotelio-db Running 
+ Container hotelio-monolith Running 
+ Container hotelio-db Waiting 
+ Container hotelio-db Healthy 
+ Container hotelio-monolith Waiting 
+ Container hotelio-monolith Healthy 
+ Container task2-regress-run-e4c4c43389a9 Creating 
+ Container task2-regress-run-e4c4c43389a9 Created 
+🏁 Регрессионный тест до миграции Hotelio
+🧪 Проверка подключения к БД...
+🧪 Загрузка фикстур...
+DELETE 0
+DELETE 0
+DELETE 0
+DELETE 0
+DELETE 0
+INSERT 0 4
+INSERT 0 3
+INSERT 0 12
+INSERT 0 3
+INSERT 0 2
+INSERT 0 2
+INSERT 0 11
+🧪 Перенос бронирований в booking-service (ops-джоба, режим тестового стенда)...
+[migration] в монолите бронирований: 2, максимальный id: 2
+[migration] перенесено новых: 2, из них с подставленной датой: 0
+[migration] счётчик id booking-service: 2
+[migration] источник: 2 e4d5bdf7954d1c33d83ac1adb1fd3fd2
+[migration] приёмник: 2 e4d5bdf7954d1c33d83ac1adb1fd3fd2
+[migration] длительность: 0 с
+[migration] OK: количество и контрольная сумма совпадают
+🧪 Выполнение HTTP-тестов...
+
+Тесты пользователей...
+✅ Получение test-user-1 по ID работает
+✅ Статус test-user-1: ACTIVE
+✅ test-user-1 в блэклисте
+✅ test-user-1 активен
+✅ test-user-1 не авторизован (в блэклисте)
+✅ test-user-3 — VIP-пользователь
+✅ test-user-2 авторизован
+
+Тесты отелей...
+✅ test-hotel-1 получен по ID
+✅ test-hotel-1 работает
+✅ test-hotel-3 не работает
+✅ test-hotel-2 полностью забронирован
+✅ Поиск отелей в Сеуле работает
+✅ Топ-отели в Сеуле загружены
+
+Тесты ревью...
+✅ Отзывы test-hotel-1 найдены
+✅ test-hotel-1 признан надёжным
+✅ test-hotel-3 НЕ признан надёжным (ожидаемо)
+
+Тесты промокодов...
+✅ Промокод TESTCODE1 найден
+✅ VIP-промо доступен VIP
+✅ VIP-промо недоступен обычному
+✅ Обычный промо доступен
+✅ Истекший промо недоступен
+✅ POST /validate промо прошёл
+
+Тесты бронирования...
+✅ Все бронирования получены (служебный gRPC-метод ListAllBookings)
+✅ Пагинация служебного списка: страницы по одной строке дают тот же набор id
+✅ Служебный список без токена закрыт
+✅ Пустой user_id не отдаёт чужие бронирования
+✅ Бронирования test-user-2 найдены
+✅ Бронирование прошло (без промо)
+✅ Бронирование с промо прошло
+✅ Отклонено: неактивный пользователь
+✅ Отклонено: отключённый отель из исходной фикстуры
+✅ Отклонено: отель с недостатком отзывов и без мест
+✅ Отклонено: недоверенный отель (работает, места есть) — Hotel is not trusted based on reviews, записи нет
+✅ Отклонено: полностью занятый отель (работает, доверенный) — Hotel is fully booked, записи нет
+
+Тесты истории бронирований...
+✅ Бронирование 3 попало в историю ровно один раз
+✅ Бронирование 4 попало в историю ровно один раз
+✅ Все HTTP-тесты пройдены!

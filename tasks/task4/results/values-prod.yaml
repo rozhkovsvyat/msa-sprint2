@@ -1,0 +1,14 @@
+# prod: три реплики для отказоустойчивости, флаг выключен, ресурсы с запасом.
+replicaCount: 3
+image:
+  pullPolicy: IfNotPresent   # в боевом кластере образ берётся из registry по неизменяемому тегу
+featureFlags:
+  enableFeatureX: false
+env:
+  - name: ASPNETCORE_ENVIRONMENT
+    value: Production
+  - name: Logging__LogLevel__Default
+    value: Warning
+resources:
+  requests: { cpu: 250m, memory: 256Mi }
+  limits:   { cpu: "1",  memory: 512Mi }

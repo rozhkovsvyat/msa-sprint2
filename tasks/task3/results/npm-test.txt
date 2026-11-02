@@ -1,0 +1,47 @@
+$ node --version && npm test
+v24.21.0
+
+> test
+> node --test tests/*.test.js
+
+✔ DataLoader: пачки до 10 отелей, без повторов, не больше 4 одновременных запросов к монолиту (40.1505ms)
+✔ Кеш отелей: вытеснение старых записей не портит результат текущей пачки (0.417792ms)
+✔ Кеш отелей: в пределах TTL отель берётся из кеша, после — снова из монолита (80.7075ms)
+✔ Кеш отелей: ошибку монолита не кешируем, следующий запрос снова идёт в монолит (0.42025ms)
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+✔ Свои бронирования приходят одним запросом вместе с отелями и промокодами (108.485458ms)
+✔ @override: discountPercent отдаёт promocode-subgraph по справочнику промокодов (11.369792ms)
+✔ ACL: чужие бронирования и запрос без userid отклоняются, чужое бронирование по id не находится (10.411375ms)
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+✔ ACL: без проброса userid шлюзом даже владелец получает UNAUTHENTICATED (5731.919042ms)
+✔ ACL: userid из пробелов или с управляющими символами отклоняется до вызова booking-service (0.945166ms)
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+✔ ACL: чужое бронирование в ответе booking-service не попадает к пользователю (1726.241167ms)
+✔ Отказ одного отеля: ошибка с path на hotel, остальные бронирования и скидки целы (21.19925ms)
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+✔ Отказ booking-service: клиент получает BOOKING_UNAVAILABLE, подробности gRPC остаются в логе (1707.235167ms)
+✔ Отказ справочника промокодов: PROMO_UNAVAILABLE вместо ответа монолита, бронирования и отели целы (7.213292ms)
+✔ validatePromoCode: проверить промокод можно только для себя — VIP-статус другого не раскрывается (5.928375ms)
+✔ Лимиты: глубина, алиасы и длина hotelsByIds отклоняются до обращения к источникам (6.209ms)
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+Enabling inline tracing for this subgraph. To disable, use ApolloServerPluginInlineTraceDisabled.
+✔ 51 бронирование с отелями и скидками читается через Federation целиком (1810.436875ms)
+✔ x-request-id клиента проходит через шлюз, подграфы, REST и gRPC; недопустимый заменяется новым (16.094375ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12516.842167
+(код выхода 0)

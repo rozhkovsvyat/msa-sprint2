@@ -1,0 +1,60 @@
+История бронирований в booking-history-service (задание 2): стенд 03.11.2026 с чистыми томами после регресса (test-log.txt, часть 5)
+и ./check-delivery.sh (delivery-check.log). Команды выполняются из tasks/task2.
+Бронирования 1 и 2 — фикстуры курса, которые регресс перенёс из монолита джобой переноса (source migration); 3 и 4 создал регресс
+через монолит и прокси; 5 — ./check-delivery.sh, пока Kafka была остановлена. Сообщение с schemaVersion 2 из той же проверки ушло
+в DLQ-топик и в историю не попало.
+
+== Таблица истории (владелец БД) ==
+$ docker exec history-db psql -U history -d history -c 'select * from booking_history order by booking_id, received_at'
+               event_id               |   event_type   | booking_id |   user_id   |   hotel_id   | promo_code | discount_amount | price  |           booked_at           | booked_at_estimated |     source      |            correlation_id            |          received_at          
+--------------------------------------+----------------+------------+-------------+--------------+------------+-----------------+--------+-------------------------------+---------------------+-----------------+--------------------------------------+-------------------------------
+ ad156cf1-8f2d-1986-e2b3-1946c8dfc010 | BookingCreated |          1 | test-user-2 | test-hotel-1 | TESTCODE1  |           10.00 |  90.00 | 2026-11-02 21:28:24.497434+00 | f                   | migration       | migration-20261102T212824Z           | 2026-11-02 21:28:26.929008+00
+ 6799ed00-578f-f544-d96e-8a4c868c24a8 | BookingCreated |          2 | test-user-3 | test-hotel-1 |            |            0.00 |  80.00 | 2026-11-02 21:28:24.497434+00 | f                   | migration       | migration-20261102T212824Z           | 2026-11-02 21:28:26.937428+00
+ 726ef485-e86d-cbb0-96f7-2d12d3763b41 | BookingCreated |          3 | test-user-3 | test-hotel-1 |            |            0.00 |  80.00 | 2026-11-02 21:28:25.102604+00 | f                   | booking-service | bbc49aad-44e0-480c-9748-13de91839e40 | 2026-11-02 21:28:26.94047+00
+ 67099ef0-1ed0-6c69-0ac5-1f84035292c8 | BookingCreated |          4 | test-user-2 | test-hotel-1 | TESTCODE1  |           10.00 |  90.00 | 2026-11-02 21:28:25.129435+00 | f                   | booking-service | c1bc3f98-b8a0-4dfe-a0c3-8882a538b47a | 2026-11-02 21:28:26.942212+00
+ be213ebd-1c48-1308-255e-99212e8966dd | BookingCreated |          5 | test-user-2 | test-hotel-1 |            |            0.00 | 100.00 | 2026-11-02 21:28:27.97621+00  | f                   | booking-service | delivery-check-1793654907            | 2026-11-02 21:29:33.047039+00
+(5 rows)
+
+
+== Статистика: представления читает роль analyst ==
+$ docker exec history-db psql -U analyst -d history -c 'select * from stats_by_user order by user_id' -c 'select * from stats_by_hotel order by hotel_id' -c 'select * from stats_by_day order by day'
+   user_id   | bookings | revenue |        last_booking_at        
+-------------+----------+---------+-------------------------------
+ test-user-2 |        3 |  280.00 | 2026-11-02 21:28:27.97621+00
+ test-user-3 |        2 |  160.00 | 2026-11-02 21:28:25.102604+00
+(2 rows)
+
+   hotel_id   | bookings | revenue | with_promo 
+--------------+----------+---------+------------
+ test-hotel-1 |        5 |  440.00 |          2
+(1 row)
+
+    day     | bookings | revenue | estimated_dates 
+------------+----------+---------+-----------------
+ 2026-11-02 |        5 |  440.00 |               0
+(1 row)
+
+
+== Права аналитика: запись запрещена ==
+$ docker exec history-db psql -U analyst -d history -c 'insert into booking_history select * from booking_history where false'
+ERROR:  permission denied for table booking_history
+(код выхода 1)
+-- тот же запрос владельцем БД (ноль строк, данные не меняются): ошибка выше — именно из-за прав
+$ docker exec history-db psql -U history -d history -c 'insert into booking_history select * from booking_history where false'
+INSERT 0 0
+
+== DLQ-топик booking-events.dlq: сообщения, которые не удалось обработать ==
+$ docker exec kafka kafka-console-consumer --bootstrap-server kafka:9092 --topic booking-events.dlq --from-beginning --timeout-ms 5000 --property print.partition=true --property print.offset=true --property print.headers=true --property print.key=true 2>/dev/null
+Partition:0	Offset:0	dlq-reason:unsupported schemaVersion 2,dlq-topic:booking-events,dlq-partition:0,dlq-offset:0	5	{"source": "booking-service", "booking": {"id": 5, "price": 100, "userId": "test-user-2", "hotelId": "test-hotel-1", "createdAt": "2026-11-02T21:28:27.97621+00:00", "promoCode": null, "discountAmount": 0, "createdAtEstimated": false}, "eventId": "be213ebd-1c48-1308-255e-99212e8966dd", "eventType": "BookingCreated", "occurredAt": "2026-11-02T21:28:27.976419+00:00", "correlationId": "delivery-check-1793654907", "schemaVersion": 2}
+
+== Отставание группы booking-history ==
+$ docker exec kafka kafka-consumer-groups --bootstrap-server kafka:9092 --group booking-history --describe 2>/dev/null
+
+GROUP           TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID                                  HOST            CLIENT-ID
+booking-history booking-events  0          1               1               0               rdkafka-62cbc736-0f40-426f-a901-a02c3d95748d /172.18.0.8     rdkafka
+booking-history booking-events  1          5               5               0               rdkafka-62cbc736-0f40-426f-a901-a02c3d95748d /172.18.0.8     rdkafka
+booking-history booking-events  2          1               1               0               rdkafka-62cbc736-0f40-426f-a901-a02c3d95748d /172.18.0.8     rdkafka
+
+== Outbox booking-service ==
+$ curl -s http://localhost:8085/diagnostics/outbox; echo
+{"pending":0,"retrying":0,"deadLetters":0,"oldestAgeSeconds":0,"publisher":"enabled"}

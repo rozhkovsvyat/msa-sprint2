@@ -1,20 +1,54 @@
-version: '3.8'
+# Личный кабинет на GraphQL Federation. Нужны стенд задания 2 (монолит и booking-service) и сеть hotelio-net.
+# Снаружи доступен только шлюз: http://localhost:4000/
 
 services:
   apollo-gateway:
-    build: ./gateway
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: apollo-gateway
     ports:
       - "4000:4000"
     depends_on:
       - booking-subgraph
       - hotel-subgraph
+      - promocode-subgraph
+    restart: on-failure   # шлюз собирает суперграф при старте и ждёт подграфы перезапуском
+    networks:
+      - hotelio-net
 
   booking-subgraph:
-    build: ./booking-subgraph
-    ports:
-      - "4001:4001"
+    build:
+      context: .
+      dockerfile: booking-subgraph/Dockerfile
+      additional_contexts:
+        task2: ../task2   # контракт booking.proto
+    container_name: booking-subgraph
+    environment:
+      BOOKING_GRPC: booking-service:9090
+    networks:
+      - hotelio-net
 
   hotel-subgraph:
-    build: ./hotel-subgraph
-    ports:
-      - "4002:4002"
+    build:
+      context: .
+      dockerfile: hotel-subgraph/Dockerfile
+    container_name: hotel-subgraph
+    environment:
+      MONOLITH_URL: http://hotelio-monolith:8080
+    networks:
+      - hotelio-net
+
+  promocode-subgraph:
+    build:
+      context: .
+      dockerfile: promocode-subgraph/Dockerfile
+    container_name: promocode-subgraph
+    environment:
+      MONOLITH_URL: http://hotelio-monolith:8080
+    networks:
+      - hotelio-net
+
+networks:
+  hotelio-net:
+    external: true

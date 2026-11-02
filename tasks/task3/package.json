@@ -1,0 +1,24 @@
+{
+  "name": "hotelio-graphql-contracts",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "gateway",
+    "booking-subgraph",
+    "hotel-subgraph",
+    "promocode-subgraph"
+  ],
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "devDependencies": {
+    "@apollo/server": "^5.5.1",
+    "@apollo/gateway": "^2.14.4",
+    "@grpc/grpc-js": "^1.14.6",
+    "@grpc/proto-loader": "^0.8.1",
+    "graphql": "^16.14.2"
+  }
+}

@@ -1,0 +1,6 @@
+$ docker ps --filter label=com.docker.compose.project=task3
+CONTAINER ID   IMAGE                      COMMAND                  CREATED          STATUS          PORTS                                         NAMES
+bb21b6137276   task3-apollo-gateway       "docker-entrypoint.s…"   52 seconds ago   Up 50 seconds   0.0.0.0:4000->4000/tcp, [::]:4000->4000/tcp   apollo-gateway
+5477ba570a65   task3-promocode-subgraph   "docker-entrypoint.s…"   53 seconds ago   Up 51 seconds                                                 promocode-subgraph
+0abc7ec7ce6b   task3-booking-subgraph     "docker-entrypoint.s…"   53 seconds ago   Up 51 seconds                                                 booking-subgraph
+f2100903e8cf   task3-hotel-subgraph       "docker-entrypoint.s…"   53 seconds ago   Up 50 seconds                                                 hotel-subgraph

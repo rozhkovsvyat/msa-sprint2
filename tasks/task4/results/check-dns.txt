@@ -1,0 +1,4 @@
+$ NAMESPACE=staging ./check-dns.sh
+▶️ Running in-cluster DNS test (namespace staging)...
+pong
+✅ Success

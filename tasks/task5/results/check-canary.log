@@ -1,0 +1,7 @@
+$ ./check-canary.sh
+▶️ Checking canary release (90% v1, 10% v2)...
+ 177 200 v1
+  23 200 v2
+v1: 177, v2: 23 из 200
+✅ OK
+(код выхода 0)

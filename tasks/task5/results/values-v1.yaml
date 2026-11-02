@@ -1,0 +1,9 @@
+# v1 — основная версия: две реплики, фича-флаг выключен. Создаёт общий Service booking-service.
+version: v1
+replicaCount: 2
+image:
+  pullPolicy: Never   # образ загружен в Minikube
+featureFlags:
+  enableFeatureX: false
+service:
+  create: true

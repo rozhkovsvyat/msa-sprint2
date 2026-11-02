@@ -1,0 +1,8 @@
+Логи promocode-subgraph по x-request-id запроса ./calls.sh success (booking-subgraph-logs.txt): поле Booking.discountPercent
+отдаёт новый подграф (@override). Команды выполняются из tasks/task3.
+
+$ docker logs promocode-subgraph 2>&1 | grep calls-1793654998-5225
+{"ts":"2026-11-02T21:29:58.701Z","svc":"promocode-subgraph","msg":"request","userid":"test-user-2","operation":"MyBookings__promocode_subgraph__1","requestId":"calls-1793654998-5225"}
+{"ts":"2026-11-02T21:29:58.704Z","svc":"promocode-subgraph","msg":"discountPercent resolved","bookingId":"5","promoCode":null,"discountPercent":0,"requestId":"calls-1793654998-5225"}
+{"ts":"2026-11-02T21:29:58.726Z","svc":"promocode-subgraph","msg":"discountPercent resolved","bookingId":"1","promoCode":"TESTCODE1","discountPercent":10,"requestId":"calls-1793654998-5225"}
+{"ts":"2026-11-02T21:29:58.727Z","svc":"promocode-subgraph","msg":"discountPercent resolved","bookingId":"4","promoCode":"TESTCODE1","discountPercent":10,"requestId":"calls-1793654998-5225"}

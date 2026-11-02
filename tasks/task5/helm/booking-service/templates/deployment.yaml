@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.appName }}-{{ .Values.version }}
+  labels:
+    {{- include "booking-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "booking-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "booking-service.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.name }}:{{ required "image.tag обязателен: задайте неизменяемый тег" .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+            - name: grpc
+              containerPort: {{ .Values.grpc.containerPort }}
+          env:
+            - name: HTTP_PORT
+              value: {{ .Values.service.targetPort | quote }}
+            - name: GRPC_PORT
+              value: {{ .Values.grpc.containerPort | quote }}
+            - name: SERVICE_VERSION
+              value: {{ .Values.version | quote }}
+            - name: ENABLE_FEATURE_X
+              value: {{ .Values.featureFlags.enableFeatureX | quote }}
+            - name: BOOKING_DB
+              value: {{ .Values.dependencies.bookingDb | quote }}
+            - name: MONOLITH_URL
+              value: {{ .Values.dependencies.monolithUrl | quote }}
+            - name: OUTBOX_PUBLISHER
+              value: {{ .Values.dependencies.outboxPublisher | quote }}
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

@@ -82,7 +82,7 @@ Registry нет, поэтому образ попадает в Minikube чере
 
 | Что | Файл |
 | :- | :- |
-| Описание изменений и инструкция по развёртыванию в Minikube | этот файл; коротко — в конце [README.md](../README.md) задания |
+| Описание изменений и инструкция по развёртыванию в Minikube | этот файл |
 | Dockerfile сервисов | [booking-service.Dockerfile](booking-service.Dockerfile), [booking-history-service.Dockerfile](booking-history-service.Dockerfile) — копии файлов из `tasks/task2` |
 | Пайплайн build → test → deploy → tag, с джобами `test:unit`, `test:integration`, `test:api` | [pipeline-build-log.txt](pipeline-build-log.txt) |
 | Продвижение того же образа в prod и откат | [prod-promotion.log](prod-promotion.log), [helm-rollback.log](helm-rollback.log) |
@@ -98,5 +98,3 @@ Registry нет, поэтому образ попадает в Minikube чере
 ![check-dns.sh](screenshot-check-dns.png)
 
 ![check-status.sh](screenshot-check-status.png)
-
-Изображения — рендер терминальной сессии: те же команды и их вывод, что в соседних `.txt`. Сняты без окон терминала и без перехвата фокуса на машине владельца.

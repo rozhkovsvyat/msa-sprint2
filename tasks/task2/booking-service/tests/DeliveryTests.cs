@@ -1,9 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using AutoFixture;
 using Confluent.Kafka;
 using Hotelio.Bookings.Data;
 using Hotelio.Bookings.Outbox;
-using Hotelio.Bookings.Tests.TestData;
 using Shouldly;
 using Xunit;
 using BookingEventsConsumer = Hotelio.BookingHistory.BookingEventsConsumer;
@@ -15,6 +17,9 @@ namespace Hotelio.Bookings.Tests;
 /// <summary>Контракт события BookingCreated и классификация ошибок доставки.</summary>
 public sealed class DeliveryTests
 {
+    // Бронирования со случайными значениями: история должна прочитать любые без потерь.
+    private static readonly Fixture Any = new();
+
     [Fact]
     public void Event_id_follows_the_formula_of_the_migration_script() =>
         // select md5('hotelio:BookingCreated:v1:42')::uuid
@@ -23,20 +28,27 @@ public sealed class DeliveryTests
     [Fact]
     public void Event_from_booking_service_is_read_by_history_service()
     {
-        TryParse(SampleEvent.Json(), out var evt, out var reason).ShouldBeTrue(reason);
+        var booking = Any.Create<StoredBooking>();
+        var requestId = Any.Create<string>();
+        var json = EventJson(booking, requestId);
+
+        TryParse(json, out var evt, out var reason).ShouldBeTrue(reason);
 
         evt.ShouldSatisfyAllConditions(
-            () => evt.EventId.ShouldBe(BookingCreatedEvent.IdFor(42)),
-            () => evt.CorrelationId.ShouldBe("client-request-1"),
-            () => evt.Booking.ShouldBe(new HistoryPayload(42, "test-user-2", "test-hotel-1", 10m, 90m,
-                SampleEvent.Booking.CreatedAt, CreatedAtEstimated: false, PromoCode: "TESTCODE1")));
-        SampleEvent.Json().ShouldContain("\"discountAmount\":10");
+            () => evt.EventId.ShouldBe(BookingCreatedEvent.IdFor(booking.Id)),
+            () => evt.CorrelationId.ShouldBe(requestId),
+            () => evt.Booking.ShouldBe(new HistoryPayload(booking.Id, booking.UserId, booking.HotelId, booking.DiscountAmount,
+                booking.Price, booking.CreatedAt, booking.CreatedAtEstimated, booking.PromoCode)));
+        // Сумма скидки называется discountAmount: имя discountPercent из монолита в событие не переносим.
+        JsonNode.Parse(json)!["booking"]!["discountAmount"]!.GetValue<decimal>().ShouldBe(booking.DiscountAmount);
     }
 
     [Fact]
     public void Event_without_promo_code_is_valid()
     {
-        TryParse(SampleEvent.With("booking.promoCode", null), out var evt, out var reason).ShouldBeTrue(reason);
+        var json = EventJson(Any.Create<StoredBooking>() with { PromoCode = null }, Any.Create<string>());
+
+        TryParse(json, out var evt, out var reason).ShouldBeTrue(reason);
         evt.Booking.PromoCode.ShouldBeNull();
     }
 
@@ -44,37 +56,33 @@ public sealed class DeliveryTests
     [InlineData("not json")]
     [InlineData("{}")]
     [InlineData("null")]
-    public void Unreadable_message_goes_to_dead_letter(string payload)
+    public void Unreadable_message_is_rejected_with_a_reason(string payload)
     {
         TryParse(payload, out _, out var reason).ShouldBeFalse();
         reason.ShouldNotBeEmpty();
     }
 
-    [Fact]
-    public void Unsupported_version_type_or_missing_fields_go_to_dead_letter()
+    [Theory]
+    [InlineData("schemaVersion", "2")]
+    [InlineData("eventType", "\"BookingCancelled\"")]
+    [InlineData("booking.userId", null)]
+    [InlineData("booking.userId", "\"\"")]
+    [InlineData("booking.price", null)]
+    [InlineData("correlationId", null)]
+    public void Unsupported_version_type_or_missing_fields_are_rejected(string path, string? value)
     {
-        string[] payloads =
-        [
-            SampleEvent.With("schemaVersion", 2),
-            SampleEvent.With("eventType", "BookingCancelled"),
-            SampleEvent.With("booking.userId", null),
-            SampleEvent.With("booking.userId", ""),
-            SampleEvent.With("booking.price", null),
-            SampleEvent.With("correlationId", null),
-        ];
+        var payload = Changed(EventJson(Any.Create<StoredBooking>(), Any.Create<string>()), path, value is null ? null : JsonNode.Parse(value));
 
-        foreach (var payload in payloads)
-        {
-            TryParse(payload, out _, out var reason).ShouldBeFalse(payload);
-            reason.ShouldNotBeEmpty();
-        }
+        TryParse(payload, out _, out var reason).ShouldBeFalse(payload);
+        reason.ShouldNotBeEmpty();
     }
 
     [Fact]
-    public void Message_that_is_not_valid_utf8_goes_to_dead_letter()
+    public void Message_that_is_not_valid_utf8_is_rejected()
     {
-        var payload = Encoding.UTF8.GetBytes(SampleEvent.Json());
-        payload[payload.AsSpan().IndexOf("test-user-2"u8) + "test-user-".Length] = 0xC0; // такого байта в UTF-8 не бывает
+        var booking = Any.Create<StoredBooking>();
+        var payload = Encoding.UTF8.GetBytes(EventJson(booking, Any.Create<string>()));
+        payload[payload.AsSpan().IndexOf(Encoding.UTF8.GetBytes(booking.UserId))] = 0xC0; // такого байта в UTF-8 не бывает
 
         BookingEventsConsumer.TryParse(payload, out _, out var reason).ShouldBeFalse();
         reason.ShouldStartWith("invalid JSON");
@@ -107,6 +115,20 @@ public sealed class DeliveryTests
     [InlineData(50, 30)]
     public void Retry_delay_grows_up_to_thirty_seconds(int attempt, int seconds) =>
         OutboxPublisher.RetryDelay(attempt).ShouldBe(TimeSpan.FromSeconds(seconds));
+
+    private static string EventJson(StoredBooking booking, string requestId) =>
+        JsonSerializer.Serialize(BookingCreatedEvent.From(booking, "booking-service", requestId), BookingStore.Json);
+
+    /// <summary>Событие с заменённым полем; null удаляет поле. Путь через точку: "booking.userId".</summary>
+    private static string Changed(string json, string path, JsonNode? value)
+    {
+        var root = JsonNode.Parse(json)!;
+        var parts = path.Split('.');
+        var parent = parts.SkipLast(1).Aggregate(root, (node, name) => node[name]!);
+        if (value is null) parent.AsObject().Remove(parts[^1]);
+        else parent[parts[^1]] = value;
+        return root.ToJsonString();
+    }
 
     private static bool TryParse(string payload, [NotNullWhen(true)] out HistoryEvent? evt, out string reason) =>
         BookingEventsConsumer.TryParse(Encoding.UTF8.GetBytes(payload), out evt, out reason);

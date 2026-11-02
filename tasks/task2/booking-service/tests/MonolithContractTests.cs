@@ -1,16 +1,17 @@
 using System.Collections.Concurrent;
 using System.Net;
+using System.Text;
 using Hotelio.Bookings.Domain;
 using Hotelio.Bookings.Legacy;
-using Hotelio.Bookings.Tests.Fakes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+using Moq.Protected;
 using Polly.CircuitBreaker;
 using Polly.Timeout;
 using Shouldly;
 using Xunit;
-using static Hotelio.Bookings.Tests.Fakes.MonolithStub;
 
 namespace Hotelio.Bookings.Tests;
 
@@ -19,23 +20,42 @@ public sealed class MonolithContractTests
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    private static MonolithClient Client(MonolithStub stub) =>
-        new(new HttpClient(stub) { BaseAddress = new Uri("http://legacy/") }, NullLogger<MonolithClient>.Instance);
+    /// <summary>Монолит, который отвечает заданной функцией: подменяем HttpMessageHandler клиента.</summary>
+    private static Mock<HttpMessageHandler> Monolith(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond)
+    {
+        var handler = new Mock<HttpMessageHandler>();
+        handler.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .Returns(respond);
+        return handler;
+    }
+
+    private static Mock<HttpMessageHandler> Monolith(Func<HttpRequestMessage, HttpResponseMessage> respond) =>
+        Monolith((request, _) => Task.FromResult(respond(request)));
+
+    private static HttpResponseMessage Json(string body, HttpStatusCode status = HttpStatusCode.OK) =>
+        new(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
+
+    private static void ShouldBeCalled(Mock<HttpMessageHandler> monolith, int times) =>
+        monolith.Protected().Verify("SendAsync", Times.Exactly(times), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
+
+    private static MonolithClient Client(Mock<HttpMessageHandler> monolith) =>
+        new(new HttpClient(monolith.Object) { BaseAddress = new Uri("http://legacy/") }, NullLogger<MonolithClient>.Instance);
 
     /// <summary>Клиент с таймаутами, повторами и circuit breaker, как в сервисе.</summary>
-    private static MonolithClient ResilientClient(MonolithStub stub, IHttpContextAccessor? context = null)
+    private static MonolithClient ResilientClient(Mock<HttpMessageHandler> monolith, IHttpContextAccessor? context = null)
     {
         var services = new ServiceCollection().AddLogging();
         if (context is not null) services.AddSingleton(context);
         services.AddLegacyHttp(new Uri("http://legacy/"));
-        services.AddHttpClient<MonolithClient>().ConfigurePrimaryHttpMessageHandler(() => stub);
+        services.AddHttpClient<MonolithClient>().ConfigurePrimaryHttpMessageHandler(() => monolith.Object);
         return services.BuildServiceProvider().GetRequiredService<MonolithClient>();
     }
 
     [Fact]
     public async Task Maps_monolith_fields_and_ignores_unknown_ones()
     {
-        var client = Client(Returning(r => Json(r.RequestUri!.AbsolutePath switch
+        var client = Client(Monolith(r => Json(r.RequestUri!.AbsolutePath switch
         {
             var p when p.Contains("users") => """{"id":"u1","status":"VIP","active":true,"blacklisted":false,"email":"ignored"}""",
             var p when p.Contains("trusted") => "true",
@@ -60,7 +80,7 @@ public sealed class MonolithContractTests
     [InlineData("""{"status":"ACTIVE","active":"yes","blacklisted":false}""")]
     [InlineData("null")]
     public async Task Incomplete_or_incompatible_user_is_a_dependency_failure(string body) =>
-        await Should.ThrowAsync<LegacyUnavailableException>(() => Client(Returning(_ => Json(body))).GetUserAsync("u", Ct));
+        await Should.ThrowAsync<LegacyUnavailableException>(() => Client(Monolith(_ => Json(body))).GetUserAsync("u", Ct));
 
     [Theory]
     [InlineData("\"VIP\"", 80)]
@@ -69,7 +89,7 @@ public sealed class MonolithContractTests
     [InlineData("null", 100)]
     public async Task User_status_gives_the_same_base_price_as_monolith(string status, double expected)
     {
-        var client = Client(Returning(_ => Json($$"""{"status":{{status}},"active":true,"blacklisted":false}""")));
+        var client = Client(Monolith(_ => Json($$"""{"status":{{status}},"active":true,"blacklisted":false}""")));
 
         var user = await client.GetUserAsync("u", Ct);
 
@@ -81,7 +101,7 @@ public sealed class MonolithContractTests
     [InlineData("""{"operational":true,"fullyBooked":false}""", "unknown")]
     public async Task Incomplete_hotel_or_unknown_trust_is_not_read_as_false(string hotel, string trust)
     {
-        var client = Client(Returning(r => Json(r.RequestUri!.AbsolutePath.Contains("trusted") ? trust : hotel)));
+        var client = Client(Monolith(r => Json(r.RequestUri!.AbsolutePath.Contains("trusted") ? trust : hotel)));
 
         await Should.ThrowAsync<LegacyUnavailableException>(() => client.GetHotelAsync("h", Ct));
     }
@@ -89,16 +109,16 @@ public sealed class MonolithContractTests
     [Fact]
     public async Task Promo_discount_is_read_from_the_monolith_discount_field()
     {
-        (await Client(Returning(_ => Json("""{"discount":15}"""))).ValidatePromoAsync("p", "u", Ct)).ShouldBe(15m);
+        (await Client(Monolith(_ => Json("""{"discount":15}"""))).ValidatePromoAsync("p", "u", Ct)).ShouldBe(15m);
 
-        var renamed = Client(Returning(_ => Json("""{"discountPercent":15}""")));
+        var renamed = Client(Monolith(_ => Json("""{"discountPercent":15}""")));
         await Should.ThrowAsync<LegacyUnavailableException>(() => renamed.ValidatePromoAsync("p", "u", Ct));
     }
 
     [Fact]
     public async Task Missing_user_and_rejected_promo_keep_domain_meaning()
     {
-        var client = Client(Returning(r => Json("", r.Method == HttpMethod.Post ? HttpStatusCode.BadRequest : HttpStatusCode.NotFound)));
+        var client = Client(Monolith(r => Json("", r.Method == HttpMethod.Post ? HttpStatusCode.BadRequest : HttpStatusCode.NotFound)));
 
         (await client.GetUserAsync("missing", Ct)).Exists.ShouldBeFalse();
         (await client.ValidatePromoAsync("expired", "u", Ct)).ShouldBeNull();
@@ -107,26 +127,26 @@ public sealed class MonolithContractTests
     [Fact]
     public async Task Get_is_retried_once_post_is_not_and_request_id_is_forwarded()
     {
-        var stub = Returning(r =>
+        var monolith = Monolith(r =>
         {
             r.Headers.GetValues("x-request-id").Single().ShouldBe("client-request-1");
             return Json("{}", HttpStatusCode.ServiceUnavailable);
         });
         var context = new HttpContextAccessor { HttpContext = new DefaultHttpContext { TraceIdentifier = "client-request-1" } };
-        var client = ResilientClient(stub, context);
+        var client = ResilientClient(monolith, context);
 
         await Should.ThrowAsync<LegacyUnavailableException>(() => client.GetUserAsync("u", Ct));
-        stub.Calls.ShouldBe(2);
+        ShouldBeCalled(monolith, 2);
 
         await Should.ThrowAsync<LegacyUnavailableException>(() => client.ValidatePromoAsync("p", "u", Ct));
-        stub.Calls.ShouldBe(3);
+        ShouldBeCalled(monolith, 3);
     }
 
     [Fact]
     public async Task Slow_monolith_is_cut_off_by_attempt_timeout_and_retried_once()
     {
         var observed = new ConcurrentBag<CancellationToken>();
-        var stub = new MonolithStub(async (_, ct) =>
+        var monolith = Monolith(async (_, ct) =>
         {
             observed.Add(ct);
             await Task.Delay(TimeSpan.FromSeconds(20), ct);
@@ -134,26 +154,26 @@ public sealed class MonolithContractTests
         });
 
         // Две попытки по 1 с укладываются в бюджет 3 с: ответ обрывает таймаут попытки, а не общий бюджет.
-        await Should.ThrowAsync<TimeoutRejectedException>(() => ResilientClient(stub).GetUserAsync("u", Ct)
+        await Should.ThrowAsync<TimeoutRejectedException>(() => ResilientClient(monolith).GetUserAsync("u", Ct)
             .WaitAsync(TimeSpan.FromSeconds(10), Ct));
 
-        stub.Calls.ShouldBe(2);
+        ShouldBeCalled(monolith, 2);
         observed.ShouldAllBe(token => token.IsCancellationRequested);
     }
 
     [Fact]
     public async Task Circuit_opens_after_a_stream_of_errors_and_stops_calling_the_monolith()
     {
-        var stub = Returning(_ => Json("{}", HttpStatusCode.ServiceUnavailable));
-        var client = ResilientClient(stub);
+        var monolith = Monolith(_ => Json("{}", HttpStatusCode.ServiceUnavailable));
+        var client = ResilientClient(monolith);
 
         // Четыре запроса по две попытки — восемь ошибок, это минимум для решения circuit breaker.
         for (var i = 0; i < 4; i++)
             await Should.ThrowAsync<LegacyUnavailableException>(() => client.GetUserAsync("u", Ct));
-        stub.Calls.ShouldBe(8);
+        ShouldBeCalled(monolith, 8);
 
         await Should.ThrowAsync<BrokenCircuitException>(() => client.GetUserAsync("u", Ct));
-        stub.Calls.ShouldBe(8);
+        ShouldBeCalled(monolith, 8);
     }
 
     [Fact]
@@ -161,7 +181,7 @@ public sealed class MonolithContractTests
     {
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         CancellationToken observed = default;
-        var stub = new MonolithStub(async (_, ct) =>
+        var monolith = Monolith(async (_, ct) =>
         {
             observed = ct;
             started.SetResult();
@@ -169,7 +189,7 @@ public sealed class MonolithContractTests
             return Json("{}");
         });
         using var caller = new CancellationTokenSource();
-        var pending = ResilientClient(stub).GetUserAsync("u", caller.Token);
+        var pending = ResilientClient(monolith).GetUserAsync("u", caller.Token);
         await started.Task.WaitAsync(TimeSpan.FromSeconds(10), Ct);
 
         caller.Cancel();
@@ -177,6 +197,6 @@ public sealed class MonolithContractTests
 
         error.ShouldBeAssignableTo<OperationCanceledException>();
         observed.IsCancellationRequested.ShouldBeTrue();
-        stub.Calls.ShouldBe(1);
+        ShouldBeCalled(monolith, 1);
     }
 }

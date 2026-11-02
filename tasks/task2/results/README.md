@@ -131,4 +131,4 @@ cd ..
 | Листинг бронирований через REST монолита и gRPC сервиса | [listing-rest-vs-grpc.txt](listing-rest-vs-grpc.txt) |
 | `select *` из таблицы истории | [history.txt](history.txt): история, статистика, права аналитика, DLQ-топик, отставание группы |
 | Бины `bookingService` и `grpcBookingService` в логе монолита | [cutover-drill-log.txt](cutover-drill-log.txt): до переноса только `bookingService`, после включения прокси — оба |
-| Дополнительно | [cutover-drill-log.txt](cutover-drill-log.txt) — учения по переключению и откату, [delivery-check.log](delivery-check.log) — доставка при остановке Kafka и DLQ, [unit-tests.txt](unit-tests.txt) и [integration-tests.txt](integration-tests.txt) — 68 юнит-тестов и 11 интеграционных тестов .NET |
+| Дополнительно | [cutover-drill-log.txt](cutover-drill-log.txt) — учения по переключению и откату, [delivery-check.log](delivery-check.log) — доставка при остановке Kafka и DLQ, [unit-tests.txt](unit-tests.txt) и [integration-tests.txt](integration-tests.txt) — 73 юнит-теста и 11 интеграционных тестов .NET |

@@ -103,7 +103,7 @@ export const resolvers = {
 export const schema = buildSubgraphSchema([{ typeDefs, resolvers }]);
 
 // Контекст запроса: пользователь из заголовка и не больше одного вызова booking-service на пользователя.
-export function contextFrom(req, listBookings, res, reqLogger = log) {
+export function contextFrom({ req, res }, listBookings, reqLogger = log) {
   const context = requestContext(req, res, reqLogger);
   const pending = new Map();
   return { ...context, listBookings: (userId) => {

@@ -10,7 +10,7 @@ const server = new ApolloServer({ schema });
 
 startStandaloneServer(server, {
   listen: { port: 4001 },
-  context: async ({ req, res }) => contextFrom(req, listBookings, res),
+  context: async (ctx) => contextFrom(ctx, listBookings),
 }).then(({ url }) => {
   log(`ready at ${url}`, { bookingGrpc: BOOKING_GRPC });
 });

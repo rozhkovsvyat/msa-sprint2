@@ -1,6 +1,8 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
-import { contextFrom, createHotelCatalog, createMonolithClient, log, schema } from './schema.js';
+import { createHotelCatalog } from './catalog.js';
+import { createMonolithClient } from './monolith-client.js';
+import { contextFrom, log, schema } from './schema.js';
 
 const MONOLITH_URL = process.env.MONOLITH_URL ?? 'http://hotelio-monolith:8080';
 const CACHE_TTL_MS = Number(process.env.HOTEL_CACHE_TTL_MS ?? 30_000);
@@ -10,7 +12,7 @@ const server = new ApolloServer({ schema });
 
 startStandaloneServer(server, {
   listen: { port: 4002 },
-  context: async ({ req, res }) => contextFrom(req, catalog, res),
+  context: async (ctx) => contextFrom(ctx, catalog),
 }).then(({ url }) => {
   log(`ready at ${url}`, { monolith: MONOLITH_URL, cacheTtlMs: CACHE_TTL_MS });
 });

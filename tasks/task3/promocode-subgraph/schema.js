@@ -6,37 +6,8 @@ import pLimit from 'p-limit';
 import { logger, requestContext } from '../shared/request-context.js';
 
 export const log = logger('promocode-subgraph');
-
-// Источник данных — справочник промокодов в REST монолита.
-export function createMonolithClient({ baseUrl, fetch = globalThis.fetch, timeoutMs = 3000 }) {
-  async function getPromo(code, requestId) {
-    const res = await fetch(`${baseUrl}/api/promos/${encodeURIComponent(code)}`, {
-      headers: { 'x-request-id': requestId }, signal: AbortSignal.timeout(timeoutMs),
-    });
-    if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`monolith /api/promos/${code}: HTTP ${res.status}`);
-    return res.json(); // { code, discount, vipOnly, expired, validUntil, description }
-  }
-
-  // Действует ли промокод для пользователя (с учётом VIP) — правило монолита.
-  async function isValidFor(code, userId, requestId) {
-    const url = userId
-      ? `${baseUrl}/api/promos/validate?code=${encodeURIComponent(code)}&userId=${encodeURIComponent(userId)}`
-      : `${baseUrl}/api/promos/${encodeURIComponent(code)}/valid?isVipUser=false`;
-    const res = await fetch(url, {
-      method: userId ? 'POST' : 'GET', headers: { 'x-request-id': requestId }, signal: AbortSignal.timeout(timeoutMs),
-    });
-    if (userId) {
-      if (res.status === 400) return false;
-      if (!res.ok) throw new Error(`monolith promos/validate: HTTP ${res.status}`);
-      return true;
-    }
-    if (!res.ok) throw new Error(`monolith promos/valid: HTTP ${res.status}`);
-    return (await res.text()).trim() === 'true';
-  }
-
-  return { getPromo, isValidFor };
-}
+const MAX_CONCURRENT = 4; // одновременных обращений к монолиту на запрос
+const MAX_BATCH = 10; // ключей в одной пачке DataLoader
 
 // Ошибку монолита клиенту не показываем: она остаётся в логе, в ответе — код PROMO_UNAVAILABLE.
 function unavailable(reqLog, error) {
@@ -44,16 +15,21 @@ function unavailable(reqLog, error) {
   return new GraphQLError('Справочник промокодов временно недоступен', { extensions: { code: 'PROMO_UNAVAILABLE' } });
 }
 
+// Пользователь известен — проверяем по правилу монолита для него, иначе как для обычного.
+const isValidFor = (api, code, userId, requestId) =>
+  userId ? api.isValidForUser(code, userId, requestId) : api.isValidForGuest(code, requestId);
+
 // DataLoader на каждый запрос: каждый промокод бронирований пользователя читается из монолита один раз.
 export function createLoaders(api, requestId, reqLog = log) {
-  const limit = pLimit(4);
+  const limit = pLimit(MAX_CONCURRENT);
   const perKey = (keys, fn) => Promise.all(keys.map((key) => limit(() => fn(key)).catch((error) => unavailable(reqLog, error))));
   return {
-    promos: new DataLoader((codes) => perKey(codes, (code) => api.getPromo(code, requestId)), { maxBatchSize: 10 }),
-    validity: new DataLoader((keys) => perKey(keys, (key) => {
-      const [code, userId] = JSON.parse(key);
-      return api.isValidFor(code, userId, requestId);
-    }), { maxBatchSize: 10 }),
+    promos: new DataLoader((codes) => perKey(codes, (code) => api.getPromo(code, requestId)), { maxBatchSize: MAX_BATCH }),
+    // Ключ — объект { code, userId }: DataLoader кеширует по примитиву, поэтому сворачиваем его в строку.
+    validity: new DataLoader((keys) => perKey(keys, ({ code, userId }) => isValidFor(api, code, userId, requestId)), {
+      maxBatchSize: MAX_BATCH,
+      cacheKeyFn: ({ code, userId }) => JSON.stringify([code, userId]),
+    }),
   };
 }
 
@@ -67,6 +43,13 @@ function toDiscountInfo(promo, isValid) {
     validUntil: promo.validUntil ?? null,
     description: promo.description ?? null,
   };
+}
+
+async function discountOf(promoCode, promos) {
+  if (!promoCode) return 0;
+  // Промокода нет в справочнике — скидка неизвестна (null), а не нулевая.
+  const promo = await promos.load(promoCode);
+  return promo?.discount ?? null;
 }
 
 export const typeDefs = gql`
@@ -100,8 +83,7 @@ export const typeDefs = gql`
 export const resolvers = {
   Booking: {
     discountPercent: async ({ id, promoCode }, _, { promos, log: reqLog }) => {
-      // Промокода нет в справочнике — скидка неизвестна (null), а не нулевая.
-      const discountPercent = promoCode ? (await promos.load(promoCode))?.discount ?? null : 0;
+      const discountPercent = await discountOf(promoCode, promos);
       reqLog('discountPercent resolved', { bookingId: id, promoCode, discountPercent });
       return discountPercent;
     },
@@ -109,7 +91,7 @@ export const resolvers = {
       if (!promoCode) return null;
       const promo = await promos.load(promoCode);
       if (!promo) return null;
-      return toDiscountInfo(promo, await validity.load(JSON.stringify([promoCode, userId])));
+      return toDiscountInfo(promo, await validity.load({ code: promoCode, userId }));
     },
   },
   Query: {
@@ -120,7 +102,7 @@ export const resolvers = {
       }
       const promo = await promos.load(code);
       if (!promo) return null;
-      const isValid = await api.isValidFor(code, userId ?? null, requestId).catch((error) => { throw unavailable(reqLog, error); });
+      const isValid = await isValidFor(api, code, userId, requestId).catch((error) => { throw unavailable(reqLog, error); });
       return toDiscountInfo(promo, isValid);
     },
   },
@@ -128,7 +110,7 @@ export const resolvers = {
 
 export const schema = buildSubgraphSchema([{ typeDefs, resolvers }]);
 
-export function contextFrom(req, api, res, reqLogger = log) {
+export function contextFrom({ req, res }, api, reqLogger = log) {
   const context = requestContext(req, res, reqLogger);
   return { ...context, api, ...createLoaders(api, context.requestId, context.log) };
 }

@@ -23,4 +23,4 @@ export const createGateway = (subgraphs, DataSource = ForwardingDataSource) => n
   buildService: ({ url }) => new DataSource({ url }),
 });
 
-export const contextFrom = (req, res, reqLogger = log) => requestContext(req, res, reqLogger);
+export const contextFrom = ({ req, res }, reqLogger = log) => requestContext(req, res, reqLogger);

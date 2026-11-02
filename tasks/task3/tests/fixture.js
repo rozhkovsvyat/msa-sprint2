@@ -8,8 +8,11 @@ import protoLoader from '@grpc/proto-loader';
 import { connectBookingService, createListBookings } from '../booking-subgraph/booking-client.js';
 import { contextFrom as bookingContext, schema as bookingSchema } from '../booking-subgraph/schema.js';
 import { contextFrom as gatewayContext, createGateway, ForwardingDataSource, validationRules } from '../gateway/gateway.js';
-import { contextFrom as hotelContext, createHotelCatalog, createMonolithClient as hotelClient, schema as hotelSchema } from '../hotel-subgraph/schema.js';
-import { contextFrom as promoContext, createMonolithClient as promoClient, schema as promoSchema } from '../promocode-subgraph/schema.js';
+import { createHotelCatalog } from '../hotel-subgraph/catalog.js';
+import { createMonolithClient as hotelClient } from '../hotel-subgraph/monolith-client.js';
+import { contextFrom as hotelContext, schema as hotelSchema } from '../hotel-subgraph/schema.js';
+import { createMonolithClient as promoClient } from '../promocode-subgraph/monolith-client.js';
+import { contextFrom as promoContext, schema as promoSchema } from '../promocode-subgraph/schema.js';
 
 export const booking = (id, userId, hotelId, promoCode = '', discount = 0) => ({
   id, user_id: userId, hotel_id: hotelId, promo_code: promoCode, discount_percent: discount, created_at: '2026-10-19T10:00:00Z',
@@ -21,6 +24,54 @@ export async function post(url, query, { userId = 'alice', requestId, variables 
   if (requestId) headers['x-request-id'] = requestId;
   const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ query, variables }) });
   return { status: response.status, requestId: response.headers.get('x-request-id'), body: await response.json() };
+}
+
+const PROTO_PATH = fileURLToPath(new URL('../../task2/booking.proto', import.meta.url));
+
+// REST монолита: отели и промокоды из фикстур; отказы включаются через failedHotels и failedPromos.
+async function startMonolithStub({ promos, failedHotels, failedPromos, restCalls }) {
+  const server = http.createServer((req, res) => {
+    const url = new URL(req.url, 'http://monolith');
+    restCalls.push({ path: req.url, requestId: req.headers['x-request-id'] });
+    res.setHeader('content-type', 'application/json');
+    const hotel = /^\/api\/hotels\/(.+)$/.exec(url.pathname);
+    const promo = /^\/api\/promos\/([^/]+)$/.exec(url.pathname);
+    if (hotel) {
+      const id = decodeURIComponent(hotel[1]);
+      if (failedHotels.has(id)) res.writeHead(503).end('{}');
+      else res.end(JSON.stringify({ id, city: 'Seoul', rating: 4.7, description: 'Hotel ' + id, operational: true }));
+    } else if (url.pathname === '/api/promos/validate') {
+      const p = promos.get(url.searchParams.get('code'));
+      res.writeHead(p && !p.expired && !p.vipOnly ? 200 : 400).end('{}');
+    } else if (promo && failedPromos.has(decodeURIComponent(promo[1]))) {
+      res.writeHead(503).end('{}');
+    } else if (promo && promos.has(decodeURIComponent(promo[1]))) {
+      res.end(JSON.stringify(promos.get(decodeURIComponent(promo[1]))));
+    } else {
+      res.writeHead(404).end('{}');
+    }
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  return {
+    url: `http://127.0.0.1:${server.address().port}`,
+    close: () => new Promise((resolve) => { server.closeAllConnections(); server.close(resolve); }),
+  };
+}
+
+// gRPC booking-service: отдаёт бронирования пользователя из массива bookings по контракту задания 2.
+async function startBookingServiceStub({ bookings, grpcCalls }) {
+  const proto = grpc.loadPackageDefinition(protoLoader.loadSync(PROTO_PATH, { keepCase: true, defaults: true }));
+  const server = new grpc.Server();
+  server.addService(proto.booking.BookingService.service, {
+    ListBookings(call, callback) {
+      grpcCalls.push({ userId: call.request.user_id, requestId: call.metadata.get('x-request-id')[0] });
+      callback(null, { bookings: bookings.filter((b) => b.user_id === call.request.user_id) });
+    },
+  });
+  const port = await new Promise((resolve, reject) => server.bindAsync('127.0.0.1:0',
+    grpc.ServerCredentials.createInsecure(), (error, boundPort) => (error ? reject(error) : resolve(boundPort))));
+  return { address: `127.0.0.1:${port}`, close: () => server.forceShutdown() };
 }
 
 /**
@@ -51,45 +102,11 @@ export async function startFixture({ dataSource = ForwardingDataSource, listBook
   const stop = async () => { while (cleanup.length) await cleanup.pop()(); };
 
   try {
-    const monolith = http.createServer((req, res) => {
-      const url = new URL(req.url, 'http://monolith');
-      restCalls.push({ path: req.url, requestId: req.headers['x-request-id'] });
-      res.setHeader('content-type', 'application/json');
-      const hotel = /^\/api\/hotels\/(.+)$/.exec(url.pathname);
-      const promo = /^\/api\/promos\/([^/]+)$/.exec(url.pathname);
-      if (hotel) {
-        const id = decodeURIComponent(hotel[1]);
-        if (failedHotels.has(id)) res.writeHead(503).end('{}');
-        else res.end(JSON.stringify({ id, city: 'Seoul', rating: 4.7, description: 'Hotel ' + id, operational: true }));
-      } else if (url.pathname === '/api/promos/validate') {
-        const p = promos.get(url.searchParams.get('code'));
-        res.writeHead(p && !p.expired && !p.vipOnly ? 200 : 400).end('{}');
-      } else if (promo && failedPromos.has(decodeURIComponent(promo[1]))) {
-        res.writeHead(503).end('{}');
-      } else if (promo && promos.has(decodeURIComponent(promo[1]))) {
-        res.end(JSON.stringify(promos.get(decodeURIComponent(promo[1]))));
-      } else {
-        res.writeHead(404).end('{}');
-      }
-    });
-    monolith.listen(0, '127.0.0.1');
-    await once(monolith, 'listening');
-    cleanup.push(() => new Promise((resolve) => { monolith.closeAllConnections(); monolith.close(resolve); }));
-    const monolithUrl = `http://127.0.0.1:${monolith.address().port}`;
-
-    const protoPath = fileURLToPath(new URL('../../task2/booking.proto', import.meta.url));
-    const proto = grpc.loadPackageDefinition(protoLoader.loadSync(protoPath, { keepCase: true, defaults: true }));
-    const bookingService = new grpc.Server();
-    bookingService.addService(proto.booking.BookingService.service, {
-      ListBookings(call, callback) {
-        grpcCalls.push({ userId: call.request.user_id, requestId: call.metadata.get('x-request-id')[0] });
-        callback(null, { bookings: bookings.filter((b) => b.user_id === call.request.user_id) });
-      },
-    });
-    const grpcPort = await new Promise((resolve, reject) => bookingService.bindAsync('127.0.0.1:0',
-      grpc.ServerCredentials.createInsecure(), (error, port) => (error ? reject(error) : resolve(port))));
-    cleanup.push(() => bookingService.forceShutdown());
-    const client = connectBookingService(`127.0.0.1:${grpcPort}`, protoPath);
+    const monolith = await startMonolithStub({ promos, failedHotels, failedPromos, restCalls });
+    cleanup.push(monolith.close);
+    const bookingService = await startBookingServiceStub({ bookings, grpcCalls });
+    cleanup.push(bookingService.close);
+    const client = connectBookingService(bookingService.address, PROTO_PATH);
     cleanup.push(() => client.close());
 
     async function start(options, context) {
@@ -99,15 +116,15 @@ export async function startFixture({ dataSource = ForwardingDataSource, listBook
       return url;
     }
     const list = listBookings ?? createListBookings(client);
-    const catalog = createHotelCatalog({ fetchHotel: hotelClient({ baseUrl: monolithUrl }), ttlMs: 0 });
-    const api = promoClient({ baseUrl: monolithUrl });
+    const catalog = createHotelCatalog({ fetchHotel: hotelClient({ baseUrl: monolith.url }), ttlMs: 0 });
+    const api = promoClient({ baseUrl: monolith.url });
     const subgraphs = [
       { name: 'booking-subgraph', url: await start({ schema: bookingSchema },
-        async ({ req, res }) => bookingContext(req, list, res, logTo('booking-subgraph'))) },
+        async (ctx) => bookingContext(ctx, list, logTo('booking-subgraph'))) },
       { name: 'hotel-subgraph', url: await start({ schema: hotelSchema },
-        async ({ req, res }) => hotelContext(req, catalog, res, logTo('hotel-subgraph'))) },
+        async (ctx) => hotelContext(ctx, catalog, logTo('hotel-subgraph'))) },
       { name: 'promocode-subgraph', url: await start({ schema: promoSchema },
-        async ({ req, res }) => promoContext(req, api, res, logTo('promocode-subgraph'))) },
+        async (ctx) => promoContext(ctx, api, logTo('promocode-subgraph'))) },
     ];
     const names = new Map(subgraphs.map((s) => [s.url, s.name]));
     class RecordedDataSource extends dataSource {
@@ -117,7 +134,7 @@ export async function startFixture({ dataSource = ForwardingDataSource, listBook
       }
     }
     const gatewayUrl = await start({ gateway: createGateway(subgraphs, RecordedDataSource), validationRules },
-      async ({ req, res }) => gatewayContext(req, res, logTo('apollo-gateway')));
+      async (ctx) => gatewayContext(ctx, logTo('apollo-gateway')));
     return { gatewayUrl, events, restCalls, grpcCalls, subgraphRequests, failedHotels, failedPromos, promos, bookings, stop };
   } catch (error) {
     await stop();

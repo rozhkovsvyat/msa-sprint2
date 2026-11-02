@@ -21,7 +21,7 @@ const server = new ApolloServer({
 
 startStandaloneServer(server, {
   listen: { port: 4000 },
-  context: async ({ req, res }) => contextFrom(req, res), // userid и x-request-id передаются подграфам
+  context: async (ctx) => contextFrom(ctx), // userid и x-request-id передаются подграфам
 }).then(({ url }) => {
   log(`ready at ${url}`, { subgraphs: subgraphs.map((s) => s.name) });
 });

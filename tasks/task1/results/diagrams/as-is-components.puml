@@ -17,7 +17,7 @@ Person(client, "Клиент", "Веб, мобильное приложение\
 Container_Boundary(mono, "Монолит Hotelio [Java 17, Spring Boot 3.2]") {
   Component(api, "REST-контроллеры", "Spring MVC", "/api/bookings, /api/users, /api/hotels,\n/api/promos, /api/reviews")
   Component(bsvc, "BookingService", "Java", "Проверки, цена и скидка,\nсохранение бронирования")
-  Component(proxy, "gRPC-прокси бронирований", "p-o-y-1.0.0.jar, без исходников", "Заменяет BookingService, если задана\nBOOKING_SERVICE_EXTERNAL_HOST")
+  Component(proxy, "gRPC-прокси бронирований", "p-o-y-1.0.0.jar, без исходников", "Заменяет BookingService,\nесли задан адрес сервиса в\nBOOKING_SERVICE_EXTERNAL_HOST")
   Component(rsvc, "ReviewService", "Java", "Доверие к отелю:\n≥10 отзывов, средняя ≥4.0")
   Component(hsvc, "HotelService", "Java", "Работает ли отель,\nесть ли места")
   Component(psvc, "PromoCodeService", "Java", "Действует ли промокод\nдля пользователя")

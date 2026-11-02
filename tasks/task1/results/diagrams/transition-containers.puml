@@ -19,7 +19,7 @@ System_Ext(partners, "Партнёрские каналы", "Клиенты REST
 System_Boundary(hotelio, "Hotelio") {
   Container(web, "Веб- и мобильные клиенты", "SPA, мобильные приложения", "Поиск, бронирование,\nличный кабинет на REST")
   Container(mono, "Монолит Hotelio", "Java 17, Spring Boot", "Весь REST API как раньше;\nбронирования через прокси\n(BOOKING_SERVICE_EXTERNAL_HOST)")
-  ContainerDb(monodb, "БД монолита", "PostgreSQL", "Пользователи, отели, промокоды,\nотзывы; booking — архив,\nисточник для отката")
+  ContainerDb(monodb, "БД монолита", "PostgreSQL", "Пользователи, отели, промокоды,\nотзывы; booking — архив,\nпри откате дописывается")
 
   Container(bs, "booking-service", "C#, .NET 10, gRPC", "Создание и список бронирований,\nцена и скидка, outbox")
   ContainerDb(bsdb, "БД бронирований", "PostgreSQL", "booking, outbox")
@@ -29,6 +29,7 @@ System_Boundary(hotelio, "Hotelio") {
   Container(mig, "Ops-джоба миграции", "psql-скрипт, ручной запуск", "Выполнена в окне переключения;\nобратный перенос — при откате")
 }
 
+Lay_R(guest, partners)
 Rel(guest, web, "Использует")
 Rel(web, mono, "Все запросы", "REST/HTTPS")
 Rel(partners, mono, "Бронирования", "REST/HTTPS")

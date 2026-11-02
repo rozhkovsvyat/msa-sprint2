@@ -28,7 +28,7 @@ job -> bdb : сдвигает счётчик ID за максимальный
 job -> job : сверяет количество и контрольную сумму
 job --> ops : отчёт сверки
 ops -> bs : запустить
-ops -> mono : запустить с BOOKING_SERVICE_EXTERNAL_HOST
+ops -> mono : запустить с BOOKING_SERVICE_EXTERNAL_HOST=booking-service
 == Работа после переключения ==
 client -> mono : POST/GET /api/bookings
 mono -> bs : CreateBooking / ListBookings [gRPC]
@@ -43,5 +43,5 @@ ops -> job : запустить перенос назад
 job -> bdb : читает бронирования, созданные после переключения
 job -> mdb : дописывает их в booking с теми же ID
 job --> ops : отчёт сверки
-ops -> mono : запустить без BOOKING_SERVICE_EXTERNAL_HOST
+ops -> mono : запустить с BOOKING_SERVICE_EXTERNAL_HOST=false
 @enduml

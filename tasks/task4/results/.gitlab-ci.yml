@@ -70,13 +70,13 @@ test:
 test:unit:
   extends: .dotnet-test
   variables:
-    TEST_PROJECT: tests/BookingService.Tests.csproj
+    TEST_PROJECT: tests/BookingService.Tests/BookingService.Tests.csproj
 
 # PostgreSQL и Kafka для тестов поднимает Testcontainers, поэтому контейнеру с тестами нужен Docker хоста.
 test:integration:
   extends: .dotnet-test
   variables:
-    TEST_PROJECT: integration-tests/BookingService.IntegrationTests.csproj
+    TEST_PROJECT: tests/BookingService.IntegrationTests/BookingService.IntegrationTests.csproj
     DOCKER_ARGS: --network host -v /var/run/docker.sock:/var/run/docker.sock
 
 # Регресс курса на стенде задания 2: монолит с прокси, booking-service, Kafka и сервис истории.

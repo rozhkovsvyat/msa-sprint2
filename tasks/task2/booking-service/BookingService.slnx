@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BookingService/BookingService.csproj" />
+    <Project Path="../booking-history-service/src/BookingHistoryService/BookingHistoryService.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BookingService.Tests/BookingService.Tests.csproj" />
+    <Project Path="tests/BookingService.IntegrationTests/BookingService.IntegrationTests.csproj" />
+  </Folder>
+</Solution>

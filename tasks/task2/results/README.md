@@ -94,10 +94,10 @@ BOOKING_SERVICE_EXTERNAL_HOST=false docker compose up -d monolith
 ```bash
 cd tasks/task2/booking-service
 # юнит-тесты: правила, ACL, контракт события, ошибки доставки, доступ к служебному списку
-dotnet test --project tests/BookingService.Tests.csproj
+dotnet test --project tests/BookingService.Tests/BookingService.Tests.csproj
 # интеграционные: outbox и доставка в историю на PostgreSQL и Kafka из Testcontainers, нужен Docker;
 # с Colima: export DOCKER_HOST=unix://$HOME/.colima/default/docker.sock TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
-dotnet test --project integration-tests/BookingService.IntegrationTests.csproj
+dotnet test --project tests/BookingService.IntegrationTests/BookingService.IntegrationTests.csproj
 
 cd ..
 ./check-delivery.sh            # на поднятом стенде: остановка Kafka, повтор, DLQ
@@ -131,4 +131,4 @@ cd ..
 | Листинг бронирований через REST монолита и gRPC сервиса | [listing-rest-vs-grpc.txt](listing-rest-vs-grpc.txt) |
 | `select *` из таблицы истории | [history.txt](history.txt): история, статистика, права аналитика, DLQ-топик, отставание группы |
 | Бины `bookingService` и `grpcBookingService` в логе монолита | [cutover-drill-log.txt](cutover-drill-log.txt): до переноса только `bookingService`, после включения прокси — оба |
-| Дополнительно | [cutover-drill-log.txt](cutover-drill-log.txt) — учения по переключению и откату, [delivery-check.log](delivery-check.log) — доставка при остановке Kafka и DLQ, [unit-tests.txt](unit-tests.txt) и [integration-tests.txt](integration-tests.txt) — 73 юнит-теста и 11 интеграционных тестов .NET |
+| Дополнительно | [cutover-drill-log.txt](cutover-drill-log.txt) — учения по переключению и откату, [delivery-check.log](delivery-check.log) — доставка при остановке Kafka и DLQ, [unit-tests.txt](unit-tests.txt) и [integration-tests.txt](integration-tests.txt) — 74 юнит-теста и 11 интеграционных тестов .NET |
